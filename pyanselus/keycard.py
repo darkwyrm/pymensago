@@ -6,11 +6,12 @@ import datetime
 import hashlib
 import os
 
-import blake3
+# Temporarily disabled while building blake3 module on Windows is sorted out
+# import blake3
 import nacl.public
 import nacl.signing
 
-from retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
+from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
 		ResourceNotFound
 
 FeatureNotAvailable = 'FeatureNotAvailable'
@@ -332,8 +333,9 @@ class EntryBase:
 	def generate_hash(self, algorithm: str) -> RetVal:
 		'''Generates a hash containing the expected signatures and the previous hash, if it exists. 
 		The supported hash algorithms are 'BLAKE2-256', 'BLAKE3-256', 'SHA-256', and 'SHA3-256'.'''  
-		if algorithm not in ['BLAKE3-256','BLAKE2B-256','SHA-256','SHA3-256']:
-			return RetVal(UnsupportedHashType, f'{algorithm} not a support hash algorithm')
+		# if algorithm not in ['BLAKE3-256','BLAKE2B-256','SHA-256','SHA3-256']:
+		if algorithm not in ['BLAKE2B-256','SHA-256','SHA3-256']:
+			return RetVal(UnsupportedHashType, f'{algorithm} not a supported hash algorithm')
 		
 		hash_string = EncodedString()
 		hash_level = -1
@@ -343,20 +345,29 @@ class EntryBase:
 				break
 		assert hash_level > 0, "BUG: signature_info missing hash entry"
 		
-		if algorithm == 'BLAKE3-256':
-			hasher = blake3.blake3() # pylint: disable=c-extension-no-member
-			hasher.update(self.make_bytestring(hash_level))
-			hash_string.data = base64.b85encode(hasher.digest()).decode()
+		# if algorithm == 'BLAKE3-256':
+		# 	hasher = blake3.blake3() # pylint: disable=c-extension-no-member
+		# 	hasher.update(self.make_bytestring(hash_level))
+		# 	hash_string.data = base64.b85encode(hasher.digest()).decode()
+		# else:
+			# hasher = None
+			# if algorithm == 'BLAKE2B-256':
+			# 	hasher = hashlib.blake2b(digest_size=32)
+			# elif algorithm == 'SHA-256':
+			# 	hasher = hashlib.sha256()
+			# else:
+			# 	hasher = hashlib.sha3_256()
+			# hasher.update(self.make_bytestring(hash_level))
+			# hash_string.data = base64.b85encode(hasher.digest()).decode()
+		hasher = None
+		if algorithm == 'BLAKE2B-256':
+			hasher = hashlib.blake2b(digest_size=32)
+		elif algorithm == 'SHA-256':
+			hasher = hashlib.sha256()
 		else:
-			hasher = None
-			if algorithm == 'BLAKE2B-256':
-				hasher = hashlib.blake2b(digest_size=32)
-			elif algorithm == 'SHA-256':
-				hasher = hashlib.sha256()
-			else:
-				hasher = hashlib.sha3_256()
-			hasher.update(self.make_bytestring(hash_level))
-			hash_string.data = base64.b85encode(hasher.digest()).decode()
+			hasher = hashlib.sha3_256()
+		hasher.update(self.make_bytestring(hash_level))
+		hash_string.data = base64.b85encode(hasher.digest()).decode()
 		
 		hash_string.prefix = algorithm
 		self.hash = str(hash_string)

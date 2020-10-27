@@ -1,0 +1,10 @@
+Type:User
+Index:1
+Name:Corbin Simons
+Workspace-ID:4418bf6c-000b-4bb3-8111-316e72030468
+Domain:example.com
+Contact-Request-Verification-Key:ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D
+Contact-Request-Encryption-Key:CURVE25519:j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph
+Public-Encryption-Key:CURVE25519:nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN
+Time-To-Live:30
+Expires:20201002
