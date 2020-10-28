@@ -5,9 +5,9 @@ import os
 import shutil
 import time
 
-import encryption
+import pyanselus.encryption as encryption
 # Pylint doesn't detect the use of this import:
-from retval import RetVal # pylint: disable=unused-import
+from pyanselus.retval import RetVal # pylint: disable=unused-import
 
 def setup_test(name):
 	'''Creates a test folder hierarchy'''

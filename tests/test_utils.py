@@ -1,6 +1,6 @@
 '''Implements tests for the utils module'''
 
-import utils
+import pyanselus.utils as utils
 
 def test_validate_uuid():
 	'''Tests utils.validate_uuid'''

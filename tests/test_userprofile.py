@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 
-from userprofile import Profile, ProfileManager
+from pyanselus.userprofile import Profile, ProfileManager
 
 def setup_test(name):
 	'''Creates a new profile folder hierarchy'''

@@ -7,8 +7,10 @@ import time
 
 import nacl.signing
 
-import keycard
-from keycard import EncodedString, Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
+import pyanselus.keycard as keycard
+from pyanselus.keycard import EncodedString, Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
+# Pylint doesn't detect the use of this import:
+from pyanselus.retval import RetVal # pylint: disable=unused-import
 
 # Keys used in the various tests
 
@@ -30,9 +32,6 @@ from keycard import EncodedString, Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATUR
 # Organization Encryption Key: @b?cjpeY;<&y+LSOA&yUQ&ZIrp(JGt{W$*V>ATLG
 # Organization Decryption Key: nQxAR1Rh{F4gKR<KZz)*)7}5s_^!`!eb!sod0<aT
 
-
-# Pylint doesn't detect the use of this import:
-from retval import RetVal # pylint: disable=unused-import
 
 def setup_test(name: str) -> str:
 	'''Creates a test folder hierarchy'''
@@ -93,7 +92,7 @@ def make_test_userentry() -> keycard.UserEntry:
 
 	# Add the hash
 
-	rv = usercard.generate_hash('BLAKE3-256')
+	rv = usercard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'entry failed to hash'
 
 	# User sign and verify
@@ -147,7 +146,7 @@ def make_test_orgentry() -> keycard.OrgEntry:
 	ovkeystring.prefix = 'ED25519'
 	ovkeystring.data = base64.b85encode(ovkey.encode()).decode()
 
-	rv = orgcard.generate_hash('BLAKE3-256')
+	rv = orgcard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'entry failed to hash'
 
 	rv = orgcard.verify_signature(ovkeystring, 'Organization')
@@ -291,7 +290,7 @@ def test_sign():
 	assert not rv.error(), 'Unexpected RetVal error %s' % rv.error()
 	assert basecard.signatures['Organization'], 'entry failed to org sign'
 
-	rv = basecard.generate_hash('BLAKE3-256')
+	rv = basecard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'Unexpected RetVal error %s' % rv.error()
 	
 	expected_sig = \
@@ -364,10 +363,10 @@ def test_verify_signature():
 
 	# Set up the hashes
 	basecard.prev_hash = '1234567890'
-	rv = basecard.generate_hash('BLAKE3-256')
+	rv = basecard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'entry failed to BLAKE3 hash'
 
-	expected_hash = r'BLAKE3-256:d0;tNM(8Q1dRN|}7`g8dH#fxYK(WHKiFX`bcHLkU'
+	expected_hash = r'BLAKE2B-256:kBO4*3!t3M2PONHy>*Ew)Hw8!v)rZcvpo;azDJvx'
 	assert basecard.hash == expected_hash, "entry did not yield the expected hash"
 	
 	# User sign and verify
@@ -379,7 +378,7 @@ def test_verify_signature():
 	assert basecard.signatures['User'], 'entry failed to user sign'
 	
 	expected_sig = \
-		'ED25519:5-rx$ZL(JwP2ux-8BnTMw*PYQ6w@VovVj6<kF*q+CM80zeHP9C;u!tLlhU&CiiE74lvjy};;9sy2G+m;'
+		'ED25519:@R53O{bS93YmZq5qs2`f0Uj)Ks^_cl{3Tl;lce#{hF-LsexWsbWqH_5erOQ+VY^pBkADo)@zxG)YZVU#'
 	assert basecard.signatures['User'] == expected_sig, \
 			"entry did not yield the expected user signature"
 
@@ -438,7 +437,7 @@ def test_is_compliant_org():
 	rv = orgcard.verify_signature(ovkeystring, 'Organization')
 	assert not rv.error(), 'entry failed to org verify'
 
-	rv = orgcard.generate_hash('BLAKE3-256')
+	rv = orgcard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'entry failed to hash'
 
 	status = orgcard.is_compliant()
@@ -469,7 +468,7 @@ def test_org_chaining():
 	assert not status.error(), f'new entry failed to org sign: {status}'
 	
 	new_entry.prev_hash = orgentry.hash
-	status = new_entry.generate_hash('BLAKE3-256')
+	status = new_entry.generate_hash('BLAKE2B-256')
 	assert not status.error(), f'new entry failed to hash: {status}'
 	
 	status = new_entry.is_compliant()
@@ -507,7 +506,7 @@ def test_user_chaining():
 	assert not status.error(), f'new entry failed to org sign: {status}'
 
 	new_entry.prev_hash = userentry.hash
-	status = new_entry.generate_hash('BLAKE3-256')
+	status = new_entry.generate_hash('BLAKE2B-256')
 	assert not status.error(), f'new entry failed to hash: {status}'
 
 	status = new_entry.sign(new_crskeystring, 'User')
@@ -525,7 +524,7 @@ def test_hashing():
 	'''Confirms that all supported algorithms work as expected'''
 	userentry = make_test_userentry()
 
-	algolist = [ 'BLAKE2B-256', 'BLAKE3-256', 'SHA-256', 'SHA3-256' ]
+	algolist = [ 'BLAKE2B-256', 'BLAKE2B-256', 'SHA-256', 'SHA3-256' ]
 	for algorithm in algolist:
 		status = userentry.generate_hash(algorithm)
 		assert not status.error(), f'hash test for {algorithm} failed'
@@ -551,7 +550,7 @@ def test_keycard_chain_verify_load_save():
 	assert not status.error(), f'chained entry failed to org sign: {status}'
 
 	new_entry.prev_hash = userentry.hash
-	new_entry.generate_hash('BLAKE3-256')
+	new_entry.generate_hash('BLAKE2B-256')
 	assert not status.error(), f'chained entry failed to hash: {status}'
 
 	skeystring = EncodedString(chaindata['sign.private'])
@@ -582,7 +581,7 @@ def bench_hashers():
 
 	iterations = 25000
 	print(f'Times for {iterations} iterations of each hash algorithm:')
-	for hasher in ['BLAKE2-256', 'BLAKE3-256', 'SHA-256', 'SHA3-256']:
+	for hasher in ['BLAKE2-256', 'BLAKE2B-256', 'SHA-256', 'SHA3-256']:
 		start = time.time()
 		for _ in range(iterations):
 			entry.generate_hash(hasher)
@@ -591,7 +590,7 @@ def bench_hashers():
 
 if __name__ == '__main__':
 	# test_sign()
-	# test_verify_signature()
+	test_verify_signature()
 	# test_keycard_chain_verify_load_save()
 	bench_hashers()
 

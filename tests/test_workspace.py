@@ -3,9 +3,9 @@ import os
 import shutil
 import time
 
-from encryption import Password
-from userprofile import Profile
-from workspace import Workspace
+from pyanselus.encryption import Password
+from pyanselus.userprofile import Profile
+from pyanselus.workspace import Workspace
 
 def setup_test(name):
 	'''Creates a new test folder hierarchy'''

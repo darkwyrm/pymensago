@@ -1,5 +1,5 @@
 *.pyc
 .vscode/*
-testfiles/*
+tests/testfiles/*
 .cache/*
 testcards/*
