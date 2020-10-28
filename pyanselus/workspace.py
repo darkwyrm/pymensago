@@ -6,7 +6,8 @@ import sqlite3
 
 import pyanselus.auth as auth
 import pyanselus.encryption as encryption
-from pyanselus.retval import RetVal, ResourceExists, ResourceNotFound, ExceptionThrown, BadParameterValue
+from pyanselus.retval import RetVal, ResourceExists, ResourceNotFound, ExceptionThrown, \
+		BadParameterValue
 
 class Workspace:
 	'''Workspace provides high-level operations for managing workspace data.'''

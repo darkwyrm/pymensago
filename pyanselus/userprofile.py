@@ -7,8 +7,9 @@ import shutil
 import sqlite3
 import uuid
 
-from pyanselus.retval import RetVal, ResourceExists, ExceptionThrown, BadParameterValue, ResourceNotFound
-import pyanselus.utils
+from pyanselus.retval import RetVal, ResourceExists, ExceptionThrown, BadParameterValue, \
+		ResourceNotFound
+import pyanselus.utils as utils
 
 BadProfileList = 'BadProfileList'
 InvalidProfile = 'InvalidProfile'

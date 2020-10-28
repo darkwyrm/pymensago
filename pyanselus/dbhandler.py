@@ -2,7 +2,7 @@
 import time
 import uuid
 
-import items
+import pyanselus.items as items
 
 class Sqlite:
 	'''Formerly a class to abstract database access. It has been deprecated. Remaining code will 
