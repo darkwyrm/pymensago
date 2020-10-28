@@ -4,7 +4,7 @@ import platform
 # import sqlite3
 
 # import auth
-from userprofile import ProfileManager
+from pyanselus.userprofile import ProfileManager
 
 class ClientStorage:
 	'''Provides a storage API for the rest of the client.'''

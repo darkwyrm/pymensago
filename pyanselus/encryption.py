@@ -12,7 +12,7 @@ import nacl.pwhash
 import nacl.secret
 import nacl.signing
 import nacl.utils
-from retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
+from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
 		ResourceExists, ResourceNotFound
 
 # JSON schemas used to validate keyfile data

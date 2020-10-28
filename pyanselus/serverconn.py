@@ -10,8 +10,8 @@ import uuid
 import nacl.pwhash
 import nacl.secret
 
-from retval import RetVal, ExceptionThrown, ServerError, NetworkError, ResourceNotFound
-import utils
+from pyanselus.retval import RetVal, ExceptionThrown, ServerError, NetworkError, ResourceNotFound
+import pyanselus.utils as utils
 
 AnsBadRequest = '400-BadRequest'
 

@@ -2,13 +2,13 @@
 Anselus client'''
 import socket
 
-import auth
-import serverconn
-from encryption import Password, KeyPair
-from retval import RetVal, InternalError, BadParameterValue, ResourceExists
-from storage import ClientStorage
-from userprofile import Profile
-from workspace import Workspace
+import pyanselus.auth as auth
+import pyanselus.serverconn as serverconn
+from pyanselus.encryption import Password, KeyPair
+from pyanselus.retval import RetVal, InternalError, BadParameterValue, ResourceExists
+from pyanselus.storage import ClientStorage
+from pyanselus.userprofile import Profile
+from pyanselus.workspace import Workspace
 
 class AnselusClient:
 	'''

@@ -2,7 +2,7 @@
 
 import re
 
-from retval import RetVal, BadParameterValue
+from pyanselus.retval import RetVal, BadParameterValue
 
 # This function is needed because the Anselus admin ID is purposely nonconformant -- a user can
 # *never* accidentally get assigned the value, and for the purposes of the platform, version 

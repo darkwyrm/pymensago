@@ -3,9 +3,9 @@
 import base64
 import sqlite3
 
-import encryption
-import utils
-from retval import RetVal, ResourceNotFound, ResourceExists, BadParameterValue
+import pyanselus.encryption as encryption
+import pyanselus.utils as utils
+from pyanselus.retval import RetVal, ResourceNotFound, ResourceExists, BadParameterValue
 
 def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
