@@ -5,6 +5,7 @@ import base64
 import datetime
 import hashlib
 import os
+import time
 
 # Temporarily disabled while building blake3 module on Windows is sorted out
 # import blake3
@@ -426,7 +427,8 @@ class OrgEntry(EntryBase):
 			'Secondary-Verification-Key',
 			'Encryption-Key',
 			'Time-To-Live',
-			'Expires'
+			'Expires',
+			'Timestamp'
 		]
 		self.required_fields = [
 			'Index',
@@ -435,7 +437,8 @@ class OrgEntry(EntryBase):
 			'Primary-Verification-Key',
 			'Encryption-Key',
 			'Time-To-Live',
-			'Expires'
+			'Expires',
+			'Timestamp'
 		]
 		self.signature_info = [ 
 			{ 'name' : 'Custody', 'level' : 1, 'optional' : True, 'type' : SIGINFO_SIGNATURE },
@@ -445,6 +448,7 @@ class OrgEntry(EntryBase):
 		
 		self.fields['Index'] = '1'
 		self.fields['Time-To-Live'] = '30'
+		self.fields['Timestamp'] = time.strftime('%Y%m%d %H%M%S', time.gmtime())
 		self.set_expiration()
 
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
@@ -548,7 +552,8 @@ class UserEntry(EntryBase):
 			'Public-Encryption-Key',
 			'Alternate-Encryption-Key',
 			'Time-To-Live',
-			'Expires'
+			'Expires',
+			'Timestamp'
 		]
 		self.required_fields = [
 			'Index',
@@ -558,7 +563,8 @@ class UserEntry(EntryBase):
 			'Contact-Request-Encryption-Key',
 			'Public-Encryption-Key',
 			'Time-To-Live',
-			'Expires'
+			'Expires',
+			'Timestamp'
 		]
 		self.signature_info = [ 
 			{ 'name' : 'Custody', 'level' : 1, 'optional' : True, 'type' : SIGINFO_SIGNATURE },
@@ -569,6 +575,7 @@ class UserEntry(EntryBase):
 		
 		self.fields['Index'] = '1'
 		self.fields['Time-To-Live'] = '7'
+		self.fields['Timestamp'] = time.strftime('%Y%m%d %H%M%S', time.gmtime())
 		self.set_expiration()
 	
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
