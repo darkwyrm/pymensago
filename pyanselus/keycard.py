@@ -448,7 +448,7 @@ class OrgEntry(EntryBase):
 		
 		self.fields['Index'] = '1'
 		self.fields['Time-To-Live'] = '30'
-		self.fields['Timestamp'] = time.strftime('%Y%m%d %H%M%S', time.gmtime())
+		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
@@ -575,7 +575,7 @@ class UserEntry(EntryBase):
 		
 		self.fields['Index'] = '1'
 		self.fields['Time-To-Live'] = '7'
-		self.fields['Timestamp'] = time.strftime('%Y%m%d %H%M%S', time.gmtime())
+		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 	
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:

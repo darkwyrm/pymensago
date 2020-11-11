@@ -24,7 +24,7 @@ class Sqlite:
 			if cursor.fetchone() is None:
 				break
 		
-		timestamp = time.strftime('%Y%m%d %H%M%S', time.gmtime())
+		timestamp = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		cursor.execute("INSERT INTO	notes(id,title,created,notebook) VALUES(?,?,?,?)",
 			(item_id, title, timestamp, notebook))
 		self.db.commit()
@@ -94,7 +94,7 @@ class Sqlite:
 			tags=?
 		WHERE id=?
 		'''
-		timestamp = time.strftime('%Y%m%d %H%M%S', time.gmtime())
+		timestamp = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		tag_string = ','.join(n.tags)	
 		cursor.execute(sqlcmd, (n.title,n.body,timestamp,tag_string,n.id))
 		self.db.commit()
