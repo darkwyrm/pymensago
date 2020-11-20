@@ -114,6 +114,10 @@ class EntryBase:
 	def __str__(self):
 		return self.make_bytestring(-1).decode()
 	
+	def is_data_compliant(self) -> RetVal:
+		'''Performs basic compliancy checks for the data fields only'''
+		# TODO: implement EntryBase::is_data_compliant()
+
 	def is_compliant(self) -> RetVal:
 		'''Checks the fields to ensure that it meets spec requirements. If a field causes it 
 		to be noncompliant, the noncompliant field is also returned'''
@@ -451,6 +455,10 @@ class OrgEntry(EntryBase):
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 
+	def validate_data(self) -> RetVal:
+		'''Checks the validity of all data fields'''
+		# TODO: Implement OrgEntry::is_data_compliant
+
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
 		'''Creates a new OrgEntry object with new keys and a custody signature. The keys are 
 		returned in EncodedString format using the following fields:
@@ -577,6 +585,10 @@ class UserEntry(EntryBase):
 		self.fields['Time-To-Live'] = '7'
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
+	
+	def validate_data(self) -> RetVal:
+		'''Checks the validity of all data fields'''
+		# TODO: Implement UserEntry::is_data_compliant
 	
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
 		'''Creates a new UserEntry object with new keys and a custody signature. It requires the 
