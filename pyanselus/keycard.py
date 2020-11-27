@@ -66,6 +66,10 @@ class EncodedString:
 	def __str__(self):
 		return '%s:%s' % (self.prefix, self.data)
 	
+	def as_string(self):
+		'''Returns the instance information as a string'''
+		return str(self)
+	
 	def as_bytes(self) -> bytes:
 		'''Returns the instance information as a byte string'''
 		return b'%s:%s' % (self.prefix, self.data)
