@@ -2,9 +2,11 @@
 representing the entry blocks which are chained together in a keycard.'''
 
 import base64
+from calendar import timegm
 import datetime
 import hashlib
 import os
+import re
 import time
 
 # Temporarily disabled while building blake3 module on Windows is sorted out
@@ -48,9 +50,16 @@ class EncodedString:
 		'''Initializes the instance from data passed to it. The string is expected to follow the 
 		format ALGORITHM:DATA, where DATA is assumed to be base85-encoded raw byte data'''
 		
+		self.prefix = self.data = ''
+
 		parts = data.split(':', 1)
 		if len(parts) == 1:
 			return RetVal(BadParameterValue, 'data is not colon-separated')
+		
+		try:
+			_ = base64.b85decode(self.data)
+		except:
+			return RetVal(BadParameterValue, 'error decoding data')
 		
 		self.prefix = parts[0]
 		self.data = parts[1]
@@ -87,6 +96,27 @@ class EncodedString:
 		self.prefix = ''
 		self.data = ''
 
+def __is_valid_date(m : int, d : int, y : int, hours=-1, minutes=-1, seconds=-1) -> bool:
+	'''Returns false if the date is invalid for this context'''
+	if y < 2020 or m < 1 or m > 12 or d < 1:
+		return False
+
+	if m == 2:
+		if ((y%4 == 0 and y%100 != 0) and d > 29):
+			return False
+		if d > 28:
+			return False
+	elif m in [1, 3, 5, 7, 8, 10, 12]:
+		if d > 31:
+			return False
+	elif d > 30:
+		return False
+	
+	if hours >= 23 or minutes >= 59 or seconds >= 59:
+		return False
+
+	return True
+
 
 class EntryBase:
 	'''Base class for all code common to org and user cards'''
@@ -118,22 +148,56 @@ class EntryBase:
 	def __str__(self):
 		return self.make_bytestring(-1).decode()
 	
+	def __validate_data(self) -> RetVal:
+		'''Internal method to be implemented by child classes for validating individual fields'''
+		return RetVal()
+	
+	def __validate_integer(self, fieldname : str, minVal=-1, maxVal=-1) -> RetVal:
+		'''Validates a non-negative integer. Checks range of value if supplied.'''
+		if fieldname not in self.fields.keys():
+			return RetVal(BadParameterValue, f"field {fieldname} does not exist")
+		
+		m = re.match(r'^[0-9]+$', self.fields[fieldname])
+		if not m:
+			return RetVal(BadData, 'bad field value')
+		
+		intValue = 0
+		try:
+			intValue = int(m[0])
+		except:
+			return RetVal(BadData, 'bad field value')
+		
+		if minVal != -1 and intValue < minVal:
+			return RetVal(BadData, f"field {fieldname} less than minimum")
+
+		if maxVal != -1 and intValue > maxVal:
+			return RetVal(BadData, f"field {fieldname} greater than maximum")
+		
+		return RetVal()
+
 	def is_data_compliant(self) -> RetVal:
 		'''Performs basic compliancy checks for the data fields only'''
-		# TODO: implement EntryBase::is_data_compliant()
-
-	def is_compliant(self) -> RetVal:
-		'''Checks the fields to ensure that it meets spec requirements. If a field causes it 
-		to be noncompliant, the noncompliant field is also returned'''
 
 		if self.type not in [ 'User', 'Organization']:
-			return RetVal(UnsupportedKeycardType, 'unsupported card type %s' % self.type)
+			return RetVal(UnsupportedKeycardType, f"unsupported card type {self.type}")
 		
 		# Check for existence of required fields
 		for field in self.required_fields:
 			if field not in self.fields or not self.fields[field]:
-				return RetVal(RequiredFieldMissing, 'missing field %s' % field)
+				return RetVal(RequiredFieldMissing, f"missing field {field}")
 		
+			if field != field.strip():
+				return RetVal(BadData, f"leading/trailing whitespace in field {field}")
+		
+		return self.__validate_data()
+
+	def is_compliant(self) -> RetVal:
+		'''Checks the fields to ensure that it meets spec requirements. If a field causes it 
+		to be noncompliant, the noncompliant field is also returned'''
+		status = self.is_data_compliant()
+		if status.error():
+			return status
+
 		# Ensure signature compliance
 		for info in self.signature_info:
 			if info['type'] == SIGINFO_HASH:
@@ -152,6 +216,65 @@ class EntryBase:
 
 		return RetVal()
 	
+	def is_timestamp_valid(self) -> RetVal:
+		'''Checks the validity of the timestamp. As a side effect, it checks the validity of the 
+		expiration date field, but it does not check if the entry is actually expired'''
+		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
+		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1])):
+			return RetVal(BadData, 'bad expiration date')
+		expire_time = time.struct_time()
+		expire_time.tm_year = m[1]
+		expire_time.tm_mon = m[2]
+		expire_time.tm_mday = m[3]
+		expire_time.tm_hour = 0
+		expire_time.tm_min = 0
+		expire_time.tm_sec = 0
+		expire_time.tm_isdst = 0
+		expire_time.tm_zone = 'utc'
+
+		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})T([0-9]{2})([0-9]{2})([0-9]{2})Z$',
+			self.fields['Timestamp'])
+		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1]), 
+			int(m[4]), int(m[5]), int(m[6])):
+			return RetVal(BadData, 'bad timestamp')
+		timestamp_time = time.struct_time()
+		timestamp_time.tm_year = m[1]
+		timestamp_time.tm_mon = m[2]
+		timestamp_time.tm_mday = m[3]
+		timestamp_time.tm_hour = m[4]
+		timestamp_time.tm_min = m[5]
+		timestamp_time.tm_sec = m[6]
+		timestamp_time.tm_isdst = 0
+		timestamp_time.tm_zone = 'utc'
+
+		if timegm(timestamp_time) > timegm(expire_time):
+			return RetVal(BadData, 'bad timestamp')
+		
+		return RetVal()
+
+	def is_expired(self) -> RetVal:
+		'''Checks if the entry is expired'''
+		if 'Expires' not in self.fields.keys():
+			return RetVal(RequiredFieldMissing, 'Expires')
+		
+		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
+		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1])):
+			return RetVal(BadData, 'bad expiration date')
+		expire_time = time.struct_time()
+		expire_time.tm_year = m[1]
+		expire_time.tm_mon = m[2]
+		expire_time.tm_mday = m[3]
+		expire_time.tm_hour = 0
+		expire_time.tm_min = 0
+		expire_time.tm_sec = 0
+		expire_time.tm_isdst = 0
+		expire_time.tm_zone = 'utc'
+
+		if timegm(datetime.datetime.now()) > timegm(expire_time):
+			return RetVal(BadData, 'entry is expired')
+
+		return RetVal()
+
 	def get_signature(self, sigtype: str) -> RetVal:
 		'''Retrieves the requested signature and type'''
 		if sigtype not in self.signatures:
@@ -461,7 +584,63 @@ class OrgEntry(EntryBase):
 
 	def validate_data(self) -> RetVal:
 		'''Checks the validity of all data fields'''
-		# TODO: Implement OrgEntry::is_data_compliant
+		
+		if self.type != 'Organization':
+			return RetVal(BadData, 'invalid entry type %s' % self.type)
+		
+		# Required field: Index
+		outStatus = self.__validate_integer('Index', 1)
+		if outStatus.error():
+			return outStatus
+		
+		# Required field: Name
+		# Although mostly freeform, the Name field has a couple requirements:
+		# 1) at least 1 printable character
+		# 2) No more than 64 code points
+		m = re.match(r'^\w+$', self.fields['Name'])
+		if not m or len(self.fields['Name']) >= 64:
+			return RetVal(BadData, 'bad name value')
+
+		# Required field: Admin address
+		m = re.match(r'^[\\da-fA-F]{8}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}'
+			r'-?[\\da-fA-F]{12}/([a-zA-Z0-9]+\x2E)+[a-zA-Z0-9]+$', self.fields['Contact-Admin'])
+		if not m:
+			return RetVal(BadData, 'bad admin contact address')
+
+		# Required fields: Primary Verification Key, Encryption Key
+		# We can't verify the actual key data, but we can at least ensure that it's formatted
+		# correctly and we can b85decode the key itself
+		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
+			if not EncodedString(self.fields[keyfield]).is_valid():
+				return RetVal(BadData, f"bad key field {keyfield}")
+		
+		# Required field: Time to Live
+		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
+		if outStatus.error():
+			return outStatus
+		
+		# Optional fields: Support and Abuse addresses
+		for contactfield in ['Contact-Support','Contact-Abuse']:
+			if contactfield in self.fields.keys():
+				m = re.match(r'^[\\da-fA-F]{8}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}'
+					r'-?[\\da-fA-F]{12}/([a-zA-Z0-9]+\x2E)+[a-zA-Z0-9]+$',
+					self.fields[contactfield])
+				if not m:
+					return RetVal(BadData, f"bad contact address {contactfield}")
+		
+		# Optional field: Language
+		if 'Language' in self.fields.keys():
+			m = re.match(r'^[a-zA-Z]{2,3}(,[a-zA-Z]{2,3})*?$', self.fields['Language'])
+			if not m:
+				return RetVal(BadData, 'bad language list')
+
+		# Optional field: Secondary Verification Key
+		if 'Secondary-Verification-Key' in self.fields.keys():
+			if not EncodedString(self.fields['Secondary-Verification-Key']).is_valid():
+				return RetVal(BadData, 'bad secondary verification key')
+
+		# is_timestamp_valid() validates both of the required fields Timestamp and Expires
+		return self.is_timestamp_valid()
 
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
 		'''Creates a new OrgEntry object with new keys and a custody signature. The keys are 
