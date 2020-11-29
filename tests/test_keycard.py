@@ -405,6 +405,117 @@ def test_is_compliant_user():
 	make_test_userentry()
 
 
+def test_is_data_compliant_org():
+	'''Tests data compliance checking for org entries'''
+	entry = make_test_orgentry()
+
+	entry.set_fields({
+		"Name":						"Acme, Inc.",
+		"Contact-Admin":			"54025843-bacc-40cc-a0e4-df48a099c2f3/acme.com",
+		"Language":					"en",
+		"Primary-Verification-Key":	"ED25519:)8id(gE02^S<{3H>9B;X4{DuYcb`%wo^mC&1lN88",
+		"Encryption-Key":			"CURVE25519:@b?cjpeY;<&y+LSOA&yUQ&ZIrp(JGt{W$*V>ATLG",
+		"Time-To-Live":				"14",
+		"Expires":					"20201002",
+		"Timestamp":				"20200901T131313Z"
+	})
+
+	assert not entry.is_data_compliant().error(), \
+		"is_data_compliant_org: failed to pass a compliant entry."
+	
+	# Now to test failures of each field. The extent of this testing wouldn't normally be
+	# necessary, but this function validates data from outside. We *have* to be extra sure that
+	# this data is good... especially when it will be permanently added to the database if it is
+	# accepted.
+
+	entry.set_field('Index', '-1')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad index'
+	entry.set_field('Index', '1')
+
+	entry.set_field('Name', '')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with an empty name'
+	entry.set_field('Name', '\t \t')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a whitespace name'
+	entry.set_field('Name', 'Acme, Inc.')
+
+	entry.set_field('Contact-Admin', 'admin/example.com')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with an Anselus address for Contact-Admin'
+	entry.set_field('Contact-Admin', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
+
+	entry.set_field('Contact-Abuse', 'abuse/example.com')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with an Anselus address for Contact-abuse'
+	entry.set_field('Contact-Abuse', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
+
+	entry.set_field('Contact-Support', 'support/example.com')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with an Anselus address for Contact-Support'
+	entry.set_field('Contact-Support', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
+
+	entry.set_field('Language', 'en-us')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad language list'
+	entry.set_field('Language', 'de,es,FR')
+	assert not entry.is_data_compliant().error(), \
+		'is_data_compliant_org: failed an entry with an compliant language list'
+
+	entry.set_field('Primary-Verification-Key', 'd0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad primary verification key'
+	entry.set_field('Primary-Verification-Key', 'ED25519:123456789:123456789')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad primary verification key'
+	entry.set_field('Primary-Verification-Key', 'ED25519:)8id(gE02^S<{3H>9B;X4{DuYcb`%wo^mC&1lN88')
+
+	entry.set_field('Secondary-Verification-Key', 'd0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad secondary verification key'
+	entry.set_field('Secondary-Verification-Key', 'ED25519:123456789:123456789')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad secondary verification key'
+	entry.set_field('Secondary-Verification-Key', 'ED25519:)8id(gE02^S<{3H>9B;X4{DuYcb`%wo^mC&1lN88')
+
+	entry.set_field('Encryption-Key', 'd0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad encryption key'
+	entry.set_field('Encryption-Key', 'ED25519:123456789:123456789')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad encryption key'
+	entry.set_field('Encryption-Key', 'ED25519:)8id(gE02^S<{3H>9B;X4{DuYcb`%wo^mC&1lN88')
+
+	entry.set_field('Time-To-Live', '0')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', '60')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', "sdf'pomwerASDFOAQEtmlde123,l.")
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', '7')
+
+	tempstr = entry.fields['Expires']
+	entry.set_field('Expires', '12345678')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad expiration date'
+	entry.set_field('Expires', '99999999')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad expiration date'
+	entry.fields['Expires'] = tempstr
+
+	entry.set_field('Timestamp', '12345678 121212')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad timestamp'
+	entry.set_field('Timestamp', '12345678T121212Z')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_org: passed an entry with a bad timestamp'
+	entry.set_field('Timestamp', '20200901T131313Z')
+
+
 def test_is_compliant_org():
 	'''Tests compliance testing for the OrgEntry class'''
 
@@ -414,8 +525,8 @@ def test_is_compliant_org():
 	orgcard = keycard.OrgEntry()
 	orgcard.set_fields({
 		'Name':'Acme Widgets, Inc',
-		'Contact-Admin':'admin/example.com',
-		'Contact-Abuse':'abuse/example.com',
+		'Contact-Admin':'54025843-bacc-40cc-a0e4-df48a099c2f3/example.com',
+		'Contact-Abuse':'54025843-bacc-40cc-a0e4-df48a099c2f3/example.com',
 		'Language':'en',
 		'Primary-Verification-Key':'ED25519:7dfD==!Jmt4cDtQDBxYa7(dV|N$}8mYwe$=RZuW|',
 		'Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE'
@@ -590,7 +701,7 @@ def bench_hashers():
 
 if __name__ == '__main__':
 	# test_sign()
-	test_verify_signature()
+	# test_verify_signature()
 	# test_keycard_chain_verify_load_save()
-	bench_hashers()
-
+	# bench_hashers()
+	test_is_data_compliant_org()

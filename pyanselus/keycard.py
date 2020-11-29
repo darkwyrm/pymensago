@@ -57,7 +57,7 @@ class EncodedString:
 			return RetVal(BadParameterValue, 'data is not colon-separated')
 		
 		try:
-			_ = base64.b85decode(self.data)
+			_ = base64.b85decode(parts[1])
 		except:
 			return RetVal(BadParameterValue, 'error decoding data')
 		
@@ -96,7 +96,7 @@ class EncodedString:
 		self.prefix = ''
 		self.data = ''
 
-def __is_valid_date(m : int, d : int, y : int, hours=-1, minutes=-1, seconds=-1) -> bool:
+def _is_valid_date(m : int, d : int, y : int, hours=-1, minutes=-1, seconds=-1) -> bool:
 	'''Returns false if the date is invalid for this context'''
 	if y < 2020 or m < 1 or m > 12 or d < 1:
 		return False
@@ -148,10 +148,6 @@ class EntryBase:
 	def __str__(self):
 		return self.make_bytestring(-1).decode()
 	
-	def __validate_data(self) -> RetVal:
-		'''Internal method to be implemented by child classes for validating individual fields'''
-		return RetVal()
-	
 	def __validate_integer(self, fieldname : str, minVal=-1, maxVal=-1) -> RetVal:
 		'''Validates a non-negative integer. Checks range of value if supplied.'''
 		if fieldname not in self.fields.keys():
@@ -175,6 +171,71 @@ class EntryBase:
 		
 		return RetVal()
 
+	def __validate_org_data(self) -> RetVal:
+		'''Checks the validity of all data fields'''
+		
+		if self.type != 'Organization':
+			return RetVal(BadData, 'invalid entry type %s' % self.type)
+		
+		# Required field: Index
+		outStatus = self.__validate_integer('Index', 1)
+		if outStatus.error():
+			return outStatus
+		
+		# Required field: Name
+		# Although mostly freeform, the Name field has a couple requirements:
+		# 1) at least 1 printable character
+		# 2) No more than 64 code points
+		m = re.match(r'\w+', self.fields['Name'])
+		if not m or len(self.fields['Name']) >= 64:
+			return RetVal(BadData, 'bad name value')
+
+		# Required field: Admin address
+		m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
+			r'-?[\da-fA-F]{12}/([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+$', self.fields['Contact-Admin'])
+		if not m:
+			return RetVal(BadData, 'bad admin contact address')
+
+		# Required fields: Primary Verification Key, Encryption Key
+		# We can't verify the actual key data, but we can at least ensure that it's formatted
+		# correctly and we can b85decode the key itself
+		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
+			if not EncodedString(self.fields[keyfield]).is_valid():
+				return RetVal(BadData, f"bad key field {keyfield}")
+		
+		# Required field: Time to Live
+		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
+		if outStatus.error():
+			return outStatus
+		
+		# Optional fields: Support and Abuse addresses
+		for contactfield in ['Contact-Support','Contact-Abuse']:
+			if contactfield in self.fields.keys():
+				m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
+					r'-?[\da-fA-F]{12}/([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+$',
+					self.fields[contactfield])
+				if not m:
+					return RetVal(BadData, f"bad contact address {contactfield}")
+		
+		# Optional field: Language
+		if 'Language' in self.fields.keys():
+			m = re.match(r'^[a-zA-Z]{2,3}(,[a-zA-Z]{2,3})*?$', self.fields['Language'])
+			if not m:
+				return RetVal(BadData, 'bad language list')
+
+		# Optional field: Secondary Verification Key
+		if 'Secondary-Verification-Key' in self.fields.keys():
+			if not EncodedString(self.fields['Secondary-Verification-Key']).is_valid():
+				return RetVal(BadData, 'bad secondary verification key')
+
+		# is_timestamp_valid() validates both of the required fields Timestamp and Expires
+		return self.is_timestamp_valid()
+
+	def __validate_user_data(self) -> RetVal:
+		'''Checks the validity of all data fields'''
+		# TODO: Implement UserEntry::is_data_compliant
+		return RetVal()
+	
 	def is_data_compliant(self) -> RetVal:
 		'''Performs basic compliancy checks for the data fields only'''
 
@@ -189,7 +250,10 @@ class EntryBase:
 			if field != field.strip():
 				return RetVal(BadData, f"leading/trailing whitespace in field {field}")
 		
-		return self.__validate_data()
+		if self.type == 'User':
+			return self.__validate_user_data()
+			
+		return self.__validate_org_data()
 
 	def is_compliant(self) -> RetVal:
 		'''Checks the fields to ensure that it meets spec requirements. If a field causes it 
@@ -220,34 +284,21 @@ class EntryBase:
 		'''Checks the validity of the timestamp. As a side effect, it checks the validity of the 
 		expiration date field, but it does not check if the entry is actually expired'''
 		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
-		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1])):
+		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1])):
 			return RetVal(BadData, 'bad expiration date')
-		expire_time = time.struct_time()
-		expire_time.tm_year = m[1]
-		expire_time.tm_mon = m[2]
-		expire_time.tm_mday = m[3]
-		expire_time.tm_hour = 0
-		expire_time.tm_min = 0
-		expire_time.tm_sec = 0
-		expire_time.tm_isdst = 0
-		expire_time.tm_zone = 'utc'
+		expire_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
+			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
 		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})T([0-9]{2})([0-9]{2})([0-9]{2})Z$',
 			self.fields['Timestamp'])
-		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1]), 
+		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1]), 
 			int(m[4]), int(m[5]), int(m[6])):
 			return RetVal(BadData, 'bad timestamp')
-		timestamp_time = time.struct_time()
-		timestamp_time.tm_year = m[1]
-		timestamp_time.tm_mon = m[2]
-		timestamp_time.tm_mday = m[3]
-		timestamp_time.tm_hour = m[4]
-		timestamp_time.tm_min = m[5]
-		timestamp_time.tm_sec = m[6]
-		timestamp_time.tm_isdst = 0
-		timestamp_time.tm_zone = 'utc'
+		timestamp_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
+			int(m[4]), int(m[5]), int(m[6]),
+			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
-		if timegm(timestamp_time) > timegm(expire_time):
+		if timestamp_time > expire_time:
 			return RetVal(BadData, 'bad timestamp')
 		
 		return RetVal()
@@ -258,19 +309,12 @@ class EntryBase:
 			return RetVal(RequiredFieldMissing, 'Expires')
 		
 		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
-		if not m or not __is_valid_date(int(m[2]), int(m[3]), int(m[1])):
+		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1])):
 			return RetVal(BadData, 'bad expiration date')
-		expire_time = time.struct_time()
-		expire_time.tm_year = m[1]
-		expire_time.tm_mon = m[2]
-		expire_time.tm_mday = m[3]
-		expire_time.tm_hour = 0
-		expire_time.tm_min = 0
-		expire_time.tm_sec = 0
-		expire_time.tm_isdst = 0
-		expire_time.tm_zone = 'utc'
+		expire_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
+			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
-		if timegm(datetime.datetime.now()) > timegm(expire_time):
+		if datetime.datetime.now() > expire_time:
 			return RetVal(BadData, 'entry is expired')
 
 		return RetVal()
@@ -582,66 +626,6 @@ class OrgEntry(EntryBase):
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 
-	def validate_data(self) -> RetVal:
-		'''Checks the validity of all data fields'''
-		
-		if self.type != 'Organization':
-			return RetVal(BadData, 'invalid entry type %s' % self.type)
-		
-		# Required field: Index
-		outStatus = self.__validate_integer('Index', 1)
-		if outStatus.error():
-			return outStatus
-		
-		# Required field: Name
-		# Although mostly freeform, the Name field has a couple requirements:
-		# 1) at least 1 printable character
-		# 2) No more than 64 code points
-		m = re.match(r'^\w+$', self.fields['Name'])
-		if not m or len(self.fields['Name']) >= 64:
-			return RetVal(BadData, 'bad name value')
-
-		# Required field: Admin address
-		m = re.match(r'^[\\da-fA-F]{8}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}'
-			r'-?[\\da-fA-F]{12}/([a-zA-Z0-9]+\x2E)+[a-zA-Z0-9]+$', self.fields['Contact-Admin'])
-		if not m:
-			return RetVal(BadData, 'bad admin contact address')
-
-		# Required fields: Primary Verification Key, Encryption Key
-		# We can't verify the actual key data, but we can at least ensure that it's formatted
-		# correctly and we can b85decode the key itself
-		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
-			if not EncodedString(self.fields[keyfield]).is_valid():
-				return RetVal(BadData, f"bad key field {keyfield}")
-		
-		# Required field: Time to Live
-		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
-		if outStatus.error():
-			return outStatus
-		
-		# Optional fields: Support and Abuse addresses
-		for contactfield in ['Contact-Support','Contact-Abuse']:
-			if contactfield in self.fields.keys():
-				m = re.match(r'^[\\da-fA-F]{8}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}-?[\\da-fA-F]{4}'
-					r'-?[\\da-fA-F]{12}/([a-zA-Z0-9]+\x2E)+[a-zA-Z0-9]+$',
-					self.fields[contactfield])
-				if not m:
-					return RetVal(BadData, f"bad contact address {contactfield}")
-		
-		# Optional field: Language
-		if 'Language' in self.fields.keys():
-			m = re.match(r'^[a-zA-Z]{2,3}(,[a-zA-Z]{2,3})*?$', self.fields['Language'])
-			if not m:
-				return RetVal(BadData, 'bad language list')
-
-		# Optional field: Secondary Verification Key
-		if 'Secondary-Verification-Key' in self.fields.keys():
-			if not EncodedString(self.fields['Secondary-Verification-Key']).is_valid():
-				return RetVal(BadData, 'bad secondary verification key')
-
-		# is_timestamp_valid() validates both of the required fields Timestamp and Expires
-		return self.is_timestamp_valid()
-
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
 		'''Creates a new OrgEntry object with new keys and a custody signature. The keys are 
 		returned in EncodedString format using the following fields:
@@ -768,10 +752,6 @@ class UserEntry(EntryBase):
 		self.fields['Time-To-Live'] = '7'
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
-	
-	def validate_data(self) -> RetVal:
-		'''Checks the validity of all data fields'''
-		# TODO: Implement UserEntry::is_data_compliant
 	
 	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
 		'''Creates a new UserEntry object with new keys and a custody signature. It requires the 
