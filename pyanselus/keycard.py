@@ -171,24 +171,40 @@ class EntryBase:
 		
 		return RetVal()
 
-	def __validate_org_data(self) -> RetVal:
-		'''Checks the validity of all data fields'''
-		
-		if self.type != 'Organization':
-			return RetVal(BadData, 'invalid entry type %s' % self.type)
+	def __validate_common_data(self) -> RetVal:
+		'''Checks the validity of data fields common to orgs and users'''
 		
 		# Required field: Index
 		outStatus = self.__validate_integer('Index', 1)
 		if outStatus.error():
 			return outStatus
 		
-		# Required field: Name
+		# Field: Name, required for orgs, optional for users
 		# Although mostly freeform, the Name field has a couple requirements:
 		# 1) at least 1 printable character
 		# 2) No more than 64 code points
-		m = re.match(r'\w+', self.fields['Name'])
-		if not m or len(self.fields['Name']) >= 64:
-			return RetVal(BadData, 'bad name value')
+		if 'Name' in self.fields.keys():
+			m = re.match(r'\w+', self.fields['Name'])
+			if not m or len(self.fields['Name']) >= 64:
+				return RetVal(BadData, 'bad name value')
+
+		# Required field: Time to Live
+		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
+		if outStatus.error():
+			return outStatus
+
+		# is_timestamp_valid() validates both of the required fields Timestamp and Expires
+		return self.is_timestamp_valid()
+
+	def __validate_org_data(self) -> RetVal:
+		'''Checks the validity of all data fields'''
+		
+		if self.type != 'Organization':
+			return RetVal(BadData, 'invalid entry type %s' % self.type)
+		
+		outStatus = self.__validate_common_data()
+		if outStatus.error():
+			return outStatus
 
 		# Required field: Admin address
 		m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
@@ -202,11 +218,6 @@ class EntryBase:
 		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
 			if not EncodedString(self.fields[keyfield]).is_valid():
 				return RetVal(BadData, f"bad key field {keyfield}")
-		
-		# Required field: Time to Live
-		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
-		if outStatus.error():
-			return outStatus
 		
 		# Optional fields: Support and Abuse addresses
 		for contactfield in ['Contact-Support','Contact-Abuse']:
@@ -227,15 +238,50 @@ class EntryBase:
 		if 'Secondary-Verification-Key' in self.fields.keys():
 			if not EncodedString(self.fields['Secondary-Verification-Key']).is_valid():
 				return RetVal(BadData, 'bad secondary verification key')
-
-		# is_timestamp_valid() validates both of the required fields Timestamp and Expires
-		return self.is_timestamp_valid()
+		
+		return RetVal()
 
 	def __validate_user_data(self) -> RetVal:
 		'''Checks the validity of all data fields'''
-		# TODO: Implement UserEntry::is_data_compliant
+		if self.type != 'User':
+			return RetVal(BadData, 'invalid entry type %s' % self.type)
+		
+		outStatus = self.__validate_common_data()
+		if outStatus.error():
+			return outStatus
+
+		# Required field: Workspace ID
+		m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
+			r'-?[\da-fA-F]{12}$', self.fields['Workspace-ID'])
+		if not m:
+			return RetVal(BadData, 'bad workspace ID')
+
+		# Required field: Domain
+		# Although mostly freeform, the Name field has a couple requirements:
+		m = re.match(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+', self.fields['Domain'])
+		if not m or len(self.fields['Domain']) >= 64:
+			return RetVal(BadData, 'bad domain value')
+
+		# Required fields: Contact Request Verification Key, Contact Request Encryption Key,
+		#	Public-Encryption-Key
+		for keyfield in ['Contact-Request-Verification-Key',
+						 'Contact-Request-Encryption-Key',
+						 'Public-Encryption-Key']:
+			if not EncodedString(self.fields[keyfield]).is_valid():
+				return RetVal(BadData, f"bad key field {keyfield}")
+
+		# Optional field: User ID
+		if 'User-ID' in self.fields.keys():
+			if re.findall(r'[\\\/\s"]', self.fields['User-ID']) or \
+				len(self.fields['User-ID']) >= 64:
+				return RetVal(BadData, 'bad user id value')
+			
+		if 'Alternate-Encryption-Key' in self.fields.keys():
+			if not EncodedString(self.fields['Alternate-Encryption-Key']).is_valid():
+				return RetVal(BadData, 'bad alternate encryption key')
+
 		return RetVal()
-	
+
 	def is_data_compliant(self) -> RetVal:
 		'''Performs basic compliancy checks for the data fields only'''
 

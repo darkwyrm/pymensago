@@ -398,6 +398,102 @@ def test_base_is_compliant():
 	assert status.error(), "EntryBase met compliance and shouldn't"
 
 
+def test_is_data_compliant_user():
+	'''Tests data compliance checking for org entries'''
+	entry = make_test_userentry()
+
+	entry.set_fields({
+		"Name":								"Corbin Simons",
+		"Workspace-ID":						"4418bf6c-000b-4bb3-8111-316e72030468",
+		"Domain":							"example.com",
+		"Contact-Request-Verification-Key":	"ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D",
+		"Contact-Request-Encryption-Key":	"CURVE25519:j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph",
+		"Public-Encryption-Key":			"CURVE25519:nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN",
+		"Time-To-Live":						"30",
+		"Expires":							"20201002",
+		"Timestamp":						"20200901T121212Z"
+	})
+
+	assert not entry.is_data_compliant().error(), \
+		"is_data_compliant_user: failed to pass a compliant entry."
+
+	entry.set_field('Index', '-1')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad index'
+	entry.set_field('Index', '1')
+
+	entry.set_field('Name', '')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with an empty name'
+	entry.set_field('Name', '\t \t')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a whitespace name'
+	entry.set_field('Name', 'Corbin Simons')
+
+	entry.set_field('Workspace-ID', '4418bf6c-000b-4bb3-8111-316e72030468/example.com')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a workspace address for a workspace ID'
+	entry.set_field('Workspace-ID', '4418bf6c-000b-4bb3-8111-316e72030468')
+
+	entry.set_field('Domain', '')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with an empty domain'
+	entry.set_field('Domain', '\t \t')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a whitespace domain'
+	entry.set_field('Domain', 'example.com')
+
+	for keyfield in ['Contact-Request-Verification-Key',
+						'Contact-Request-Encryption-Key',
+						'Public-Encryption-Key',
+						'Alternate-Encryption-Key']:
+		entry.set_field(keyfield, 'd0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D')
+		assert entry.is_data_compliant().error(), \
+			f"is_data_compliant_user: passed an entry with bad field {keyfield}"
+		entry.set_field(keyfield, 'ED25519:123456789:123456789')
+		assert entry.is_data_compliant().error(), \
+			f"is_data_compliant_user: passed an entry with bad field {keyfield}"
+		entry.set_field(keyfield, 'ED25519:)8id(gE02^S<{3H>9B;X4{DuYcb`%wo^mC&1lN88')
+
+	entry.set_field('Time-To-Live', '0')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', '60')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', "sdf'pomwerASDFOAQEtmlde123,l.")
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad time to live'
+	entry.set_field('Time-To-Live', '7')
+
+	tempstr = entry.fields['Expires']
+	entry.set_field('Expires', '12345678')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad expiration date'
+	entry.set_field('Expires', '99999999')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad expiration date'
+	entry.fields['Expires'] = tempstr
+
+	entry.set_field('Timestamp', '12345678 121212')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad timestamp'
+	entry.set_field('Timestamp', '12345678T121212Z')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a bad timestamp'
+	entry.set_field('Timestamp', '20200901T131313Z')
+
+	entry.set_field('User-ID', 'Corbin Simons')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a user ID containing whitespace'
+	entry.set_field('User-ID', 'TEST\\csimons')
+	assert entry.is_data_compliant().error(), \
+		'is_data_compliant_user: passed an entry with a user ID containing illegal characters'
+	entry.set_field('User-ID', 'csimons_is-teh.bestest:PERSON>>>>EVARRRR<<<<<LOL😁')
+	assert not entry.is_data_compliant().error(), \
+		'is_data_compliant_user: failed an entry with a valid user ID'
+
+
 def test_is_compliant_user():
 	'''Tests compliance testing for the UserEntry class'''
 
@@ -704,4 +800,4 @@ if __name__ == '__main__':
 	# test_verify_signature()
 	# test_keycard_chain_verify_load_save()
 	# bench_hashers()
-	test_is_data_compliant_org()
+	test_is_data_compliant_user()
