@@ -14,6 +14,7 @@ import nacl.public
 import nacl.signing
 
 from pyanselus.encodedstring import EncodedString
+from pyanselus.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
 		ResourceNotFound
 
@@ -643,18 +644,18 @@ class OrgEntry(EntryBase):
 		
 		out = RetVal()
 
-		skey = nacl.signing.SigningKey.generate()
-		ekey = nacl.public.PrivateKey.generate()
+		skey = SigningPair()
+		ekey = EncryptionPair()
 
-		out['sign.public'] = 'ED25519:' + skey.verify_key.encode(Base85Encoder).decode()
-		out['sign.private'] = 'ED25519:' + skey.encode(Base85Encoder).decode()
-		out['encrypt.public'] = 'CURVE25519:' + ekey.public_key.encode(Base85Encoder).decode()
-		out['encrypt.private'] = 'CURVE25519:' + ekey.encode(Base85Encoder).decode()
+		out['sign.public'] = skey.get_public_key()
+		out['sign.private'] = skey.get_private_key()
+		out['encrypt.public'] = ekey.get_public_key()
+		out['encrypt.private'] = ekey.get_private_key()
 		
 		if rotate_optional:
-			altskey = nacl.signing.SigningKey.generate()
-			out['altsign.public'] = 'ED25519:' + altskey.verify_key.encode(Base85Encoder).decode()
-			out['altsign.private'] = 'ED25519:' + altskey.encode(Base85Encoder).decode()
+			altskey = SigningPair()
+			out['altsign.public'] = altskey.get_public_key()
+			out['altsign.private'] = altskey.get_private_key()
 		else:
 			out['altsign.public'] = self.fields['Primary-Verification-Key']
 			out['altsign.private'] = ''
@@ -772,28 +773,28 @@ class UserEntry(EntryBase):
 
 		out = RetVal()
 
-		skey = nacl.signing.SigningKey.generate()
-		crskey = nacl.signing.SigningKey.generate()
-		crekey = nacl.public.PrivateKey.generate()
+		skey = SigningPair()
+		crskey = SigningPair()
+		crekey = EncryptionPair()
 
-		out['sign.public'] = 'ED25519:' + skey.verify_key.encode(Base85Encoder).decode()
-		out['sign.private'] = 'ED25519:' + skey.encode(Base85Encoder).decode()
-		out['crsign.public'] = 'ED25519:' + crskey.verify_key.encode(Base85Encoder).decode()
-		out['crsign.private'] = 'ED25519:' + crskey.encode(Base85Encoder).decode()
-		out['crencrypt.public'] = 'CURVE25519:' + crekey.public_key.encode(Base85Encoder).decode()
-		out['crencrypt.private'] = 'CURVE25519:' + crekey.encode(Base85Encoder).decode()
+		out['sign.public'] = skey.get_public_key()
+		out['sign.private'] = skey.get_private_key()
+		out['crsign.public'] = crskey.get_public_key()
+		out['crsign.private'] = crskey.get_private_key()
+		out['crencrypt.public'] = crekey.get_public_key()
+		out['crencrypt.private'] = crekey.get_private_key()
 		
 		new_entry.fields['Contact-Request-Verification-Key'] = out['crsign.public']
 		new_entry.fields['Contact-Request-Encryption-Key'] = out['crencrypt.public']
 
 		if rotate_optional:
-			ekey = nacl.public.PrivateKey.generate()
-			out['encrypt.public'] ='CURVE25519:' +  ekey.public_key.encode(Base85Encoder).decode()
-			out['encrypt.private'] = 'CURVE25519:' + ekey.encode(Base85Encoder).decode()
+			ekey = EncryptionPair()
+			out['encrypt.public'] = ekey.get_public_key()
+			out['encrypt.private'] = ekey.get_private_key()
 
-			aekey = nacl.public.PrivateKey.generate()
-			out['altencrypt.public'] = 'CURVE25519:' + aekey.public_key.encode(Base85Encoder).decode()
-			out['altencrypt.private'] = 'CURVE25519:' + aekey.encode(Base85Encoder).decode()
+			aekey = EncryptionPair()
+			out['altencrypt.public'] = aekey.get_public_key()
+			out['altencrypt.private'] = aekey.get_private_key()
 			
 			new_entry.fields['Public-Encryption-Key'] = out['encrypt.public']
 			new_entry.fields['Alternate-Encryption-Key'] = out['altencrypt.public']
@@ -970,16 +971,3 @@ class Keycard:
 				return status
 
 		return RetVal()
-
-
-class Base85Encoder:
-	'''Base85 encoder for PyNaCl library'''
-	@staticmethod
-	def encode(data):
-		'''Returns Base85 encoded data'''
-		return base64.b85encode(data)
-	
-	@staticmethod
-	def decode(data):
-		'''Returns Base85 decoded data'''
-		return base64.b85decode(data)

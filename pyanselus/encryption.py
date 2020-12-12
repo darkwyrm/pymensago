@@ -195,7 +195,7 @@ class SigningPair:
 		'''Returns the private key encoded in base85'''
 		return self.private.as_string()
 	
-	def save(self, path: str):
+	def save(self, path: str) -> RetVal:
 		'''Saves the key to a file'''
 		if not path:
 			return RetVal(BadParameterValue, 'path may not be empty')
@@ -217,6 +217,20 @@ class SigningPair:
 			return RetVal(ExceptionThrown, str(e))
 
 		return RetVal()
+	
+	def sign(self, data : bytes) -> RetVal:
+		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
+		
+		key = nacl.signing.SigningKey(self.private.raw_data())
+
+		try:
+			signed = key.sign(data, Base85Encoder)
+		except Exception as e:
+			return RetVal(ExceptionThrown, e)
+		
+		return 'ED25519:' + signed.signature.decode()
+	
+
 
 def signingpair_from_string(keystr : str) -> SigningPair:
 	'''Intantiates a signing pair from a saved seed string that is used for the private key'''
@@ -434,3 +448,16 @@ class Password:
 		Checks the supplied password against the stored hash and returns a boolean match status.
 		'''
 		return nacl.pwhash.verify(self.hashstring.encode(), text.encode())
+
+
+class Base85Encoder:
+	'''Base85 encoder for PyNaCl library'''
+	@staticmethod
+	def encode(data):
+		'''Returns Base85 encoded data'''
+		return base64.b85encode(data)
+	
+	@staticmethod
+	def decode(data):
+		'''Returns Base85 decoded data'''
+		return base64.b85decode(data)

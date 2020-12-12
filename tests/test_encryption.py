@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 
+import nacl.signing
 from pyanselus.encodedstring import EncodedString
 import pyanselus.encryption as encryption
 # Pylint doesn't detect the use of this import:
@@ -109,6 +110,20 @@ def test_signpair_load():
 	assert testpair.enctype == kp.enctype, "Loaded data does not match input data"
 	assert testpair.public == public_key, "Loaded data does not match input data"
 	assert testpair.private == private_key, "Loaded data does not match input data"
+
+
+def test_signpair_sign():
+	'''Tests SigningPair's sign() method'''
+
+	public_key = EncodedString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
+	private_key = EncodedString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
+	sp = encryption.SigningPair(public_key, private_key)
+
+	key = nacl.signing.SigningKey(private_key.raw_data())
+	signed = key.sign(b'1234567890', encryption.Base85Encoder)
+	
+	assert sp.sign(b'1234567890') == 'ED25519:' + signed.signature.decode(), \
+		"test_signpair_sign: signature data failed to match"
 
 
 def test_secretkey_save():
