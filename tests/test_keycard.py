@@ -8,7 +8,8 @@ import time
 import nacl.signing
 
 import pyanselus.keycard as keycard
-from pyanselus.keycard import EncodedString, Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
+from pyanselus.encodedstring import EncodedString
+from pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 # Pylint doesn't detect the use of this import:
 from pyanselus.retval import RetVal # pylint: disable=unused-import
 
