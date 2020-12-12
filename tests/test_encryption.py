@@ -122,7 +122,9 @@ def test_signpair_sign():
 	key = nacl.signing.SigningKey(private_key.raw_data())
 	signed = key.sign(b'1234567890', encryption.Base85Encoder)
 	
-	assert sp.sign(b'1234567890') == 'ED25519:' + signed.signature.decode(), \
+	status = sp.sign(b'1234567890')
+	assert not status.error(), f"test_signpair_sign failed: {status.info()}"
+	assert status['signature'] == 'ED25519:' + signed.signature.decode(), \
 		"test_signpair_sign: signature data failed to match"
 
 

@@ -228,7 +228,7 @@ class SigningPair:
 		except Exception as e:
 			return RetVal(ExceptionThrown, e)
 		
-		return 'ED25519:' + signed.signature.decode()
+		return RetVal().set_value('signature', 'ED25519:' + signed.signature.decode())
 	
 
 
@@ -317,7 +317,32 @@ class SecretKey (CryptoKey):
 			return RetVal(ExceptionThrown, str(e))
 
 		return RetVal()
+	
+	def decrypt(self, encdata : str) -> bytes:
+		'''Decrypts the Base85-encoded encrypted data and returns it as bytes. Returns None on 
+		failure'''
+		if encdata is None:
+			return None
+		
+		if type(encdata).__name__ != 'str':
+			raise TypeError
 
+		secretbox = nacl.secret.SecretBox(self.key.raw_data(), Base85Encoder)
+		return secretbox.decrypt(encdata)
+	
+	def encrypt(self, data : bytes) -> str:
+		'''Encrypts the passed data and returns it as a Base85-encoded string. Returns None on 
+		failure'''
+		if data is None:
+			return None
+		
+		if type(data).__name__ != 'bytes':
+			raise TypeError
+		
+		secretbox = nacl.secret.SecretBox(self.key.raw_data())
+		mynonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
+		return secretbox.encrypt(data,nonce=mynonce).decode()
+		
 
 def load_secretkey(path: str) -> RetVal:
 	'''Instantiates a secret key from a file'''
