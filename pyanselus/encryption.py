@@ -175,7 +175,7 @@ class SigningPair:
 			self.private = private
 		else:
 			key = nacl.signing.SigningKey.generate()
-			self.enctype = 'CURVE25519'
+			self.enctype = 'ED25519'
 			self.public = EncodedString('ED25519:' + \
 					base64.b85encode(key.verify_key.encode()).decode())
 			self.private = EncodedString('ED25519:' + \
@@ -217,6 +217,15 @@ class SigningPair:
 			return RetVal(ExceptionThrown, str(e))
 
 		return RetVal()
+
+def signingpair_from_string(keystr : str) -> SigningPair:
+	'''Intantiates a signing pair from a saved seed string that is used for the private key'''
+	
+	key = nacl.signing.SigningKey(base64.b85decode(keystr))
+	return SigningPair(
+		EncodedString('ED25519:' + base64.b85encode(key.verify_key.encode()).decode()),
+		EncodedString('ED25519:' + base64.b85encode(key.encode()).decode())	
+	)
 
 
 def load_signingpair(path: str) -> RetVal:
