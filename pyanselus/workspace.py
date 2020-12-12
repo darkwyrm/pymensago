@@ -36,10 +36,10 @@ class Workspace:
 
 		# Generate user's encryption keys
 		keys = {
-			'identity' : encryption.KeyPair('identity'),
-			'conrequest' : encryption.KeyPair('conrequest'),
-			'broadcast' : encryption.SecretKey('broadcast'),
-			'folder' : encryption.SecretKey('folder')
+			'identity' : encryption.EncryptionPair(),
+			'conrequest' : encryption.EncryptionPair(),
+			'broadcast' : encryption.SecretKey(),
+			'folder' : encryption.SecretKey()
 		}
 		
 		# Add encryption keys

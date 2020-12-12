@@ -4,7 +4,7 @@ import socket
 
 import pyanselus.auth as auth
 import pyanselus.serverconn as serverconn
-from pyanselus.encryption import Password, KeyPair
+from pyanselus.encryption import Password, EncryptionPair
 from pyanselus.retval import RetVal, InternalError, BadParameterValue, ResourceExists
 from pyanselus.storage import ClientStorage
 from pyanselus.userprofile import Profile
@@ -163,14 +163,14 @@ class AnselusClient:
 			return status
 		
 		# Add the device to the workspace
-		devkey = KeyPair()
+		devkey = EncryptionPair()
 
 		conndata = serverconn.connect(host, port)
 		if conndata.error():
 			return conndata
 		
-		regdata = serverconn.register(conndata['socket'], pw.hashstring, devkey.enc_type,
-				devkey.public85)
+		regdata = serverconn.register(conndata['socket'], pw.hashstring, devkey.enctype,
+				devkey.public)
 		if regdata.error():
 			return regdata
 		serverconn.disconnect(conndata['socket'])
@@ -197,7 +197,7 @@ class AnselusClient:
 		
 		address = '/'.join([regdata['wid'], serverstring])
 		status = auth.add_device_session(self.fs.pman.get_active_profile().db, address, 
-				regdata['devid'], devkey.enc_type, devkey.public85, devkey.private85,
+				regdata['devid'], devkey.enctype, devkey.public, devkey.private,
 				socket.gethostname())
 		if status.error():
 			return status

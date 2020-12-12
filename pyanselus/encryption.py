@@ -12,6 +12,7 @@ import nacl.pwhash
 import nacl.secret
 import nacl.signing
 import nacl.utils
+from pyanselus.encodedstring import EncodedString
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
 		ResourceExists, ResourceNotFound
 
@@ -19,101 +20,84 @@ from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown
 __encryption_pair_schema = {
 	'type' : 'object',
 	'properties' : {
-		'type' : {	'type' : 'string', 'pattern' : 'encryptionpair' },
-		'encryption' : { 'type' : 'string', 'pattern' : 'curve25519' },
-		'publickey' : { 'type' : 'string' },
-		'privatekey' : { 'type' : 'string' },
+		'PublicKey' : { 'type' : 'string' },
+		'PrivateKey' : { 'type' : 'string' },
 	}
 }
 
 __signing_pair_schema = {
 	'type' : 'object',
 	'properties' : {
-		'type' : {	'type' : 'string', 'pattern' : 'signingpair' },
-		'encryption' : { 'type' : 'string', 'pattern' : 'ed25519' },
-		'publickey' : { 'type' : 'string' },
-		'privatekey' : { 'type' : 'string' },
+		'VerificationKey' : { 'type' : 'string' },
+		'SigningKey' : { 'type' : 'string' },
 	}
 }
 
 __secret_key_schema = {
 	'type' : 'object',
 	'properties' : {
-		'type' : {	'type' : 'string', 'pattern' : 'secretkey' },
-		'encryption' : { 'type' : 'string', 'pattern' : 'salsa20' },
-		'key' : { 'type' : 'string' }
+		'SecretKey' : { 'type' : 'string' }
 	}
 }
 
-class EncryptionKey:
+class CryptoKey:
 	'''Defines a generic interface to an Anselus encryption key, which contains more
 	information than just the key itself'''
-	def __init__(self, category='', keytype='', enctype=''):
-		self.category = category
+	def __init__(self):
+		# TODO: Create keypair ID from hash
 		self.id = str(uuid.uuid4())
-		self.enc_type = enctype
-		self.type = keytype
+		self.enctype = ''
+		self.type = ''
 	
-	def get_category(self):
-		'''Returns a string containing the category of the key.'''
-		return self.category
-
 	def get_id(self):
 		'''Returns the ID of the key'''
 		return self.id
 	
-	def set_category(self, category):
-		'''Sets the category of the key'''
-		self.category = category
-	
 	def get_encryption_type(self):
 		'''Returns the name of the encryption used, such as rsa, aes256, etc.'''
-		return self.enc_type
+		return self.enctype
 
 	def get_type(self):
 		'''Returns the type of key, such as asymmetric or symmetric'''
 		return self.type
 
 
-class KeyPair (EncryptionKey):
+class EncryptionPair (CryptoKey):
 	'''Represents an assymmetric encryption key pair'''
-	def __init__(self, category='', public=None, private=None, encryption=None):
-		if public and private and encryption:
-			super().__init__(category, keytype='asymmetric', enctype=encryption)
+	def __init__(self, public=None, private=None):
+		super().__init__()
+		if public and private:
+			if type(public).__name__ != 'EncodedString' or \
+				type(private).__name__ != 'EncodedString':
+				raise TypeError
+			
+			if public.prefix != private.prefix:
+				raise ValueError
+			
+			self.enctype = public.prefix
 			self.public = public
 			self.private = private
 		else:
-			super().__init__(category, keytype='asymmetric', enctype='curve25519')
 			key = nacl.public.PrivateKey.generate()
-			self.public = key.public_key.encode()
-			self.private = key.encode()
-		
-		self.public85 = base64.b85encode(bytes(self.public)).decode('utf8')
-		self.private85 = base64.b85encode(bytes(self.private)).decode('utf8')
+			self.enctype = 'CURVE25519'
+			self.public = EncodedString('CURVE25519:' + \
+					base64.b85encode(key.public_key.encode()).decode())
+			self.private = EncodedString('CURVE25519:' + \
+					base64.b85encode(key.encode()).decode())
 
 	def __str__(self):
 		return '\n'.join([
-			self.type,
-			self.enc_type,
-			self.public85,
-			self.private85
+			self.public.as_string(),
+			self.private.as_string()
 		])
 
-	def get_public_key(self) -> bytes:
-		'''Returns the binary data representing the public half of the key'''
-		return self.public
-	
-	def get_public_key85(self) -> str:
+	def get_public_key(self) -> str:
 		'''Returns the public key encoded in base85'''
-		return self.public85
+		return self.public.as_string()
 	
-	def get_private_key(self) -> bytes:
-		'''Returns the binary data representing the private half of the key'''
-		return self.private
-
-	def get_private_key85(self) -> str:
+	def get_private_key(self) -> str:
 		'''Returns the private key encoded in base85'''
-		return self.private85
+		return self.private.as_string()
 
 	def save(self, path: str):
 		'''Saves the keypair to a file'''
@@ -124,11 +108,9 @@ class KeyPair (EncryptionKey):
 			return RetVal(ResourceExists, '%s exists' % path)
 
 		outdata = {
-			'type' : 'encryptionpair',
-			'encryption' : self.enc_type
+			'PublicKey' : self.get_public_key(),
+			'PrivateKey' : self.get_private_key()
 		}
-		outdata['publickey'] = self.get_public_key85()
-		outdata['privatekey'] = self.get_private_key85()
 			
 		try:
 			fhandle = open(path, 'w')
@@ -167,57 +149,52 @@ def load_encryptionpair(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid EncryptionPair schema")
 
-	public_key = None
-	private_key = None
-	try:
-		public_key = base64.b85decode(indata['publickey'].encode())
-		private_key = base64.b85decode(indata['privatekey'].encode())
-	except Exception as e:
+	public_key = EncodedString(indata['PublicKey'])
+	private_key = EncodedString(indata['PrivateKey'])
+	if not public_key.is_valid() or not private_key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	
-	return RetVal().set_value('keypair', KeyPair('', public_key, private_key, indata['encryption']))
+	return RetVal().set_value('keypair', EncryptionPair(public_key, private_key))
 
 
-class SigningPair (EncryptionKey):
+class SigningPair:
 	'''Represents an asymmetric signing key pair'''
-	def __init__(self, category='', public=None, private=None, encryption=None):
-		if public and private and encryption:
-			super().__init__(category, keytype='asymmetric', enctype=encryption)
+	def __init__(self, public=None, private=None):
+		super().__init__()
+
+		if public and private:
+			if type(public).__name__ != 'EncodedString' or \
+				type(private).__name__ != 'EncodedString':
+				raise TypeError
+			
+			if public.prefix != private.prefix:
+				raise ValueError
+			
+			self.enctype = public.prefix
 			self.public = public
 			self.private = private
 		else:
-			super().__init__(category, keytype='asymmetric', enctype='ed25519')
 			key = nacl.signing.SigningKey.generate()
-			self.public = key.verify_key.encode()
-			self.private = key.encode()
+			self.enctype = 'CURVE25519'
+			self.public = EncodedString('ED25519:' + \
+					base64.b85encode(key.verify_key.encode()).decode())
+			self.private = EncodedString('ED25519:' + \
+					base64.b85encode(key.encode()).decode())		
 		
-		self.public85 = base64.b85encode(bytes(self.public)).decode('utf8')
-		self.private85 = base64.b85encode(bytes(self.private)).decode('utf8')
-
 	def __str__(self):
 		return '\n'.join([
-			self.type,
-			self.enc_type,
-			self.public85,
-			self.private85
+			self.public.as_string(),
+			self.private.as_string()
 		])
 
 	def get_public_key(self) -> bytes:
 		'''Returns the binary data representing the public half of the key'''
-		return self.public
+		return self.public.as_string()
 	
-	def get_public_key85(self) -> str:
-		'''Returns the public key encoded in base85'''
-		return self.public85
-	
-	def get_private_key(self) -> bytes:
-		'''Returns the binary data representing the private half of the key'''
-		return self.private
-
-	def get_private_key85(self) -> str:
+	def get_private_key(self) -> str:
 		'''Returns the private key encoded in base85'''
-		return self.private85
-
+		return self.private.as_string()
+	
 	def save(self, path: str):
 		'''Saves the key to a file'''
 		if not path:
@@ -227,12 +204,9 @@ class SigningPair (EncryptionKey):
 			return RetVal(ResourceExists, '%s exists' % path)
 
 		outdata = {
-			'type' : 'signingpair',
-			'encryption' : self.enc_type
+			'VerificationKey' : self.get_public_key(),
+			'SigningKey' : self.get_private_key()
 		}
-
-		outdata['publickey'] = self.get_public_key85()
-		outdata['privatekey'] = self.get_private_key85()
 			
 		try:
 			fhandle = open(path, 'w')
@@ -271,39 +245,33 @@ def load_signingpair(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid SigningPair schema")
 
-	public_key = None
-	private_key = None
-	try:
-		public_key = base64.b85decode(indata['publickey'].encode())
-		private_key = base64.b85decode(indata['privatekey'].encode())
-	except Exception as e:
+	public_key = EncodedString(indata['VerificationKey'])
+	private_key = EncodedString(indata['SigningKey'])
+	if not public_key.is_valid() or not private_key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	
-	return RetVal().set_value('keypair', SigningPair('', public_key, private_key, indata['encryption']))
+	return RetVal().set_value('keypair', SigningPair(public_key, private_key))
 
 
-class SecretKey (EncryptionKey):
+class SecretKey (CryptoKey):
 	'''Represents a secret key used by symmetric encryption'''
-	def __init__(self, category='', key=None, encryption=None):
-		if key and encryption:
-			super().__init__(category, keytype='symmetric', enctype=encryption)
+	def __init__(self, key=None):
+		super().__init__()
+		if key:
+			if type(key).__name__ != 'EncodedString':
+				raise TypeError
 			self.key = key
-			self.type = encryption
 		else:
-			super().__init__(category, keytype='symmetric', enctype='salsa20')
-			self.key = nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
-		self.key85 = base64.b85encode(bytes(self.key)).decode('utf8')
+			self.enctype = 'XSALSA20'
+			self.key = EncodedString('XSALSA20:' + \
+					base64.b85encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode())
 
 	def __str__(self):
-		return '\n'.join([
-			self.type,
-			self.enc_type,
-			self.key85
-		])
+		return self.get_key()
 
-	def get_key85(self) -> str:
+	def get_key(self) -> str:
 		'''Returns the key encoded in base85'''
-		return self.key85
+		return self.key.as_string()
 	
 	def save(self, path: str) -> RetVal:
 		'''Saves the key to a file'''
@@ -314,12 +282,9 @@ class SecretKey (EncryptionKey):
 			return RetVal(ResourceExists, '%s exists' % path)
 
 		outdata = {
-			'type' : 'secretkey',
-			'encryption' : self.enc_type
+			'SecretKey' : self.get_key()
 		}
 
-		outdata['key'] = self.get_key85()
-			
 		try:
 			fhandle = open(path, 'w')
 			json.dump(outdata, fhandle, ensure_ascii=False, indent=1)
@@ -357,13 +322,11 @@ def load_secretkey(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid SecretKey schema")
 
-	key = None
-	try:
-		key = base64.b85decode(indata['key'].encode())
-	except Exception as e:
+	key = EncodedString(indata['SecretKey'])
+	if not key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	
-	return RetVal().set_value('key', SecretKey('', key, indata['encryption']))
+	return RetVal().set_value('key', SecretKey(key))
 
 
 class FolderMapping:

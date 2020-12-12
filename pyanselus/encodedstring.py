@@ -44,6 +44,12 @@ class EncodedString:
 	def __str__(self):
 		return '%s:%s' % (self.prefix, self.data)
 	
+	def __eq__(self, b):
+		return self.prefix == b.prefix and self.data == b.data
+
+	def __ne__(self, b):
+		return self.prefix != b.prefix or self.data != b.data
+
 	def as_string(self):
 		'''Returns the instance information as a string'''
 		return str(self)

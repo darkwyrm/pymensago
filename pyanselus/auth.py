@@ -117,10 +117,10 @@ def get_session_private_key(db: sqlite3.Connection, address: str) -> RetVal:
 	return RetVal().set_value('key', results[0])
 
 
-def add_key(db: sqlite3.Connection, key: encryption.EncryptionKey, address: str) -> RetVal:
+def add_key(db: sqlite3.Connection, key: encryption.CryptoKey, address: str) -> RetVal:
 	'''Adds an encryption key to a workspace.
 	Parameters:
-	key: EncryptionKey from encryption module
+	key: CryptoKey from encryption module
 	address: full Anselus address, i.e. wid + domain
 	
 	Returns:
@@ -132,17 +132,17 @@ def add_key(db: sqlite3.Connection, key: encryption.EncryptionKey, address: str)
 	if results:
 		return RetVal(ResourceExists)
 	
-	if key.get_type() == 'symmetric':
+	if key.enctype == 'XSALSA20':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,algorithm)
-			VALUES(?,?,?,?,?,?)''', (key.get_id(), address, key.get_type(), key.get_category(),
-				key.get_key85(), key.get_encryption_type()))
+			VALUES(?,?,?,?,?,?)''', (key.get_id(), address, 'symmetric', '',
+				key.get_key(), key.enctype))
 		db.commit()
 		return RetVal()
 	
-	if key.get_type() == 'asymmetric':
+	if key.enctype == 'CURVE25519':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
-			VALUES(?,?,?,?,?,?,?)''', (key.get_id(), address, key.get_type(), key.get_category(),
-				key.get_private_key85(), key.get_public_key85(), key.get_encryption_type()))
+			VALUES(?,?,?,?,?,?,?)''', (key.get_id(), address, 'asymmetric', '',
+				key.private.as_string(), key.public.as_string(), key.enctype))
 		db.commit()
 		return RetVal()
 	
@@ -175,7 +175,7 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 
 	Returns:
 	'error' : string
-	'key' : EncryptionKey object
+	'key' : CryptoKey object
 	'''
 
 	cursor = db.cursor()
@@ -190,12 +190,12 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	if results[1] == 'asymmetric':
 		public = base64.b85decode(results[4])
 		private = base64.b85decode(results[3])
-		key = encryption.KeyPair(results[2],	public,	private, results[5])
+		key = encryption.EncryptionPair(public,	private)
 		return RetVal().set_value('key', key)
 	
 	if results[1] == 'symmetric':
 		private = base64.b85decode(results[3])
-		key = encryption.SecretKey(results[2], private, results[5])
+		key = encryption.SecretKey(private)
 		return RetVal().set_value('key', key)
 	
 	return RetVal(BadParameterValue, "Key must be 'asymmetric' or 'symmetric'")

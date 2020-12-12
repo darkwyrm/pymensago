@@ -44,4 +44,4 @@ def test_workspace_generate():
 
 	w = Workspace(profile.db, unit_test_folder)
 	status = w.generate('testname', profile.domain, profile.wid, pw)
-	assert not status.error(), "Failed to generate workspace"
+	assert not status.error(), f"Failed to generate workspace: {status.info()}"
