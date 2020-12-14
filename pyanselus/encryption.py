@@ -327,8 +327,8 @@ class SecretKey (CryptoKey):
 		if type(encdata).__name__ != 'str':
 			raise TypeError
 
-		secretbox = nacl.secret.SecretBox(self.key.raw_data(), Base85Encoder)
-		return secretbox.decrypt(encdata)
+		secretbox = nacl.secret.SecretBox(self.key.raw_data())
+		return secretbox.decrypt(encdata, encoder=Base85Encoder)
 	
 	def encrypt(self, data : bytes) -> str:
 		'''Encrypts the passed data and returns it as a Base85-encoded string. Returns None on 
@@ -341,7 +341,7 @@ class SecretKey (CryptoKey):
 		
 		secretbox = nacl.secret.SecretBox(self.key.raw_data())
 		mynonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
-		return secretbox.encrypt(data,nonce=mynonce).decode()
+		return secretbox.encrypt(data,nonce=mynonce, encoder=Base85Encoder).decode()
 		
 
 def load_secretkey(path: str) -> RetVal:

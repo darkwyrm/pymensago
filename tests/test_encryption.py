@@ -165,3 +165,14 @@ def test_secretkey_load():
 	assert testpair.type == sk.type, "Loaded data does not match input data"
 	assert testpair.enctype == sk.enctype, "Loaded data does not match input data"
 	assert testpair.key == key, "Loaded data does not match input data"
+
+def test_secretkey_encrypt_decrypt():
+	'''Tests SecretKey encryption/decryption'''
+
+	testdata = b'1234567890'
+
+	sk = encryption.SecretKey()
+	encdata = sk.encrypt(testdata)
+
+	newdata = sk.decrypt(encdata)
+	assert testdata == newdata, "Decrypted data didn't match"
