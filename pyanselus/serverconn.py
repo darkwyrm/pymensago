@@ -277,6 +277,37 @@ def register(sock: socket.socket, pwhash: str, keytype: str, devkey: str) -> Ret
 	return response.set_value('wid', wid)
 
 
+def respond_to_download(sock: socket.socket) -> RetVal:
+	'''Handles responding to the server's request to upload to the client'''
+	response = read_response(sock)
+	if response.error():
+		return response
+	
+	if response['status'] == 104:
+		if len(response['string']) < 13 or response['string'][:14].casefold != '104 transfer ':
+			write_text(sock, '400 BAD REQUEST\r\n')
+			return RetVal(NetworkError, response['string'])
+
+		parts = ' '.split(response['string'])
+		if len(parts) < 3:
+			return RetVal(NetworkError, response['string'])
+		
+		try:
+			server_bytes = int(parts[2])
+		except:
+			write_text(sock, '400 BAD REQUEST\r\n')
+			return RetVal(NetworkError, response['string'])
+		
+		if server_bytes > 10737418240:
+			write_text(sock, '104 TRANSFER 10737418240\r\n')
+		else:
+			write_text(sock, f"104 TRANSFER {server_bytes}\r\n")
+		return RetVal()
+	
+	write_text(sock, '400 BAD REQUEST\r\n')
+	return RetVal(NetworkError, response['string'])
+
+
 def unregister(sock: socket.socket, pwhash: str) -> RetVal:
 	'''
 	Deletes the online account at the specified server.
