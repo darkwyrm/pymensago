@@ -1,6 +1,6 @@
 *.pyc
 .vscode/*
-tests/testfiles/*
+tests/unit/testfiles/*
 .cache/*
 testcards/*
 pyanselus.egg-info/*
