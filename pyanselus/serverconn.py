@@ -2,14 +2,17 @@
 communications. Commands largely map 1-to-1 to the commands outlined in the 
 spec.'''
 
+import json
 import socket
 import sys
 import time
 import uuid
 
+import jsonschema
 import nacl.pwhash
 import nacl.secret
 
+import pyanselus.rpc_schemas as rpc_schemas
 from pyanselus.retval import RetVal, ExceptionThrown, ServerError, NetworkError, ResourceNotFound
 import pyanselus.utils as utils
 
@@ -60,23 +63,27 @@ def read_text(sock: socket.socket) -> RetVal:
 def read_response(sock: socket.socket) -> RetVal:
 	'''Reads a server response and returns a separated code and string'''
 	
-	response = read_text(sock)
-	if response.error():
-		return response
+	status = read_text(sock)
+	if status.error():
+		return status
 	
 	try:
-		status_code = int(response['string'][0:3])
+		response = json.loads(status['string'])
+	except Exception as exc:
+		return RetVal(ExceptionThrown, exc.__str__())
+
+	try:
+		jsonschema.validate(response, rpc_schemas.server_response)
 	except:
-		return RetVal(ServerError).set_value('response', response['string'])
-	
-	return RetVal().set_value('status', status_code).set_info(response['string'])
+		return RetVal(ServerError, 'invalid JSON response')
+
+	return RetVal().set_values(response)
 
 # Connect
-#	Requires: host (hostname or IP)
-#	Optional: port number
+#	Requires: host (hostname or IP), port number
 #	Returns: RetVal / socket, IP address, server version (if given), error string
 #					
-def connect(host: str, port=2001) -> dict:
+def connect(host: str, port: int) -> RetVal:
 	'''Creates a connection to the server.'''
 	try:
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -99,13 +106,19 @@ def connect(host: str, port=2001) -> dict:
 	try:
 		sock.connect((host_ip, port))
 		
-		hello = read_text(sock)
-		if not hello.error():
-			tempstr = hello['string'].strip().split()
-			if len(tempstr) >= 3:
-				out_data.set_value('version', tempstr[2])
-			else:
-				out_data.set_value('version', '')
+		status = read_text(sock)
+		if not status.error():
+			try:
+				greeting = json.loads(status['string'])
+			except:
+				return RetVal(ServerError, 'Invalid server greeting')
+			
+			try:
+				jsonschema.validate(greeting, rpc_schemas.greeting)
+			except Exception as exc:
+				return RetVal(ServerError, f"Nonconforming server greeting: {exc}")
+			
+			out_data.set_values(greeting)
 
 	except Exception as exc:
 		sock.close()
@@ -135,7 +148,7 @@ def device(sock: socket.socket, devid: str, session_str: str) -> RetVal:
 #	Requires: socket
 def disconnect(sock: socket.socket) -> RetVal:
 	'''Disconnects by sending a QUIT command to the server'''
-	return write_text(sock, 'QUIT\r\n'.encode())
+	return write_text(sock, '{"Action":"QUIT"\r\n'.encode())
 
 
 # Exists
