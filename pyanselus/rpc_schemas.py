@@ -1,19 +1,36 @@
 greeting = {
 	'title' : 'Anselus Hello Message',
 	'type' : 'object',
-	'required' : [ 'version' ],
+	'required' : [ 'Name', 'Version', 'Code', 'Status' ],
 	'properties' : {
-		'name' : {
+		'Name' : {
 			'type' : 'string'
 		},
-		'version' : {
+		'Version' : {
 			'type' : 'string'
 		},
-		'code' : {
+		'Code' : {
 			'type' : 'integer'
 		},
-		'status' : {
+		'Status' : {
 			'type' : 'string'
+		}
+	}
+}
+
+server_response = {
+	'title' : 'Anselus Server Response',
+	'type' : 'object',
+	'required' : [ 'Code', 'Status', 'Data' ],
+	'properties' : {
+		'Code' : {
+			'type' : 'integer'
+		},
+		'Status' : {
+			'type' : 'string'
+		},
+		'Data' : {
+			'type' : 'object'
 		}
 	}
 }
