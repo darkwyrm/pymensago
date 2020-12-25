@@ -60,7 +60,18 @@ def read_text(sock: socket.socket) -> RetVal:
 	return RetVal().set_value('string', out_string)
 
 
-def read_response(sock: socket.socket) -> RetVal:
+def send_message(sock: socket.socket, command : dict) -> RetVal:
+	'''Sends a message to the server with command sent as JSON data'''
+	try:
+		cmdstr = json.dumps(command) + '\r\n'
+	except Exception as exc:
+		return RetVal(ExceptionThrown, exc)
+	
+	status = write_text(sock, cmdstr)
+	return status
+
+
+def read_response(sock: socket.socket, schema: dict) -> RetVal:
 	'''Reads a server response and returns a separated code and string'''
 	
 	status = read_text(sock)
@@ -73,9 +84,12 @@ def read_response(sock: socket.socket) -> RetVal:
 		return RetVal(ExceptionThrown, exc.__str__())
 
 	try:
-		jsonschema.validate(response, rpc_schemas.server_response)
-	except:
-		return RetVal(ServerError, 'invalid JSON response')
+		if schema:
+			jsonschema.validate(response, schema)
+		else:
+			jsonschema.validate(response, rpc_schemas.server_response)
+	except Exception as exc:
+		return RetVal(ExceptionThrown, exc)
 
 	return RetVal().set_values(response)
 
@@ -141,14 +155,14 @@ def device(sock: socket.socket, devid: str, session_str: str) -> RetVal:
 	if response.error():
 		return response
 	
-	return read_response(sock)
+	return read_response(sock, None)
 
 
 # Disconnect
 #	Requires: socket
 def disconnect(sock: socket.socket) -> RetVal:
 	'''Disconnects by sending a QUIT command to the server'''
-	return write_text(sock, '{"Action":"QUIT"\r\n'.encode())
+	return write_text(sock, '{"Action":"QUIT"}\r\n'.encode())
 
 
 # Exists
@@ -156,11 +170,18 @@ def disconnect(sock: socket.socket) -> RetVal:
 #	Returns: RetVal / "exists" : bool, "code" : int, "error" : string
 def exists(sock: socket.socket, path: str) -> RetVal:
 	'''Checks to see if a path exists on the server side.'''
-	status = write_text(sock, "EXISTS %s\r\n" % path)
+	if not path: 
+		return RetVal().set_value('exists', False)
+	
+	status = send_message(sock, {
+		'Action' : 'EXISTS',
+		'Data' : {
+			'Path' : path
+		}})
 	if status.error():
 		return status
 	
-	status = read_response(sock)
+	status = read_response(sock, None)
 	if status['status'] == 200:
 		return status.set_value('exists', True)
 	
@@ -182,7 +203,7 @@ def login(sock: socket.socket, wid: str) -> RetVal:
 	if not response['error']:
 		return response
 	
-	return read_response(sock)
+	return read_response(sock, None)
 
 
 # Password
@@ -202,7 +223,7 @@ def password(sock: socket.socket, wid: str, pword: str) -> RetVal:
 	if response.error():
 		return response
 	
-	return read_response(sock)
+	return read_response(sock, None)
 
 
 # Preregister
@@ -218,7 +239,7 @@ def preregister(sock: socket.socket, uid: str) -> RetVal:
 	if response.error():
 		return response
 	
-	response = read_response(sock)
+	response = read_response(sock, None)
 	if response.error() or response['status'] != 200:
 		return response
 
@@ -267,7 +288,7 @@ def register(sock: socket.socket, pwhash: str, keytype: str, devkey: str) -> Ret
 		if response.error():
 			return response
 		
-		response = read_response(sock)
+		response = read_response(sock, None)
 		if response.error():
 			return response
 		
@@ -292,7 +313,7 @@ def register(sock: socket.socket, pwhash: str, keytype: str, devkey: str) -> Ret
 
 def respond_to_download(sock: socket.socket) -> RetVal:
 	'''Handles responding to the server's request to upload to the client'''
-	response = read_response(sock)
+	response = read_response(sock, None)
 	if response.error():
 		return response
 	
@@ -332,7 +353,7 @@ def unregister(sock: socket.socket, pwhash: str) -> RetVal:
 	if response.error():
 		return response
 	
-	response = read_response(sock)
+	response = read_response(sock, None)
 
 	# This particular command is very simple: make a request, because the server will return
 	# one of three possible types of responses: success, pending (for private/moderated 
