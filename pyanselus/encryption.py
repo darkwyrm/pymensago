@@ -12,7 +12,7 @@ import nacl.pwhash
 import nacl.secret
 import nacl.signing
 import nacl.utils
-from pyanselus.encodedstring import EncodedString
+from pyanselus.cryptostring import CryptoString
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
 		ResourceExists, ResourceNotFound
 
@@ -67,8 +67,8 @@ class EncryptionPair (CryptoKey):
 	def __init__(self, public=None, private=None):
 		super().__init__()
 		if public and private:
-			if type(public).__name__ != 'EncodedString' or \
-				type(private).__name__ != 'EncodedString':
+			if type(public).__name__ != 'CryptoString' or \
+				type(private).__name__ != 'CryptoString':
 				raise TypeError
 			
 			if public.prefix != private.prefix:
@@ -80,9 +80,9 @@ class EncryptionPair (CryptoKey):
 		else:
 			key = nacl.public.PrivateKey.generate()
 			self.enctype = 'CURVE25519'
-			self.public = EncodedString('CURVE25519:' + \
+			self.public = CryptoString('CURVE25519:' + \
 					base64.b85encode(key.public_key.encode()).decode())
-			self.private = EncodedString('CURVE25519:' + \
+			self.private = CryptoString('CURVE25519:' + \
 					base64.b85encode(key.encode()).decode())
 
 	def __str__(self):
@@ -149,8 +149,8 @@ def load_encryptionpair(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid EncryptionPair schema")
 
-	public_key = EncodedString(indata['PublicKey'])
-	private_key = EncodedString(indata['PrivateKey'])
+	public_key = CryptoString(indata['PublicKey'])
+	private_key = CryptoString(indata['PrivateKey'])
 	if not public_key.is_valid() or not private_key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	
@@ -163,8 +163,8 @@ class SigningPair:
 		super().__init__()
 
 		if public and private:
-			if type(public).__name__ != 'EncodedString' or \
-				type(private).__name__ != 'EncodedString':
+			if type(public).__name__ != 'CryptoString' or \
+				type(private).__name__ != 'CryptoString':
 				raise TypeError
 			
 			if public.prefix != private.prefix:
@@ -176,9 +176,9 @@ class SigningPair:
 		else:
 			key = nacl.signing.SigningKey.generate()
 			self.enctype = 'ED25519'
-			self.public = EncodedString('ED25519:' + \
+			self.public = CryptoString('ED25519:' + \
 					base64.b85encode(key.verify_key.encode()).decode())
-			self.private = EncodedString('ED25519:' + \
+			self.private = CryptoString('ED25519:' + \
 					base64.b85encode(key.encode()).decode())		
 		
 	def __str__(self):
@@ -237,8 +237,8 @@ def signingpair_from_string(keystr : str) -> SigningPair:
 	
 	key = nacl.signing.SigningKey(base64.b85decode(keystr))
 	return SigningPair(
-		EncodedString('ED25519:' + base64.b85encode(key.verify_key.encode()).decode()),
-		EncodedString('ED25519:' + base64.b85encode(key.encode()).decode())	
+		CryptoString('ED25519:' + base64.b85encode(key.verify_key.encode()).decode()),
+		CryptoString('ED25519:' + base64.b85encode(key.encode()).decode())	
 	)
 
 
@@ -268,8 +268,8 @@ def load_signingpair(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid SigningPair schema")
 
-	public_key = EncodedString(indata['VerificationKey'])
-	private_key = EncodedString(indata['SigningKey'])
+	public_key = CryptoString(indata['VerificationKey'])
+	private_key = CryptoString(indata['SigningKey'])
 	if not public_key.is_valid() or not private_key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	
@@ -281,12 +281,12 @@ class SecretKey (CryptoKey):
 	def __init__(self, key=None):
 		super().__init__()
 		if key:
-			if type(key).__name__ != 'EncodedString':
+			if type(key).__name__ != 'CryptoString':
 				raise TypeError
 			self.key = key
 		else:
 			self.enctype = 'XSALSA20'
-			self.key = EncodedString('XSALSA20:' + \
+			self.key = CryptoString('XSALSA20:' + \
 					base64.b85encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode())
 
 	def __str__(self):
@@ -370,7 +370,7 @@ def load_secretkey(path: str) -> RetVal:
 	except jsonschema.SchemaError:
 		return RetVal(InternalError, "BUG: invalid SecretKey schema")
 
-	key = EncodedString(indata['SecretKey'])
+	key = CryptoString(indata['SecretKey'])
 	if not key.is_valid():
 		return RetVal(BadData, 'Failure to base85 decode key data')
 	

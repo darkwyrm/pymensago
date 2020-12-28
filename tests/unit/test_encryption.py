@@ -5,7 +5,7 @@ import shutil
 import time
 
 import nacl.signing
-from pyanselus.encodedstring import EncodedString
+from pyanselus.cryptostring import CryptoString
 import pyanselus.encryption as encryption
 # Pylint doesn't detect the use of this import:
 from pyanselus.retval import RetVal # pylint: disable=unused-import
@@ -31,8 +31,8 @@ def test_encryptionpair_save():
 	'''Tests the save code of the EncryptionPair class'''
 	test_folder = setup_test('encryption_encryptionpair_save')
 
-	public_key = EncodedString("CURVE25519:(B2XX5|<+lOSR>_0mQ=KX4o<aOvXe6M`Z5ldINd`")
-	private_key = EncodedString("CURVE25519:(Rj5)mmd1|YqlLCUP0vE;YZ#o;tJxtlAIzmPD7b&")
+	public_key = CryptoString("CURVE25519:(B2XX5|<+lOSR>_0mQ=KX4o<aOvXe6M`Z5ldINd`")
+	private_key = CryptoString("CURVE25519:(Rj5)mmd1|YqlLCUP0vE;YZ#o;tJxtlAIzmPD7b&")
 	kp = encryption.EncryptionPair(public_key, private_key)
 
 	keypair_path = os.path.join(test_folder, 'testpair.jk')
@@ -51,8 +51,8 @@ def test_encryptionpair_load():
 	'''Tests the load code of the EncryptionPair class'''
 	test_folder = setup_test('encryption_encryptionpair_load')
 
-	public_key = EncodedString("CURVE25519:(B2XX5|<+lOSR>_0mQ=KX4o<aOvXe6M`Z5ldINd`")
-	private_key = EncodedString("CURVE25519:(Rj5)mmd1|YqlLCUP0vE;YZ#o;tJxtlAIzmPD7b&")
+	public_key = CryptoString("CURVE25519:(B2XX5|<+lOSR>_0mQ=KX4o<aOvXe6M`Z5ldINd`")
+	private_key = CryptoString("CURVE25519:(Rj5)mmd1|YqlLCUP0vE;YZ#o;tJxtlAIzmPD7b&")
 	kp = encryption.EncryptionPair(public_key, private_key)
 
 	keypair_path = os.path.join(test_folder, 'testpair.jk')
@@ -73,8 +73,8 @@ def test_signpair_save():
 	'''Tests the save code of the SigningPair class'''
 	test_folder = setup_test('encryption_signpair_save')
 
-	public_key = EncodedString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
-	private_key = EncodedString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
+	public_key = CryptoString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
+	private_key = CryptoString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
 	sp = encryption.SigningPair(public_key, private_key)
 
 	keypair_path = os.path.join(test_folder, 'testpair.jk')
@@ -94,8 +94,8 @@ def test_signpair_load():
 	'''Tests the load code of the SigningPair class'''
 	test_folder = setup_test('encryption_signpair_load')
 
-	public_key = EncodedString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
-	private_key = EncodedString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
+	public_key = CryptoString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
+	private_key = CryptoString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
 	kp = encryption.SigningPair(public_key, private_key)
 
 	keypair_path = os.path.join(test_folder, 'testpair.jk')
@@ -115,8 +115,8 @@ def test_signpair_load():
 def test_signpair_sign():
 	'''Tests SigningPair's sign() method'''
 
-	public_key = EncodedString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
-	private_key = EncodedString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
+	public_key = CryptoString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
+	private_key = CryptoString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
 	sp = encryption.SigningPair(public_key, private_key)
 
 	key = nacl.signing.SigningKey(private_key.raw_data())
@@ -132,7 +132,7 @@ def test_secretkey_save():
 	'''Tests the save code of the SecretKey class'''
 	test_folder = setup_test('encryption_secretkey_save')
 
-	key = EncodedString(r"XSALSA20:J~T^ko3HCFb$1Z7NudpcJA-dzDpF52IF1Oysh+CY")
+	key = CryptoString(r"XSALSA20:J~T^ko3HCFb$1Z7NudpcJA-dzDpF52IF1Oysh+CY")
 	sk = encryption.SecretKey(key)
 
 	key_path = os.path.join(test_folder, 'testkey.jk')
@@ -150,7 +150,7 @@ def test_secretkey_load():
 	'''Tests the load code of the SecretKey class'''
 	test_folder = setup_test('encryption_secretkey_load')
 
-	key = EncodedString(r"XSALSA20:J~T^ko3HCFb$1Z7NudpcJA-dzDpF52IF1Oysh+CY")
+	key = CryptoString(r"XSALSA20:J~T^ko3HCFb$1Z7NudpcJA-dzDpF52IF1Oysh+CY")
 	sk = encryption.SecretKey(key)
 
 	key_path = os.path.join(test_folder, 'testkey.jk')

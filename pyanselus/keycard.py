@@ -13,7 +13,7 @@ import time
 import nacl.public
 import nacl.signing
 
-from pyanselus.encodedstring import EncodedString
+from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
 		ResourceNotFound
@@ -159,7 +159,7 @@ class EntryBase:
 		# We can't verify the actual key data, but we can at least ensure that it's formatted
 		# correctly and we can b85decode the key itself
 		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
-			if not EncodedString(self.fields[keyfield]).is_valid():
+			if not CryptoString(self.fields[keyfield]).is_valid():
 				return RetVal(BadData, f"bad key field {keyfield}")
 		
 		# Optional fields: Support and Abuse addresses
@@ -179,7 +179,7 @@ class EntryBase:
 
 		# Optional field: Secondary Verification Key
 		if 'Secondary-Verification-Key' in self.fields.keys():
-			if not EncodedString(self.fields['Secondary-Verification-Key']).is_valid():
+			if not CryptoString(self.fields['Secondary-Verification-Key']).is_valid():
 				return RetVal(BadData, 'bad secondary verification key')
 		
 		return RetVal()
@@ -210,7 +210,7 @@ class EntryBase:
 		for keyfield in ['Contact-Request-Verification-Key',
 						 'Contact-Request-Encryption-Key',
 						 'Public-Encryption-Key']:
-			if not EncodedString(self.fields[keyfield]).is_valid():
+			if not CryptoString(self.fields[keyfield]).is_valid():
 				return RetVal(BadData, f"bad key field {keyfield}")
 
 		# Optional field: User ID
@@ -220,7 +220,7 @@ class EntryBase:
 				return RetVal(BadData, 'bad user id value')
 			
 		if 'Alternate-Encryption-Key' in self.fields.keys():
-			if not EncodedString(self.fields['Alternate-Encryption-Key']).is_valid():
+			if not CryptoString(self.fields['Alternate-Encryption-Key']).is_valid():
 				return RetVal(BadData, 'bad alternate encryption key')
 
 		return RetVal()
@@ -232,7 +232,7 @@ class EntryBase:
 		if algorithm not in ['BLAKE2B-256','SHA-256','SHA3-256']:
 			return RetVal(UnsupportedHashType, f'{algorithm} not a supported hash algorithm')
 		
-		hash_string = EncodedString()
+		hash_string = CryptoString()
 		hash_level = -1
 		for sig in self.signature_info:
 			if sig['type'] == SIGINFO_HASH:
@@ -500,7 +500,7 @@ class EntryBase:
 		self.fields['Expires'] = expiration.strftime("%Y%m%d")
 		return RetVal()
 
-	def sign(self, signing_key: EncodedString, sigtype: str) -> RetVal:
+	def sign(self, signing_key: CryptoString, sigtype: str) -> RetVal:
 		'''Adds a signature to the  Note that for any change in the keycard fields, this 
 		call must be made afterward. Note that successive signatures are deleted, such that 
 		updating a User signature will delete the Organization signature which depends on it. The 
@@ -549,9 +549,9 @@ class EntryBase:
 
 	def verify_hash(self) -> RetVal:
 		'''Checks that the entry's actual hash matches that in the hash field'''
-		current_hash = EncodedString(self.hash)
+		current_hash = CryptoString(self.hash)
 		if not current_hash.is_valid():
-			return RetVal(InvalidHash, f"{self.hash} is not a valid EncodedString")
+			return RetVal(InvalidHash, f"{self.hash} is not a valid CryptoString")
 		
 		status = self.get_hash(current_hash.prefix)
 		if status.error():
@@ -560,7 +560,7 @@ class EntryBase:
 		return RetVal()
 
 
-	def verify_signature(self, verify_key: EncodedString, sigtype: str) -> RetVal:
+	def verify_signature(self, verify_key: CryptoString, sigtype: str) -> RetVal:
 		'''Verifies a signature, given a verification key'''
 	
 		if not verify_key.is_valid():
@@ -576,7 +576,7 @@ class EntryBase:
 		if sigtype in self.signatures and not self.signatures[sigtype]:
 			return RetVal(NotCompliant, 'empty signature ' + sigtype)
 		
-		sig = EncodedString()
+		sig = CryptoString()
 		status = sig.set(self.signatures[sigtype])
 		if status.error():
 			return status
@@ -636,9 +636,9 @@ class OrgEntry(EntryBase):
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 
-	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
+	def chain(self, key: CryptoString, rotate_optional: bool) -> RetVal:
 		'''Creates a new OrgEntry object with new keys and a custody signature. The keys are 
-		returned in EncodedString format using the following fields:
+		returned in CryptoString format using the following fields:
 		entry
 		sign.public / sign.private -- primary signing keypair
 		altsign.public / crsign.private -- contact request signing keypair
@@ -716,7 +716,7 @@ class OrgEntry(EntryBase):
 		if index != prev_index + 1:
 			return RetVal(InvalidKeycard, 'entry index compliance failure')
 
-		status = self.verify_signature(EncodedString(previous.fields['Primary-Verification-Key']),
+		status = self.verify_signature(CryptoString(previous.fields['Primary-Verification-Key']),
 				'Custody')
 		return status
 
@@ -763,10 +763,10 @@ class UserEntry(EntryBase):
 		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 		self.set_expiration()
 	
-	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
+	def chain(self, key: CryptoString, rotate_optional: bool) -> RetVal:
 		'''Creates a new UserEntry object with new keys and a custody signature. It requires the 
-		previous contact request signing key passed as an EncodedString. The new keys are returned in 
-		EncodedString format using the following fields:
+		previous contact request signing key passed as an CryptoString. The new keys are returned in 
+		CryptoString format using the following fields:
 		entry
 		sign.public / sign.private -- primary signing keypair
 		crsign.public / crsign.private -- contact request signing keypair
@@ -847,7 +847,7 @@ class UserEntry(EntryBase):
 				not previous.fields['Contact-Request-Verification-Key']:
 			return RetVal(ResourceNotFound, 'signing key missing')
 		
-		status = self.verify_signature(EncodedString(previous.fields['Contact-Request-Verification-Key']),
+		status = self.verify_signature(CryptoString(previous.fields['Contact-Request-Verification-Key']),
 				'Custody')
 		return status
 
@@ -858,7 +858,7 @@ class Keycard:
 		self.type = cardtype
 		self.entries = list()
 	
-	def chain(self, key: EncodedString, rotate_optional: bool) -> RetVal:
+	def chain(self, key: CryptoString, rotate_optional: bool) -> RetVal:
 		'''Appends a new entry to the chain, optionally rotating keys which aren't required to be 
 		changed. This method requires that the root entry already exist. Note that user cards will 
 		not have all the required signatures when the call returns'''
@@ -876,7 +876,7 @@ class Keycard:
 		
 		new_entry = chaindata['entry']
 
-		skeystring = EncodedString()
+		skeystring = CryptoString()
 		status = skeystring.set(chaindata['sign.private'])
 		if status.error():
 			return status

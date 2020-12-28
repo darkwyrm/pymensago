@@ -1,11 +1,12 @@
-'''This module contains EncodedString, a class for bundling cryptographic keys and hashes with 
-their algorithms in a text-friendly way.'''
+'''This module contains CryptoString, a class for bundling cryptographic keys and hashes with 
+their algorithms in a text-friendly way. The algorithm name may be no longer than 15 characters 
+and use only capital ASCII letters, numbers, and dashes.'''
 
 import base64
 
 from pyanselus.retval import RetVal, BadData, BadParameterValue
 
-class EncodedString:
+class CryptoString:
 	'''This class encapsulates code for working with strings associated with an algorithm. This 
 	includes hashes and encryption keys.'''
 	def __init__(self, data=''):
@@ -25,6 +26,8 @@ class EncodedString:
 		if len(parts) == 1:
 			return RetVal(BadParameterValue, 'data is not colon-separated')
 		
+		# TODO: Enforce prefix characters and length
+		
 		try:
 			_ = base64.b85decode(parts[1])
 		except:
@@ -35,7 +38,7 @@ class EncodedString:
 		return RetVal()
 
 	def set_bytes(self, data: bytes) -> RetVal:
-		'''Initializesthe instance from a byte string'''
+		'''Initializes the instance from a byte string'''
 		try:
 			return self.set(data.decode())
 		except Exception as e:
