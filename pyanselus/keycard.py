@@ -24,6 +24,8 @@ UnsupportedHashType = 'UnsupportedHashType'
 UnsupportedEncryptionType = 'UnsupportedEncryptionType'
 InvalidKeycard = 'InvalidKeycard'
 InvalidEntry = 'InvalidEntry'
+InvalidHash = 'InvalidHash'
+HashMismatch = 'HashMismatch'
 
 # These three return codes are associated with a second field, 'field', which indicates which
 # signature field is related to the error
@@ -223,6 +225,48 @@ class EntryBase:
 
 		return RetVal()
 
+	def get_hash(self, algorithm: str) -> RetVal:
+		'''Generates a hash containing the expected signatures and the previous hash, if it exists. 
+		The supported hash algorithms are 'BLAKE2-256', 'BLAKE3-256', 'SHA-256', and 'SHA3-256'.'''  
+		# if algorithm not in ['BLAKE3-256','BLAKE2B-256','SHA-256','SHA3-256']:
+		if algorithm not in ['BLAKE2B-256','SHA-256','SHA3-256']:
+			return RetVal(UnsupportedHashType, f'{algorithm} not a supported hash algorithm')
+		
+		hash_string = EncodedString()
+		hash_level = -1
+		for sig in self.signature_info:
+			if sig['type'] == SIGINFO_HASH:
+				hash_level = sig['level']
+				break
+		assert hash_level > 0, "BUG: signature_info missing hash entry"
+		
+		# if algorithm == 'BLAKE3-256':
+		# 	hasher = blake3.blake3() # pylint: disable=c-extension-no-member
+		# 	hasher.update(self.make_bytestring(hash_level))
+		# 	hash_string.data = base64.b85encode(hasher.digest()).decode()
+		# else:
+			# hasher = None
+			# if algorithm == 'BLAKE2B-256':
+			# 	hasher = hashlib.blake2b(digest_size=32)
+			# elif algorithm == 'SHA-256':
+			# 	hasher = hashlib.sha256()
+			# else:
+			# 	hasher = hashlib.sha3_256()
+			# hasher.update(self.make_bytestring(hash_level))
+			# hash_string.data = base64.b85encode(hasher.digest()).decode()
+		hasher = None
+		if algorithm == 'BLAKE2B-256':
+			hasher = hashlib.blake2b(digest_size=32)
+		elif algorithm == 'SHA-256':
+			hasher = hashlib.sha256()
+		else:
+			hasher = hashlib.sha3_256()
+		hasher.update(self.make_bytestring(hash_level))
+		hash_string.data = base64.b85encode(hasher.digest()).decode()
+		
+		hash_string.prefix = algorithm
+		return RetVal().set_value('hash', str(hash_string))
+	
 	def is_data_compliant(self) -> RetVal:
 		'''Performs basic compliancy checks for the data fields only'''
 
@@ -494,48 +538,27 @@ class EntryBase:
 		return RetVal()
 
 	def generate_hash(self, algorithm: str) -> RetVal:
-		'''Generates a hash containing the expected signatures and the previous hash, if it exists. 
-		The supported hash algorithms are 'BLAKE2-256', 'BLAKE3-256', 'SHA-256', and 'SHA3-256'.'''  
-		# if algorithm not in ['BLAKE3-256','BLAKE2B-256','SHA-256','SHA3-256']:
-		if algorithm not in ['BLAKE2B-256','SHA-256','SHA3-256']:
-			return RetVal(UnsupportedHashType, f'{algorithm} not a supported hash algorithm')
+		'''Populates the hash attribute based on the data in the entry. For supported algorithms,
+		see EntryBase.get_hash()'''  
+		status = self.get_hash(algorithm)
+		if status.error():
+			return status
 		
-		hash_string = EncodedString()
-		hash_level = -1
-		for sig in self.signature_info:
-			if sig['type'] == SIGINFO_HASH:
-				hash_level = sig['level']
-				break
-		assert hash_level > 0, "BUG: signature_info missing hash entry"
+		self.hash = status['hash']
+		return status
+
+	def verify_hash(self) -> RetVal:
+		'''Checks that the entry's actual hash matches that in the hash field'''
+		current_hash = EncodedString(self.hash)
+		if not current_hash.is_valid():
+			return RetVal(InvalidHash, f"{self.hash} is not a valid EncodedString")
 		
-		# if algorithm == 'BLAKE3-256':
-		# 	hasher = blake3.blake3() # pylint: disable=c-extension-no-member
-		# 	hasher.update(self.make_bytestring(hash_level))
-		# 	hash_string.data = base64.b85encode(hasher.digest()).decode()
-		# else:
-			# hasher = None
-			# if algorithm == 'BLAKE2B-256':
-			# 	hasher = hashlib.blake2b(digest_size=32)
-			# elif algorithm == 'SHA-256':
-			# 	hasher = hashlib.sha256()
-			# else:
-			# 	hasher = hashlib.sha3_256()
-			# hasher.update(self.make_bytestring(hash_level))
-			# hash_string.data = base64.b85encode(hasher.digest()).decode()
-		hasher = None
-		if algorithm == 'BLAKE2B-256':
-			hasher = hashlib.blake2b(digest_size=32)
-		elif algorithm == 'SHA-256':
-			hasher = hashlib.sha256()
-		else:
-			hasher = hashlib.sha3_256()
-		hasher.update(self.make_bytestring(hash_level))
-		hash_string.data = base64.b85encode(hasher.digest()).decode()
+		status = self.get_hash(current_hash.prefix)
+		if status.error():
+			return status
 		
-		hash_string.prefix = algorithm
-		self.hash = str(hash_string)
-		
-		return RetVal().set_value('hash',self.hash)
+		return RetVal()
+
 
 	def verify_signature(self, verify_key: EncodedString, sigtype: str) -> RetVal:
 		'''Verifies a signature, given a verification key'''
