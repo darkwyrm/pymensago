@@ -329,8 +329,8 @@ class EntryBase:
 	def make_bytestring(self, signature_level : int) -> bytes:
 		'''Creates a byte string from the fields in the keycard. Because this doesn't use join(), 
 		it is not affected by Python's line ending handling, which is critical in ensuring that 
-		signatures are not invalidated. The second parameter, signature_level, specifies 
-		how many signatures to include. Passing a negative number specifies all signatures.'''
+		signatures are not invalidated. The parameter, signature_level, specifies how many 
+		signatures to include. Passing a negative number specifies all signatures.'''
 		lines = list()
 		if self.type:
 			lines.append(b':'.join([b'Type', self.type.encode()]))
