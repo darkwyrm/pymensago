@@ -73,24 +73,3 @@ class CryptoString:
 		'''Makes the entry empty'''
 		self.prefix = ''
 		self.data = ''
-
-def _is_valid_date(m : int, d : int, y : int, hours=-1, minutes=-1, seconds=-1) -> bool:
-	'''Returns false if the date is invalid for this context'''
-	if y < 2020 or m < 1 or m > 12 or d < 1:
-		return False
-
-	if m == 2:
-		if ((y%4 == 0 and y%100 != 0) and d > 29):
-			return False
-		if d > 28:
-			return False
-	elif m in [1, 3, 5, 7, 8, 10, 12]:
-		if d > 31:
-			return False
-	elif d > 30:
-		return False
-	
-	if hours >= 23 or minutes >= 59 or seconds >= 59:
-		return False
-
-	return True
