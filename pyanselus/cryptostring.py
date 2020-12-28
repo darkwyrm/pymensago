@@ -3,6 +3,7 @@ their algorithms in a text-friendly way. The algorithm name may be no longer tha
 and use only capital ASCII letters, numbers, and dashes.'''
 
 import base64
+import re
 
 from pyanselus.retval import RetVal, BadData, BadParameterValue
 
@@ -22,11 +23,13 @@ class CryptoString:
 		
 		self.prefix = self.data = ''
 
+		m = re.match(r'^[A-Z0-9-]{1,15}:', data)
+		if not m:
+			return RetVal(BadParameterValue, 'prefix is non-compliant')
+	
 		parts = data.split(':', 1)
-		if len(parts) == 1:
-			return RetVal(BadParameterValue, 'data is not colon-separated')
-		
-		# TODO: Enforce prefix characters and length
+		if len(parts) != 2:
+			return RetVal(BadParameterValue, 'bad data string')
 		
 		try:
 			_ = base64.b85decode(parts[1])
