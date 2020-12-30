@@ -881,7 +881,10 @@ class Keycard:
 		if status.error():
 			return status
 		
-		status = new_entry.sign(skeystring, 'User')
+		if new_entry.type == 'User':
+			status = new_entry.sign(skeystring, 'User')
+		else:
+			status = new_entry.sign(skeystring, 'Organization')
 		if status.error():
 			return status
 		
