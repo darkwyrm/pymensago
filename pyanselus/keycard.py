@@ -671,6 +671,7 @@ class OrgEntry(EntryBase):
 		ekey = EncryptionPair()
 
 		out['sign.public'] = skey.get_public_key()
+		
 		out['sign.private'] = skey.get_private_key()
 		out['encrypt.public'] = ekey.get_public_key()
 		out['encrypt.private'] = ekey.get_private_key()

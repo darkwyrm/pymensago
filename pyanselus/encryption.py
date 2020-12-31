@@ -95,13 +95,21 @@ class EncryptionPair (CryptoKey):
 		])
 
 	def get_public_key(self) -> str:
-		'''Returns the public key encoded in base85'''
+		'''Returns the public key as a CryptoString string'''
 		return self.public.as_string()
 	
+	def get_public_hash(self) -> str:
+		'''Returns the hash of the public key as a CryptoString string'''
+		return self.pubhash
+	
 	def get_private_key(self) -> str:
-		'''Returns the private key encoded in base85'''
+		'''Returns the private key as a CryptoString string'''
 		return self.private.as_string()
 
+	def get_private_hash(self) -> str:
+		'''Returns the hash of the private key as a CryptoString string'''
+		return self.privhash
+	
 	def save(self, path: str):
 		'''Saves the keypair to a file'''
 		if not path:
@@ -195,12 +203,20 @@ class SigningPair:
 		])
 
 	def get_public_key(self) -> bytes:
-		'''Returns the binary data representing the public half of the key'''
+		'''Returns the verification key as a CryptoString string'''
 		return self.public.as_string()
 	
+	def get_public_hash(self) -> str:
+		'''Returns the hash of the verification key as a CryptoString string'''
+		return self.pubhash
+	
 	def get_private_key(self) -> str:
-		'''Returns the private key encoded in base85'''
+		'''Returns the signing key as a CryptoString string'''
 		return self.private.as_string()
+	
+	def get_private_hash(self) -> str:
+		'''Returns the hash of the signing key as a CryptoString string'''
+		return self.privhash
 	
 	def save(self, path: str) -> RetVal:
 		'''Saves the key to a file'''
