@@ -15,6 +15,7 @@ import nacl.signing
 
 from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import EncryptionPair, SigningPair, Base85Encoder
+from pyanselus.hash import blake2hash
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
 		ResourceNotFound
 
@@ -641,8 +642,11 @@ class OrgEntry(EntryBase):
 		returned in CryptoString format using the following fields:
 		entry
 		sign.public / sign.private -- primary signing keypair
+		sign.pubhash / sign.privhash -- hashes of the corresponding keys
 		altsign.public / altsign.private -- contact request signing keypair
+		altsign.pubhash / altsign.privhash -- hashes of the corresponding keys
 		encrypt.public / encrypt.private -- general-purpose public encryption keypair
+		encrypt.pubhash / encrypt.privhash -- hashes of the corresponding keys
 
 		For organization entries, rotating optional keys works a little differently: the primary 
 		signing key becomes the secondary signing key in the new entry. When rotation is False, 
@@ -671,17 +675,24 @@ class OrgEntry(EntryBase):
 		ekey = EncryptionPair()
 
 		out['sign.public'] = skey.get_public_key()
-		
+		out['sign.pubhash'] = skey.get_public_hash()
 		out['sign.private'] = skey.get_private_key()
+		out['sign.privhash'] = skey.get_private_hash()
 		out['encrypt.public'] = ekey.get_public_key()
+		out['encrypt.pubhash'] = ekey.get_public_hash()
 		out['encrypt.private'] = ekey.get_private_key()
+		out['encrypt.privhash'] = ekey.get_private_hash()
 		
 		if rotate_optional:
 			altskey = SigningPair()
 			out['altsign.public'] = altskey.get_public_key()
+			out['altsign.pubhash'] = altskey.get_public_hash()
 			out['altsign.private'] = altskey.get_private_key()
+			out['altsign.privhash'] = altskey.get_private_hash()
 		else:
 			out['altsign.public'] = self.fields['Primary-Verification-Key']
+			out['altsign.pubhash'] = blake2hash(
+				self.fields['Primary-Verification-Key'].as_string().encode())
 			out['altsign.private'] = ''
 
 		status = new_entry.sign(key, 'Custody')

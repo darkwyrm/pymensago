@@ -85,8 +85,8 @@ class EncryptionPair (CryptoKey):
 					base64.b85encode(key.public_key.encode()).decode())
 			self.private = CryptoString('CURVE25519:' + \
 					base64.b85encode(key.encode()).decode())
-		self.pubhash = blake2hash(self.public.data)
-		self.privhash = blake2hash(self.private.data)
+		self.pubhash = blake2hash(self.public.data.encode())
+		self.privhash = blake2hash(self.private.data.encode())
 
 	def __str__(self):
 		return '\n'.join([
@@ -193,8 +193,8 @@ class SigningPair:
 					base64.b85encode(key.verify_key.encode()).decode())
 			self.private = CryptoString('ED25519:' + \
 					base64.b85encode(key.encode()).decode())		
-		self.pubhash = blake2hash(self.public.data)
-		self.privhash = blake2hash(self.private.data)
+		self.pubhash = blake2hash(self.public.data.encode())
+		self.privhash = blake2hash(self.private.data.encode())
 		
 	def __str__(self):
 		return '\n'.join([
@@ -314,7 +314,7 @@ class SecretKey (CryptoKey):
 			self.key = CryptoString('XSALSA20:' + \
 					base64.b85encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode())
 		
-		self.hash = blake2hash(self.key.data)
+		self.hash = blake2hash(self.key.data.encode())
 
 	def __str__(self):
 		return self.get_key()
