@@ -641,7 +641,7 @@ class OrgEntry(EntryBase):
 		returned in CryptoString format using the following fields:
 		entry
 		sign.public / sign.private -- primary signing keypair
-		altsign.public / crsign.private -- contact request signing keypair
+		altsign.public / altsign.private -- contact request signing keypair
 		encrypt.public / encrypt.private -- general-purpose public encryption keypair
 
 		For organization entries, rotating optional keys works a little differently: the primary 
