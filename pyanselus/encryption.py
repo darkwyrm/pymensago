@@ -13,6 +13,7 @@ import nacl.secret
 import nacl.signing
 import nacl.utils
 from pyanselus.cryptostring import CryptoString
+from pyanselus.hash import blake2hash
 from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
 		ResourceExists, ResourceNotFound
 
@@ -44,8 +45,9 @@ class CryptoKey:
 	'''Defines a generic interface to an Anselus encryption key, which contains more
 	information than just the key itself'''
 	def __init__(self):
-		# TODO: Create keypair ID from hash
 		self.id = str(uuid.uuid4())
+		self.pubhash = ''
+		self.privhash = ''
 		self.enctype = ''
 		self.type = ''
 	
@@ -67,8 +69,7 @@ class EncryptionPair (CryptoKey):
 	def __init__(self, public=None, private=None):
 		super().__init__()
 		if public and private:
-			if type(public).__name__ != 'CryptoString' or \
-				type(private).__name__ != 'CryptoString':
+			if not isinstance(public, CryptoString) or not isinstance(private, CryptoString):
 				raise TypeError
 			
 			if public.prefix != private.prefix:
@@ -84,6 +85,8 @@ class EncryptionPair (CryptoKey):
 					base64.b85encode(key.public_key.encode()).decode())
 			self.private = CryptoString('CURVE25519:' + \
 					base64.b85encode(key.encode()).decode())
+		self.pubhash = blake2hash(self.public.data)
+		self.privhash = blake2hash(self.private.data)
 
 	def __str__(self):
 		return '\n'.join([
@@ -109,7 +112,9 @@ class EncryptionPair (CryptoKey):
 
 		outdata = {
 			'PublicKey' : self.get_public_key(),
-			'PrivateKey' : self.get_private_key()
+			'PublicHash' : self.pubhash,
+			'PrivateKey' : self.get_private_key(),
+			'PrivateHash' : self.privhash
 		}
 			
 		try:
@@ -180,6 +185,8 @@ class SigningPair:
 					base64.b85encode(key.verify_key.encode()).decode())
 			self.private = CryptoString('ED25519:' + \
 					base64.b85encode(key.encode()).decode())		
+		self.pubhash = blake2hash(self.public.data)
+		self.privhash = blake2hash(self.private.data)
 		
 	def __str__(self):
 		return '\n'.join([
@@ -205,7 +212,9 @@ class SigningPair:
 
 		outdata = {
 			'VerificationKey' : self.get_public_key(),
-			'SigningKey' : self.get_private_key()
+			'VerificationHash' : self.pubhash,
+			'SigningKey' : self.get_private_key(),
+			'SigningHash' : self.privhash
 		}
 			
 		try:
@@ -288,6 +297,8 @@ class SecretKey (CryptoKey):
 			self.enctype = 'XSALSA20'
 			self.key = CryptoString('XSALSA20:' + \
 					base64.b85encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode())
+		
+		self.hash = blake2hash(self.key.data)
 
 	def __str__(self):
 		return self.get_key()
