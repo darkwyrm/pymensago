@@ -66,6 +66,29 @@ class CryptoKey:
 		return self.type
 
 
+class PublicKey (CryptoKey):
+	'''Represents a public encryption key'''
+	def __init__(self, public):
+		super().__init__()
+		if not isinstance(public, CryptoString):
+			raise TypeError
+		self.public = public
+
+	def encrypt(self, data : bytes) -> RetVal:
+		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
+		field 'data'.'''
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected')
+		
+		try:
+			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
+			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
+		except Exception as e:
+			return RetVal(ExceptionThrown, str(e))
+		
+		return RetVal().set_value('data', encrypted_data)
+
+
 class EncryptionPair (CryptoKey):
 	'''Represents an assymmetric encryption key pair'''
 	def __init__(self, public=None, private=None):
@@ -204,6 +227,32 @@ def load_encryptionpair(path: str) -> RetVal:
 	return RetVal().set_value('keypair', EncryptionPair(public_key, private_key))
 
 
+class VerificationKey (CryptoKey):
+	'''Represents a public encryption key'''
+	def __init__(self, public):
+		super().__init__()
+		if not isinstance(public, CryptoString):
+			raise TypeError
+		self.public = public
+
+	def verify(self, data : bytes, data_signature : CryptoString) -> RetVal:
+		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
+		
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected for data')
+		if not isinstance(data_signature, CryptoString):
+			return RetVal(BadParameterType, 'signature parameter must be a CryptoString')
+		
+		key = nacl.signing.VerifyKey(self.public.raw_data())
+
+		try:
+			key.verify(data, data_signature.raw_data())
+		except Exception as e:
+			return RetVal(VerificationError, e)
+		
+		return RetVal()
+
+
 class SigningPair:
 	'''Represents an asymmetric signing key pair'''
 	def __init__(self, public=None, private=None):
@@ -302,7 +351,7 @@ class SigningPair:
 		key = nacl.signing.VerifyKey(self.public.raw_data())
 
 		try:
-			signed = key.verify(data, data_signature.raw_data())
+			key.verify(data, data_signature.raw_data())
 		except Exception as e:
 			return RetVal(VerificationError, e)
 		
