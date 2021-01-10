@@ -67,7 +67,22 @@ def test_encryptionpair_load():
 	assert testpair.enctype == kp.enctype, "Loaded data does not match input data"
 	assert testpair.public == public_key, "Loaded data does not match input data"
 	assert testpair.private == private_key, "Loaded data does not match input data"
-	
+
+def test_encryptionpair_encrypt_decrypt():
+	'''Test the encryption and decryption code for the EncryptionPair class'''
+
+	public_key = CryptoString(r"CURVE25519:(B2XX5|<+lOSR>_0mQ=KX4o<aOvXe6M`Z5ldINd`")
+	private_key = CryptoString(r"CURVE25519:(Rj5)mmd1|YqlLCUP0vE;YZ#o;tJxtlAIzmPD7b&")
+	kp = encryption.EncryptionPair(public_key, private_key)
+
+	test_data = 'This is some encryption test data'
+	estatus = kp.encrypt(test_data.encode())
+	assert not estatus.error(), 'test_encryptionpair_encrypt_decrypt: error encrypting test data'
+
+	dstatus = kp.decrypt(estatus['data'])
+	assert not dstatus.error(), 'test_encryptionpair_encrypt_decrypt: error decrypting test data'
+	assert dstatus['data'].decode() == test_data, 'decoded data mismatch'
+
 
 def test_signpair_save():
 	'''Tests the save code of the SigningPair class'''
@@ -176,3 +191,6 @@ def test_secretkey_encrypt_decrypt():
 
 	newdata = sk.decrypt(encdata)
 	assert testdata == newdata, "Decrypted data didn't match"
+
+if __name__ == '__main__':
+	test_encryptionpair_encrypt_decrypt()

@@ -14,8 +14,8 @@ import nacl.signing
 import nacl.utils
 from pyanselus.cryptostring import CryptoString
 from pyanselus.hash import blake2hash
-from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, InternalError, \
-		ResourceExists, ResourceNotFound
+from pyanselus.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
+	ExceptionThrown, InternalError, ResourceExists, ResourceNotFound
 
 # JSON schemas used to validate keyfile data
 __encryption_pair_schema = {
@@ -134,6 +134,36 @@ class EncryptionPair (CryptoKey):
 			return RetVal(ExceptionThrown, str(e))
 
 		return RetVal()
+
+	def encrypt(self, data : bytes) -> RetVal:
+		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
+		field 'data'.'''
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected')
+		
+		try:
+			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
+			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
+		except Exception as e:
+			return RetVal(ExceptionThrown, str(e))
+		
+		return RetVal().set_value('data', encrypted_data)
+
+	def decrypt(self, data : bytes, b85decode = True) -> RetVal:
+		'''Decrypt the passed data using the private key and return the raw data in the field 
+		'data'. Base85 decoding of the data is optional, but enabled by default.'''
+		
+		try:
+			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.raw_data()))
+		
+			if b85decode:
+				decrypted_data = sealedbox.decrypt(data, Base85Encoder)
+			else:
+				decrypted_data = sealedbox.decrypt(data)
+		except Exception as e:
+			return RetVal(ExceptionThrown, str(e))
+		
+		return RetVal().set_value('data', decrypted_data)
 
 
 def load_encryptionpair(path: str) -> RetVal:
@@ -255,7 +285,6 @@ class SigningPair:
 		
 		return RetVal().set_value('signature', 'ED25519:' + signed.signature.decode())
 	
-
 
 def signingpair_from_string(keystr : str) -> SigningPair:
 	'''Intantiates a signing pair from a saved seed string that is used for the private key'''
