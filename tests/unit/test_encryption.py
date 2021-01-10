@@ -127,8 +127,8 @@ def test_signpair_load():
 	assert testpair.private == private_key, "Loaded data does not match input data"
 
 
-def test_signpair_sign():
-	'''Tests SigningPair's sign() method'''
+def test_signpair_sign_verify():
+	'''Tests SigningPair's sign() and verify() methods'''
 
 	public_key = CryptoString(r"ED25519:PnY~pK2|;AYO#1Z;B%T$2}E$^kIpL=>>VzfMKsDx")
 	private_key = CryptoString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
@@ -137,10 +137,13 @@ def test_signpair_sign():
 	key = nacl.signing.SigningKey(private_key.raw_data())
 	signed = key.sign(b'1234567890', encryption.Base85Encoder)
 	
-	status = sp.sign(b'1234567890')
-	assert not status.error(), f"test_signpair_sign failed: {status.info()}"
-	assert status['signature'] == 'ED25519:' + signed.signature.decode(), \
-		"test_signpair_sign: signature data failed to match"
+	sstatus = sp.sign(b'1234567890')
+	assert not sstatus.error(), f"test_signpair_sign_verify: signing failed: {sstatus.info()}"
+	assert sstatus['signature'] == 'ED25519:' + signed.signature.decode(), \
+		"test_signpair_sign_verify: signature data mismatch"
+	
+	vstatus = sp.verify(b'1234567890', CryptoString(sstatus['signature']))
+	assert not vstatus.error(), f"test_signpair_sign_verify: verification failed: {vstatus.info()}"
 
 
 def test_secretkey_save():
@@ -194,3 +197,4 @@ def test_secretkey_encrypt_decrypt():
 
 if __name__ == '__main__':
 	test_encryptionpair_encrypt_decrypt()
+	test_signpair_sign_verify()

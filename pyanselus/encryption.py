@@ -17,6 +17,8 @@ from pyanselus.hash import blake2hash
 from pyanselus.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
 	ExceptionThrown, InternalError, ResourceExists, ResourceNotFound
 
+VerificationError = 'VerificationError	'
+
 # JSON schemas used to validate keyfile data
 __encryption_pair_schema = {
 	'type' : 'object',
@@ -152,6 +154,8 @@ class EncryptionPair (CryptoKey):
 	def decrypt(self, data : bytes, b85decode = True) -> RetVal:
 		'''Decrypt the passed data using the private key and return the raw data in the field 
 		'data'. Base85 decoding of the data is optional, but enabled by default.'''
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected')
 		
 		try:
 			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.raw_data()))
@@ -275,6 +279,8 @@ class SigningPair:
 	
 	def sign(self, data : bytes) -> RetVal:
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected for data')
 		
 		key = nacl.signing.SigningKey(self.private.raw_data())
 
@@ -285,6 +291,23 @@ class SigningPair:
 		
 		return RetVal().set_value('signature', 'ED25519:' + signed.signature.decode())
 	
+	def verify(self, data : bytes, data_signature : CryptoString) -> RetVal:
+		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
+		
+		if not isinstance(data, bytes):
+			return RetVal(BadParameterType, 'bytes expected for data')
+		if not isinstance(data_signature, CryptoString):
+			return RetVal(BadParameterType, 'signature parameter must be a CryptoString')
+		
+		key = nacl.signing.VerifyKey(self.public.raw_data())
+
+		try:
+			signed = key.verify(data, data_signature.raw_data())
+		except Exception as e:
+			return RetVal(VerificationError, e)
+		
+		return RetVal()
+
 
 def signingpair_from_string(keystr : str) -> SigningPair:
 	'''Intantiates a signing pair from a saved seed string that is used for the private key'''
