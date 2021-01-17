@@ -81,7 +81,7 @@ def test_encryptionpair_encrypt_decrypt():
 
 	dstatus = kp.decrypt(estatus['data'])
 	assert not dstatus.error(), 'test_encryptionpair_encrypt_decrypt: error decrypting test data'
-	assert dstatus['data'].decode() == test_data, 'decoded data mismatch'
+	assert dstatus['data'] == test_data, 'decoded data mismatch'
 
 
 def test_signpair_save():

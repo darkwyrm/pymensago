@@ -174,23 +174,19 @@ class EncryptionPair (CryptoKey):
 		
 		return RetVal().set_value('data', encrypted_data)
 
-	def decrypt(self, data : bytes, b85decode = True) -> RetVal:
+	def decrypt(self, data : str) -> RetVal:
 		'''Decrypt the passed data using the private key and return the raw data in the field 
 		'data'. Base85 decoding of the data is optional, but enabled by default.'''
-		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected')
+		if not isinstance(data, str):
+			return RetVal(BadParameterType, 'string expected')
 		
 		try:
 			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.raw_data()))
-		
-			if b85decode:
-				decrypted_data = sealedbox.decrypt(data, Base85Encoder)
-			else:
-				decrypted_data = sealedbox.decrypt(data)
+			decrypted_data = sealedbox.decrypt(data.encode(), Base85Encoder)
 		except Exception as e:
 			return RetVal(ExceptionThrown, str(e))
 		
-		return RetVal().set_value('data', decrypted_data)
+		return RetVal().set_value('data', decrypted_data.decode())
 
 
 def load_encryptionpair(path: str) -> RetVal:
