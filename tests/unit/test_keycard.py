@@ -137,6 +137,9 @@ def make_test_orgentry() -> keycard.OrgEntry:
 
 	# Organization sign, hash, and verify
 
+	rv = orgcard.generate_hash('BLAKE2B-256')
+	assert not rv.error(), 'entry failed to hash'
+
 	pskeystring = CryptoString()
 	pskeystring.set('ED25519:' + base64.b85encode(pskey.encode()).decode())
 	rv = orgcard.sign(pskeystring, 'Organization')
@@ -147,9 +150,6 @@ def make_test_orgentry() -> keycard.OrgEntry:
 	ovkeystring = CryptoString()
 	ovkeystring.prefix = 'ED25519'
 	ovkeystring.data = base64.b85encode(ovkey.encode()).decode()
-
-	rv = orgcard.generate_hash('BLAKE2B-256')
-	assert not rv.error(), 'entry failed to hash'
 
 	rv = orgcard.verify_signature(ovkeystring, 'Organization')
 	assert not rv.error(), 'org entry failed to verify'
