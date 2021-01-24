@@ -17,7 +17,8 @@ from pyanselus.hash import blake2hash
 from pyanselus.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
 	ExceptionThrown, InternalError, ResourceExists, ResourceNotFound
 
-VerificationError = 'VerificationError	'
+VerificationError = 'VerificationError'
+DecryptionFailure = 'DecryptionFailure'
 
 # JSON schemas used to validate keyfile data
 __encryption_pair_schema = {
