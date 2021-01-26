@@ -3,10 +3,11 @@ import pyanselus.serverconn as serverconn # pylint: disable=import-error
 
 def test_connect():
 	'''Tests just the basic connection to the server and parsing the greeting'''
-	status = serverconn.connect('localhost', 2001)
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
 
 	assert not status.error(), f"test_connect(): failed to connect to server: {status.info()}"
-	serverconn.disconnect(status['socket'])
+	conn.disconnect()
 
 
 

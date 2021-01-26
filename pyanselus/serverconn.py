@@ -34,32 +34,31 @@ class ServerConnection:
 	def __init__(self):
 		self.socket = None
 	
-	def connect(self) -> bool:
+	def connect(self, address: str, port: int) -> RetVal:
 		'''Creates a connection to the server.'''
 		try:
 			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			# Set a short timeout in case the server doesn't respond immediately,
 			# which is the expectation as soon as a client connects.
 			sock.settimeout(10.0)
-		except:
-			return None
+		except Exception as e:
+			return RetVal(ExceptionThrown, e)
 		
 		try:
-			sock.connect(('127.0.0.1', 2001))
+			sock.connect((address, port))
 			
 			# absorb the hello string
 			_ = sock.recv(8192)
 
 		except Exception as e:
-			print("Connection failed: %s" % e)
 			sock.close()
-			return False
+			return RetVal(ExceptionThrown, e)
 
 		# Set a timeout of 30 minutes
 		sock.settimeout(1800.0)
 		
 		self.socket = sock
-		return True
+		return RetVal()
 
 	def disconnect(self) -> RetVal:
 		'''Disconnects by sending a QUIT command to the server'''
