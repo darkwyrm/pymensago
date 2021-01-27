@@ -352,7 +352,7 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 
 
 def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: str, 
-	devkey: EncryptionPair, domain: str):
+	devkey: EncryptionPair, domain: str) -> RetVal:
 	'''Finishes registration of a workspace'''
 
 	wid = ''
