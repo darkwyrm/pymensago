@@ -56,7 +56,7 @@ def _is_valid_date(m : int, d : int, y : int, hours=-1, minutes=-1, seconds=-1) 
 	elif d > 30:
 		return False
 	
-	if hours >= 23 or minutes >= 59 or seconds >= 59:
+	if hours > 23 or minutes > 59 or seconds > 59:
 		return False
 
 	return True
