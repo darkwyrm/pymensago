@@ -216,6 +216,33 @@ def exists(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal().set_value('exists', True)
 
 
+def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
+	'''Looks up a wid based on the specified user ID and optional domain'''
+
+	# TODO: validate uid and domain
+	request = {
+		'Action' : 'GETWID',
+		'Data' : {
+			'User-ID': uid
+		}
+	}
+	if domain:
+		request['Data']['Domain'] = domain
+	
+	status = conn.send_message(request)
+	if status.error():
+		return status
+	
+	response = conn.read_response()
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		wrap_server_error(response)
+	
+	return RetVal().set_value('Workspace-ID', response['Data']['Workspace-ID'])
+
+
 def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	'''Starts the login process by sending the requested workspace ID.'''
 	if not utils.validate_uuid(wid):
@@ -316,21 +343,20 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 	
 	return out
 
-# | Parameters
-# | * Workspace-ID or User-ID
-# * Reg-Code
-# * Password-Hash
-# * Device-ID
-# * Device-Key
-# * _optional:_ Domain
 
-# | Returns  | * 201 REGISTERED
-# | Possible Errors | * 401 UNAUTHORIZED
-# |===
 def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: str, 
 	devkey: EncryptionPair, domain: str):
 	'''Finishes registration of a workspace'''
 
+	wid = ''
+	if utils.validate_uuid(regid):
+		wid = regid
+	else:
+		status = getwid(conn, regid, domain)
+		if status.error():
+			return status
+		wid = status['Workspace-ID']
+	
 	pwhash = nacl.pwhash.argon2id.kdf(nacl.secret.SecretBox.KEY_SIZE,
 							bytes(pword, 'utf8'), wid,
 							opslimit=nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE,
@@ -357,7 +383,11 @@ def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: st
 	if status.error():
 		return status
 	
-
+	if status['Code'] != 201:
+		wrap_server_error(status)
+	
+	return RetVal()
+	
 
 def register(conn: ServerConnection, uid: str, pwhash: str, devkey: PublicKey) -> RetVal:
 	'''Creates an account on the server.'''
