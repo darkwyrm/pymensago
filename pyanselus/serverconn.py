@@ -316,6 +316,48 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 	
 	return out
 
+# | Parameters
+# | * Workspace-ID or User-ID
+# * Reg-Code
+# * Password-Hash
+# * Device-ID
+# * Device-Key
+# * _optional:_ Domain
+
+# | Returns  | * 201 REGISTERED
+# | Possible Errors | * 401 UNAUTHORIZED
+# |===
+def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: str, 
+	devkey: EncryptionPair, domain: str):
+	'''Finishes registration of a workspace'''
+
+	pwhash = nacl.pwhash.argon2id.kdf(nacl.secret.SecretBox.KEY_SIZE,
+							bytes(pword, 'utf8'), wid,
+							opslimit=nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE,
+							memlimit=nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE)	
+	request = {
+		'Action':'REGCODE',
+		'Data':{
+			'Reg-Code': code,
+			'Password-Hash':pwhash,
+			'Device-ID':devid,
+			'Device-Key':devkey.public.as_string()
+		}
+	}
+
+	if domain:
+		request['Data']['Domain'] = domain
+
+	if utils.validate_uuid(id):
+		request['Data']['Workspace-ID'] = regid
+	else:
+		request['Data']['User-ID'] = regid
+	
+	status = conn.send_message(request)
+	if status.error():
+		return status
+	
+
 
 def register(conn: ServerConnection, uid: str, pwhash: str, devkey: PublicKey) -> RetVal:
 	'''Creates an account on the server.'''
