@@ -1,7 +1,7 @@
 from integration_setup import setup_test, config_server
-from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import EncryptionPair
-import pyanselus.serverconn as serverconn # pylint: disable=import-error
+from pyanselus.pyanselus.cryptostring import CryptoString
+from pyanselus.pyanselus.encryption import EncryptionPair
+import pyanselus.pyanselus.serverconn as serverconn
 
 def test_connect():
 	'''Tests just the basic connection to the server and parsing the greeting'''

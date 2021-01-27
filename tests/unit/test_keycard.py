@@ -7,11 +7,9 @@ import time
 
 import nacl.signing
 
-import pyanselus.keycard as keycard
-from pyanselus.cryptostring import CryptoString
-from pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
-# Pylint doesn't detect the use of this import:
-from pyanselus.retval import RetVal # pylint: disable=unused-import
+import pyanselus.pyanselus.keycard as keycard
+from pyanselus.pyanselus.cryptostring import CryptoString
+from pyanselus.pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 
 # Keys used in the various tests
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!

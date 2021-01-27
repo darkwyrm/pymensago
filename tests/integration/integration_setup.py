@@ -8,8 +8,8 @@ import nacl.secret
 import psycopg2
 import toml
 
-from pyanselus.cryptostring import CryptoString
-import pyanselus.keycard as keycard
+from pyanselus.pyanselus.cryptostring import CryptoString
+import pyanselus.pyanselus.keycard as keycard
 
 # Keys used in the various tests. 
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!

@@ -5,10 +5,8 @@ import shutil
 import time
 
 import nacl.signing
-from pyanselus.cryptostring import CryptoString
-import pyanselus.encryption as encryption
-# Pylint doesn't detect the use of this import:
-from pyanselus.retval import RetVal # pylint: disable=unused-import
+from pyanselus.pyanselus.cryptostring import CryptoString
+import pyanselus.pyanselus.encryption as encryption
 
 def setup_test(name):
 	'''Creates a test folder hierarchy'''
