@@ -219,7 +219,14 @@ def exists(conn: ServerConnection, path: str) -> RetVal:
 def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	'''Looks up a wid based on the specified user ID and optional domain'''
 
-	# TODO: validate uid and domain
+	if re.findall(r'[\\\/\s"]', uid) or len(uid) >= 64:
+		return RetVal(BadParameterValue, 'user id')
+	
+	if domain:
+		m = re.match(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+', domain)
+		if not m or len(domain) >= 64:
+			return RetVal(BadParameterValue, 'bad domain value')
+	
 	request = {
 		'Action' : 'GETWID',
 		'Data' : {
