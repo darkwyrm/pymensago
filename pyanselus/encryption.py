@@ -523,7 +523,7 @@ class FolderMapping:
 		self.permissions = permissions
 
 
-def check_password_complexity(indata):
+def check_password_complexity(indata: str) -> RetVal:
 	'''Checks the requested string as meeting the needed security standards.
 	
 	Returns: RetVal
@@ -565,12 +565,14 @@ def check_password_complexity(indata):
 
 class Password:
 	'''Encapsulates hashed password interactions. Uses the Argon2id hashing algorithm.'''
-	def __init__(self):
+	def __init__(self, text=''):
 		self.hashtype = 'argon2id'
 		self.strength = ''
 		self.hashstring = ''
+		if text:
+			self.Set(text)
 
-	def Set(self, text):
+	def Set(self, text) -> RetVal:
 		'''
 		Takes the given password text, checks strength, and generates a hash
 		Returns: RetVal
@@ -580,11 +582,11 @@ class Password:
 		if status.error():
 			return status
 		self.strength = status['strength']
-		self.hashstring = nacl.pwhash.argon2id.str(bytes(text, 'utf8')).decode('ascii')
+		self.hashstring = nacl.pwhash.argon2id.str(text.encode()).decode('ascii')
 		
 		return status
 	
-	def Assign(self, pwhash):
+	def Assign(self, pwhash) -> RetVal:
 		'''
 		Takes a PHC hash format string and assigns the password object to it.
 		Returns: [dict]
@@ -593,9 +595,9 @@ class Password:
 		self.hashstring = pwhash
 		return RetVal()
 	
-	def Check(self, text):
+	def Check(self, text) -> bool:
 		'''
-		Checks the supplied password against the stored hash and returns a boolean match status.
+		Checks the supplied password against the stored hash.
 		'''
 		return nacl.pwhash.verify(self.hashstring.encode(), text.encode())
 
