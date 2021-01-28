@@ -11,8 +11,6 @@ import time
 import uuid
 
 import jsonschema
-import nacl.pwhash
-import nacl.secret
 
 from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import DecryptionFailure, EncryptionPair, PublicKey
@@ -301,19 +299,11 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	return RetVal()
 
 
-def password(conn: ServerConnection, wid: str, pword: str) -> RetVal:
-	'''Continues the login process by hashing a password and sending it to the server.'''
+def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
+	'''Continues the login process sending a password hash to the server.'''
 	if not password or not utils.validate_uuid(wid):
 		return RetVal(AnsBadRequest).set_value('status', 400)
 	
-	bareWID = wid.replace('-', '')
-	# The server will salt the hash we submit, but we'll salt anyway with the first 16 characters 
-	# of the WID for extra safety.
-	pwhash = nacl.pwhash.argon2id.kdf(nacl.secret.SecretBox.KEY_SIZE,
-							bytes(pword, 'utf8'), bareWID[:16].encode(),
-							opslimit=nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE,
-							memlimit=nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE)	
-
 	conn.send_message({
 		'Action' : "PASSWORD",
 		'Data' : { 'Password-Hash' : pwhash }
@@ -372,23 +362,10 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 	return out
 
 
-def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: str, 
+def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: str, 
 	devkey: EncryptionPair, domain: str) -> RetVal:
 	'''Finishes registration of a workspace'''
-
-	wid = ''
-	if utils.validate_uuid(regid):
-		wid = regid
-	else:
-		status = getwid(conn, regid, domain)
-		if status.error():
-			return status
-		wid = status['Workspace-ID']
 	
-	pwhash = nacl.pwhash.argon2id.kdf(nacl.secret.SecretBox.KEY_SIZE,
-							bytes(pword, 'utf8'), wid,
-							opslimit=nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE,
-							memlimit=nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE)	
 	request = {
 		'Action':'REGCODE',
 		'Data':{
@@ -402,7 +379,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pword: str, devid: st
 	if domain:
 		request['Data']['Domain'] = domain
 
-	if utils.validate_uuid(id):
+	if utils.validate_uuid(regid):
 		request['Data']['Workspace-ID'] = regid
 	else:
 		request['Data']['User-ID'] = regid
