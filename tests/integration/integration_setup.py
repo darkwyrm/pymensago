@@ -232,8 +232,8 @@ def config_server(dbconn) -> dict:
 	regcode = 'Undamaged Shining Amaretto Improve Scuttle Uptake'
 	cur.execute(f"INSERT INTO prereg(wid, uid, domain, regcode) VALUES('{admin_wid}', 'admin', "
 		f"'example.com', '{regcode}');")
-	# cur.execute(f"INSERT INTO workspaces(wid, uid, domain, wtype) VALUES('{admin_wid}', 'admin', "
-	# 	f"'example.com', 'individual');")
+	cur.execute(f"INSERT INTO workspaces(wid, uid, domain, wtype, status) VALUES('{admin_wid}', "
+		f"'admin', 'example.com', 'individual', 'awaiting');")
 	
 	# Set up abuse/support forwarding to admin
 	abuse_wid = 'f8cfdbdf-62fe-4275-b490-736f5fdc82e3'
