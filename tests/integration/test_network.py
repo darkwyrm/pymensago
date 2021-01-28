@@ -33,13 +33,13 @@ def test_login():
 	assert not status.error(), f"test_login(): regcode failed: {status.info()}"
 
 	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
-	assert not status.error(), f"test_login(): login failed: {status.info()}"
+	assert not status.error(), f"test_login(): login phase failed: {status.info()}"
 
 	status = serverconn.password(conn, config['admin_wid'], password.hashstring)
-	assert not status.error(), f"test_password(): password phase failed: {status.info()}"
+	assert not status.error(), f"test_login(): password phase failed: {status.info()}"
 
 	status = serverconn.device(conn, devid, keypair)
-	assert not status.error(), f"test_device(): device phase failed: {status.info()}"
+	assert not status.error(), f"test_login(): device phase failed: {status.info()}"
 
 	conn.disconnect()
 
