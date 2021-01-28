@@ -22,6 +22,22 @@ import pyanselus.utils as utils
 
 AnsBadRequest = '400-BadRequest'
 
+server_response = {
+	'title' : 'Anselus Server Response',
+	'type' : 'object',
+	'required' : [ 'Code', 'Status', 'Data' ],
+	'properties' : {
+		'Code' : {
+			'type' : 'integer'
+		},
+		'Status' : {
+			'type' : 'string'
+		},
+		'Data' : {
+			'type' : 'object'
+		}
+	}
+}
 
 # Number of seconds to wait for a client before timing out
 CONN_TIMEOUT = 900.0
@@ -77,9 +93,9 @@ class ServerConnection:
 			self.socket.close()
 			return RetVal(ExceptionThrown, e)
 		
-		return RetVal
+		return RetVal()
 
-	def read_response(self, schema: dict) -> dict:
+	def read_response(self, schema: dict) -> RetVal:
 		'''Reads a server response and returns a separated code and string'''
 		
 		if not self.socket:
@@ -91,13 +107,16 @@ class ServerConnection:
 		try:
 			rawdata = self.socket.recv(8192)
 			rawstring = rawdata.decode()
-			response = json.loads(rawstring)
+			rawresponse = json.loads(rawstring)
 			if schema:
-				jsonschema.validate(response, schema)
+				jsonschema.validate(rawresponse, schema)
 		except Exception as e:
-			print(f"Exception thrown in read_response(): {e}")
-			return None
+			return RetVal(ExceptionThrown, e)
 
+		response = RetVal()
+		response['Code'] = rawresponse['Code']
+		response['Status'] = rawresponse['Status']
+		response['Data'] = rawresponse['Data']
 		return response
 	
 	def read(self) -> str:
@@ -126,7 +145,7 @@ class ServerConnection:
 
 def wrap_server_error(response) -> RetVal:
 	'''Wraps a server response into a RetVal object'''
-	return RetVal(ServerError, response['Info']).set_values({
+	return RetVal(ServerError, response['Status']).set_values({
 		'Code' : response['Code'],
 		'Status' : response['Status']
 	})
@@ -159,7 +178,7 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 	})
 
 	# Receive, decrypt, and return the server challenge
-	response = conn.read_response(None)
+	response = conn.read_response(server_response)
 	if response.error():
 		return response
 	
@@ -240,12 +259,12 @@ def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	if status.error():
 		return status
 	
-	response = conn.read_response()
+	response = conn.read_response(server_response)
 	if response.error():
 		return response
 	
 	if response['Code'] != 200:
-		wrap_server_error(response)
+		return wrap_server_error(response)
 	
 	return RetVal().set_value('Workspace-ID', response['Data']['Workspace-ID'])
 
@@ -269,7 +288,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 		}
 	})
 
-	response = conn.read_response(None)
+	response = conn.read_response(server_response)
 	if response.error():
 		return response
 	
@@ -298,7 +317,7 @@ def password(conn: ServerConnection, wid: str, pword: str) -> RetVal:
 		'Data' : { 'Password-Hash' : pwhash }
 	})
 
-	response = conn.read_response(None)
+	response = conn.read_response(server_response)
 	if response.error():
 		return response
 	
@@ -322,7 +341,7 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 	if status.error():
 		return status
 	
-	response = conn.read_response()
+	response = conn.read_response(server_response)
 	if response.error():
 		return response
 	
@@ -436,7 +455,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devkey: PublicKey) -
 		if status.error():
 			return status
 
-		response = conn.read_response()
+		response = conn.read_response(server_response)
 		if response.error():
 			return response
 		
@@ -488,7 +507,7 @@ def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 	if status.error():
 		return status
 	
-	response = conn.read_response()
+	response = conn.read_response(server_response)
 
 	if response['Code'] == 202:
 		return RetVal()

@@ -1,6 +1,6 @@
 '''Tests the RetVal class'''
 
-from pyanselus.pyanselus.retval import RetVal, OK, BadParameterValue
+from pyanselus.retval import RetVal, OK, BadParameterValue
 
 def test_setvalue():
 	'''Tests setvalue()'''

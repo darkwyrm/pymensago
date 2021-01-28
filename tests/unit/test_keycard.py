@@ -7,9 +7,9 @@ import time
 
 import nacl.signing
 
-import pyanselus.pyanselus.keycard as keycard
-from pyanselus.pyanselus.cryptostring import CryptoString
-from pyanselus.pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
+import pyanselus.keycard as keycard
+from pyanselus.cryptostring import CryptoString
+from pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 
 # Keys used in the various tests
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!

@@ -1,7 +1,7 @@
 from integration_setup import setup_test, config_server
-from pyanselus.pyanselus.cryptostring import CryptoString
-from pyanselus.pyanselus.encryption import EncryptionPair
-import pyanselus.pyanselus.serverconn as serverconn
+from pyanselus.cryptostring import CryptoString
+from pyanselus.encryption import EncryptionPair
+import pyanselus.serverconn as serverconn
 
 def test_connect():
 	'''Tests just the basic connection to the server and parsing the greeting'''
@@ -31,7 +31,7 @@ def test_login():
 	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password, devid, keypair,
 		'')
 
-	status = serverconn.login(conn, config['admin_wid'], config['oekey'])
+	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"test_login(): login failed: {status.info()}"
 
 	status = serverconn.password(conn, config['admin_wid'], password)

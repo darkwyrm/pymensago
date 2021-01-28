@@ -5,8 +5,8 @@ import shutil
 import time
 
 import nacl.signing
-from pyanselus.pyanselus.cryptostring import CryptoString
-import pyanselus.pyanselus.encryption as encryption
+from pyanselus.cryptostring import CryptoString
+import pyanselus.encryption as encryption
 
 def setup_test(name):
 	'''Creates a test folder hierarchy'''
