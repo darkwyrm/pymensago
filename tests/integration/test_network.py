@@ -30,7 +30,7 @@ def test_login():
 	)
 	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
 		devid, keypair, '')
-	assert status.code == 201, f"test_login(): regcode failed: {status.info()}"
+	assert not status.error(), f"test_login(): regcode failed: {status.info()}"
 
 	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"test_login(): login failed: {status.info()}"

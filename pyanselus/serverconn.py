@@ -388,8 +388,12 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 	if status.error():
 		return status
 	
-	if status['Code'] != 201:
-		wrap_server_error(status)
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 201:
+		wrap_server_error(response)
 	
 	return RetVal()
 	
