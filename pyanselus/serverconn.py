@@ -304,7 +304,8 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	challenge = b85encode(secrets.token_bytes(32))
 	ekey = PublicKey(serverkey)
 	status = ekey.encrypt(challenge)
-	assert not status.error(), 'test_login: failed to encrypt server challenge'
+	if status.error():
+		return status
 
 	conn.send_message({
 		'Action' : "LOGIN",
