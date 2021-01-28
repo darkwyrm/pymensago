@@ -338,7 +338,7 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 		return response
 	
 	if response['Code'] != 200:
-		wrap_server_error(response)
+		return wrap_server_error(response)
 
 	out = RetVal()
 	
@@ -393,7 +393,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 		return response
 	
 	if response['Code'] != 201:
-		wrap_server_error(response)
+		return wrap_server_error(response)
 	
 	return RetVal()
 	
