@@ -295,7 +295,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	if response['Code'] != 100:
 		return wrap_server_error(response)
 	
-	if response['Data']['Response'] == challenge.decode():
+	if response['Data']['Response'] != challenge.decode():
 		return RetVal(ServerError, 'server failed to decrypt challenge')
 	
 	return RetVal()
