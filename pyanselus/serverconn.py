@@ -306,9 +306,11 @@ def password(conn: ServerConnection, wid: str, pword: str) -> RetVal:
 	if not password or not utils.validate_uuid(wid):
 		return RetVal(AnsBadRequest).set_value('status', 400)
 	
-	# The server will salt the hash we submit, but we'll salt anyway with the WID for extra safety.
+	bareWID = wid.replace('-', '')
+	# The server will salt the hash we submit, but we'll salt anyway with the first 16 characters 
+	# of the WID for extra safety.
 	pwhash = nacl.pwhash.argon2id.kdf(nacl.secret.SecretBox.KEY_SIZE,
-							bytes(pword, 'utf8'), wid,
+							bytes(pword, 'utf8'), bareWID[:16].encode(),
 							opslimit=nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE,
 							memlimit=nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE)	
 
