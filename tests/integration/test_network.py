@@ -43,6 +43,24 @@ def test_login():
 
 	conn.disconnect()
 
+def test_iscurrent():
+	'''Tests the iscurrent() command'''
+
+	dbconn = setup_test()
+	config_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+
+	status = serverconn.iscurrent(conn, 1)
+	assert not status.error(), f"test_iscurrent(): org failure check failed: {status.info()}"
+
+	status = serverconn.iscurrent(conn, 2)
+	assert not status.error(), f"test_iscurrent(): org success check failed: {status.info()}"
+
+
 if __name__ == '__main__':
-	test_connect()
-	test_login()
+	# test_connect()
+	# test_login()
+	test_iscurrent()

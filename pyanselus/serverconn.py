@@ -267,6 +267,35 @@ def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	return RetVal().set_value('Workspace-ID', response['Data']['Workspace-ID'])
 
 
+def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
+	'''Finds out if an entry index is current. If wid is empty, the index is checked for the 
+	organization.'''
+	if wid and not utils.validate_uuid(wid):
+		return RetVal(AnsBadRequest).set_value('status', 400)
+	
+	request = {
+		'Action' : 'ISCURRENT',
+		'Data' : {
+			'Index' : str(index)
+		}
+	}
+	if wid:
+		request['Data']['Workspace-ID'] = wid
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	if 'Is-Current' not in response:
+		return RetVal(ServerError, 'server did not return an answer')
+	
+	return RetVal().set_value('iscurrent', bool(response['Is-Current'] == 'YES'))
+
+
 def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	'''Starts the login process by sending the requested workspace ID.'''
 	if not utils.validate_uuid(wid):
@@ -302,7 +331,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	'''Continues the login process sending a password hash to the server.'''
 	if not password or not utils.validate_uuid(wid):
-		return RetVal(AnsBadRequest).set_value('status', 400)
+		return RetVal(BadParameterValue)
 	
 	conn.send_message({
 		'Action' : "PASSWORD",
