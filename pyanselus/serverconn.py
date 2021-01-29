@@ -13,7 +13,8 @@ import uuid
 import jsonschema
 
 from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import DecryptionFailure, EncryptionPair, PublicKey
+from pyanselus.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
+from pyanselus.keycard import EntryBase
 from pyanselus.retval import RetVal, BadParameterValue, ExceptionThrown, NetworkError, \
 	ResourceExists, ServerError
 import pyanselus.utils as utils
@@ -147,6 +148,63 @@ def wrap_server_error(response) -> RetVal:
 		'Code' : response['Code'],
 		'Status' : response['Status']
 	})
+
+
+def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
+	spair: SigningPair) -> RetVal:
+	'''Handles the process to upload an entry to the server.'''
+
+	conn.send_message({
+		'Action' : "ADDENTRY",
+		'Data' : { 'Base-Entry' : entry.make_bytestring(0).decode() }
+	})
+
+	response = conn.read_response(server_response)
+	if response['Code'] != 100:
+		return wrap_server_error(response)
+
+	for field in ['Organization-Signature', 'Hash', 'Previous-Hash']	:
+		if field not in response['Data']:
+			return RetVal(ServerError, f"Server did not return required field {field}")
+
+	entry.signatures['Organization'] =  response['Data']['Organization-Signature']
+
+	# A regular client will check the entry cache, pull updates to the org card, and get the 
+	# verification key. Because this is just an integration test, we skip all that and just use
+	# the known verification key from earlier in the test.
+	status = entry.verify_signature(ovkey, 'Organization')
+	if status.error():
+		return status
+	
+	entry.prev_hash = response['Data']['Previous-Hash']
+	entry.hash = response['Data']['Hash']
+	status = entry.verify_hash()
+	if status.error():
+		return status
+	
+	# User sign and verify
+	status = entry.sign(spair.private, 'User')
+	if status.error():
+		return status
+
+	status = entry.verify_signature(spair.public, 'User')
+	if status.error():
+		return status
+
+	status = entry.is_compliant()
+	if status.error():
+		return status
+
+	conn.send_message({
+		'Action' : "ADDENTRY",
+		'Data' : { 'User-Signature' : entry.signatures['User'] }
+	})
+	
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+
+	return RetVal()
 
 
 def cancel(conn: ServerConnection):
