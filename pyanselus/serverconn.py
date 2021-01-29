@@ -348,10 +348,10 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
-	if 'Is-Current' not in response:
+	if 'Is-Current' not in response['Data']:
 		return RetVal(ServerError, 'server did not return an answer')
 	
-	return RetVal().set_value('iscurrent', bool(response['Is-Current'] == 'YES'))
+	return RetVal().set_value('iscurrent', bool(response['Data']['Is-Current'] == 'YES'))
 
 
 def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:

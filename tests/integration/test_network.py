@@ -45,7 +45,7 @@ def test_login():
 	conn.disconnect()
 
 
-def test_iscurrent():
+def test_iscurrent_org():
 	'''Tests the iscurrent() command'''
 
 	dbconn = setup_test()
@@ -114,6 +114,14 @@ def test_addentry():
 
 	status = serverconn.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
 	assert not status.error(), f"test_addentry: failed to add entry: {status.info()}"
+
+	status = serverconn.iscurrent(conn, 1, config['admin_wid'])
+	assert not status.error(), "test_addentry(): admin iscurrent() success check failed: " \
+		f"{status.info()}"
+
+	status = serverconn.iscurrent(conn, 2, config['admin_wid'])
+	assert not status.error(), "test_addentry(): admin iscurrent() failure check failed: " \
+		f"{status.info()}"
 
 	conn.disconnect()
 
