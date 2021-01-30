@@ -9,6 +9,7 @@ import nacl.secret
 import psycopg2
 import toml
 
+# pylint: disable=import-error
 from pyanselus.cryptostring import CryptoString
 import pyanselus.keycard as keycard
 
