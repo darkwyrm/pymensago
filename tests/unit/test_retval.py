@@ -1,5 +1,6 @@
 '''Tests the RetVal class'''
 
+# pylint: disable=import-error
 from pyanselus.retval import RetVal, OK, BadParameterValue
 
 def test_setvalue():

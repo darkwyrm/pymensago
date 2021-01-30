@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 
+# pylint: disable=import-error
 from pyanselus.encryption import Password
 from pyanselus.userprofile import Profile
 from pyanselus.workspace import Workspace

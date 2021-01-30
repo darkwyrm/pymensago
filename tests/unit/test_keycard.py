@@ -7,6 +7,7 @@ import time
 
 import nacl.signing
 
+# pylint: disable=import-error
 import pyanselus.keycard as keycard
 from pyanselus.cryptostring import CryptoString
 from pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE

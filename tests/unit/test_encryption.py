@@ -5,6 +5,8 @@ import shutil
 import time
 
 import nacl.signing
+
+# pylint: disable=import-error
 from pyanselus.cryptostring import CryptoString
 import pyanselus.encryption as encryption
 
