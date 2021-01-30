@@ -19,7 +19,7 @@ class AnselusClient:
 	def __init__(self):
 		self.fs = ClientStorage()
 		self.active_profile = ''
-		self.socket = None
+		self.conn = serverconn.ServerConnection()
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
@@ -28,11 +28,9 @@ class AnselusClient:
 		if status.error():
 			return status
 		
-		if self.socket:
-			serverconn.disconnect(self.socket)
-		self.socket = None
+		self.conn.disconnect()
 		
-		status = serverconn.connect(status['host'],status['port'])
+		status = self.conn.connect(status['host'],status['port'])
 		return status
 	
 	def get_active_profile(self) -> Profile:
@@ -87,14 +85,14 @@ class AnselusClient:
 		if '"' in uid or '/' in uid:
 			return RetVal(BadParameterValue, "User ID can't contain \" or /")
 
-		conndata = serverconn.connect('127.0.0.1', port)
-		if conndata.error():
-			return conndata
+		status = self.conn.connect('127.0.0.1', port)
+		if status.error():
+			return status
 		
-		regdata = serverconn.preregister(conndata['socket'], uid)
+		regdata = serverconn.preregister(self.conn, '', uid, '')
 		if regdata.error():
 			return regdata
-		serverconn.disconnect(conndata['socket'])
+		self.conn.disconnect()
 
 		if regdata['status'] != 200:
 			return regdata
@@ -105,7 +103,7 @@ class AnselusClient:
 
 		return regdata
 
-	def register_account(self, server: str, userpass: str) -> RetVal:
+	def register_account(self, server: str, userid: str, userpass: str) -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
@@ -142,6 +140,8 @@ class AnselusClient:
 			return RetVal(ResourceExists, 'a user workspace already exists')
 
 		# Parse server string. Should be in the form of (ip/domain):portnum
+		host = ''
+		port = -1
 		if ':' in server:
 			addressparts = server.split(':')
 			host = addressparts[0]
@@ -153,7 +153,6 @@ class AnselusClient:
 		else:
 			host = server
 			port = 2001
-			serverstring = host + ':2001'
 		
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.
@@ -163,17 +162,16 @@ class AnselusClient:
 			return status
 		
 		# Add the device to the workspace
-		devkey = EncryptionPair()
+		devpair = EncryptionPair()
 
-		conndata = serverconn.connect(host, port)
-		if conndata.error():
-			return conndata
+		status = self.conn.connect(host, port)
+		if status.error():
+			return status
 		
-		regdata = serverconn.register(conndata['socket'], pw.hashstring, devkey.enctype,
-				devkey.public)
+		regdata = serverconn.register(self.conn, userid, pw.hashstring, devpair.public)
 		if regdata.error():
 			return regdata
-		serverconn.disconnect(conndata['socket'])
+		self.conn.disconnect()
 
 		# Possible status codes from register()
 		# 304 - Registration closed
@@ -197,7 +195,7 @@ class AnselusClient:
 		
 		address = '/'.join([regdata['wid'], serverstring])
 		status = auth.add_device_session(self.fs.pman.get_active_profile().db, address, 
-				regdata['devid'], devkey.enctype, devkey.public, devkey.private,
+				regdata['devid'], devpair.enctype, devpair.public, devpair.private,
 				socket.gethostname())
 		if status.error():
 			return status
