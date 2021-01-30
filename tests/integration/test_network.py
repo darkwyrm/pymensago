@@ -1,4 +1,4 @@
-from integration_setup import setup_test, config_server
+from integration_setup import setup_test, init_server
 from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import EncryptionPair, Password, SigningPair
 from pyanselus.keycard import UserEntry
@@ -17,7 +17,7 @@ def test_login():
 	'''Test the PLAIN login process functions'''
 
 	dbconn = setup_test()
-	config = config_server(dbconn)
+	config = init_server(dbconn)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -49,7 +49,7 @@ def test_iscurrent_org():
 	'''Tests the iscurrent() command'''
 
 	dbconn = setup_test()
-	config_server(dbconn)
+	init_server(dbconn)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -65,7 +65,7 @@ def test_iscurrent_org():
 def test_addentry():
 	'''Tests the addentry() command'''
 	dbconn = setup_test()
-	config = config_server(dbconn)
+	config = init_server(dbconn)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
