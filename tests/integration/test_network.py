@@ -1,4 +1,5 @@
-from integration_setup import setup_test, init_server
+# pylint: disable=import-error
+from integration_setup import setup_test, init_server, load_server_config_file
 from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import EncryptionPair, Password, SigningPair
 from pyanselus.keycard import UserEntry
@@ -13,11 +14,11 @@ def test_connect():
 	conn.disconnect()
 
 
-def test_login():
+def test_login_regcode():
 	'''Test the PLAIN login process functions'''
 
 	dbconn = setup_test()
-	config = init_server(dbconn)
+	dbdata = init_server(dbconn)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -29,14 +30,14 @@ def test_login():
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
+	status = serverconn.regcode(conn, 'admin', dbdata['admin_regcode'], password.hashstring, 
 		devid, keypair, '')
 	assert not status.error(), f"test_login(): regcode failed: {status.info()}"
 
-	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
+	status = serverconn.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_login(): login phase failed: {status.info()}"
 
-	status = serverconn.password(conn, config['admin_wid'], password.hashstring)
+	status = serverconn.password(conn, dbdata['admin_wid'], password.hashstring)
 	assert not status.error(), f"test_login(): password phase failed: {status.info()}"
 
 	status = serverconn.device(conn, devid, keypair)
@@ -65,7 +66,7 @@ def test_iscurrent_org():
 def test_addentry():
 	'''Tests the addentry() command'''
 	dbconn = setup_test()
-	config = init_server(dbconn)
+	dbdata = init_server(dbconn)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -88,14 +89,14 @@ def test_addentry():
 		CryptoString(r'CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$'	)
 	)
 
-	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
+	status = serverconn.regcode(conn, 'admin', dbdata['admin_regcode'], password.hashstring, 
 		devid, crepair, '')
 	assert not status.error(), f"test_addentry(): regcode failed: {status.info()}"
 
-	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
+	status = serverconn.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_addentry(): login phase failed: {status.info()}"
 
-	status = serverconn.password(conn, config['admin_wid'], password.hashstring)
+	status = serverconn.password(conn, dbdata['admin_wid'], password.hashstring)
 	assert not status.error(), f"test_addentry(): password phase failed: {status.info()}"
 
 	status = serverconn.device(conn, devid, crepair)
@@ -104,7 +105,7 @@ def test_addentry():
 	entry = UserEntry()
 	entry.set_fields({
 		'Name':'Administrator',
-		'Workspace-ID':config['admin_wid'],
+		'Workspace-ID':dbdata['admin_wid'],
 		'User-ID':'admin',
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':crspair.get_public_key(),
@@ -112,22 +113,44 @@ def test_addentry():
 		'Public-Encryption-Key':epair.get_public_key()
 	})
 
-	status = serverconn.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
+	status = serverconn.addentry(conn, entry, CryptoString(dbdata['ovkey']), crspair)	
 	assert not status.error(), f"test_addentry: failed to add entry: {status.info()}"
 
-	status = serverconn.iscurrent(conn, 1, config['admin_wid'])
+	status = serverconn.iscurrent(conn, 1, dbdata['admin_wid'])
 	assert not status.error(), "test_addentry(): admin iscurrent() success check failed: " \
 		f"{status.info()}"
 
-	status = serverconn.iscurrent(conn, 2, config['admin_wid'])
+	status = serverconn.iscurrent(conn, 2, dbdata['admin_wid'])
 	assert not status.error(), "test_addentry(): admin iscurrent() failure check failed: " \
 		f"{status.info()}"
 
 	conn.disconnect()
 
 
+def test_register():
+	'''Test worskpace registration'''
+	
+	# Registration testing only works when the server uses either network or public mode
+	serverdbdata = load_server_config_file()
+	if serverdbdata['global']['registration'] not in ['network', 'public']:
+		return
+
+	dbconn = setup_test()
+	init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+	
+	password = Password('MyS3cretPassw*rd')
+	devpair = EncryptionPair()
+	status = serverconn.register(conn, 'csimons', password.hashstring, devpair.public)
+	assert not status.error(), f"test_register: failed to register test account: {status.info()}"
+
+
 if __name__ == '__main__':
 	# test_connect()
-	# test_login()
+	# test_login_regcode()
 	# test_iscurrent()
-	test_addentry()
+	# test_addentry()
+	test_register()

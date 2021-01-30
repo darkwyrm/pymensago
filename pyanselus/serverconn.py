@@ -486,7 +486,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 	return RetVal()
 	
 
-def register(conn: ServerConnection, uid: str, pwhash: str, devkey: PublicKey) -> RetVal:
+def register(conn: ServerConnection, uid: str, pwhash: str, devkey: CryptoString) -> RetVal:
 	'''Creates an account on the server.'''
 	
 	if uid and len(re.findall(r'[\/" \s]',uid)) > 0:
@@ -516,7 +516,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devkey: PublicKey) -
 				'Workspace-ID' : wid,
 				'Password-Hash' : pwhash,
 				'Device-ID' : devid,
-				'Device-Key' : devkey.public.as_string()
+				'Device-Key' : devkey.as_string()
 			}
 		}
 		if uid:
