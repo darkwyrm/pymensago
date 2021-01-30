@@ -75,6 +75,10 @@ class ServerConnection:
 		self.socket = sock
 		return RetVal()
 
+	def is_connected(self) -> bool:
+		'''Returns whether or not the instance is connected to a server'''
+		return bool(self.socket is None)
+
 	def disconnect(self) -> RetVal:
 		'''Disconnects by sending a QUIT command to the server'''
 		return self.send_message({'Action':'QUIT','Data':{}})
