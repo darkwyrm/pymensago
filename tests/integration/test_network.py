@@ -111,7 +111,7 @@ def test_register():
 	status = serverconn.register(conn, 'csimons', password.hashstring, devpair.public)
 	assert not status.error(), f"test_register: failed to register test account: {status.info()}"
 
-	serverconn.disconnect()
+	conn.disconnect()
 
 
 if __name__ == '__main__':
