@@ -1,17 +1,18 @@
-import base64
 import os.path
 import platform
 import re
 import sys
 import time
 
-import nacl.secret
 import psycopg2
 import toml
 
 # pylint: disable=import-error
 from pyanselus.cryptostring import CryptoString
+from pyanselus.encryption import Password, EncryptionPair, SigningPair
 import pyanselus.keycard as keycard
+from pyanselus.retval import RetVal
+import pyanselus.serverconn as serverconn
 
 # Keys used in the various tests. 
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
@@ -277,48 +278,6 @@ def init_server(dbconn) -> dict:
 		'second_org_entry' : new_entry
 	}
 
-
-def add_workspace(account: dict, dbconn):
-	'''Creates a workspace using the supplied information in the parameter `account`'''
-	
-	cursor = dbconn.cursor()
-	cmdparts = ["INSERT INTO iwkspc_main(wid,friendly_address,password,status) VALUES('",
-				account['wid'],
-				"',"]
-	if account['uid']:
-		cmdparts.extend(["'",account['uid'],"',"])
-	else:
-		cmdparts.append("'',")
-	
-	cmdparts.extend(["'", account['serverpwhash'],"','", account['status'], "');"])
-	cmd = ''.join(cmdparts)
-	cursor.execute(cmd)
-	
-	box = nacl.secret.SecretBox(account['keys'][4]['key'])
-	for folder_name,fid in account['folder_map'].items():
-		cmd = ("INSERT INTO iwkspc_folders(wid, fid, enc_name, enc_key) "
-					"VALUES('%s','%s','%s',$$%s$$);" % 
-					( account['wid'], fid,
-					base64.b85encode(box.encrypt(bytes(folder_name, 'utf8'))).decode('utf8'),
-					account['keys'][4]['id']))
-		cursor.execute(cmd)
-
-	i = 0
-	while i < len(account['devices']):
-		cmd =	(	"INSERT INTO iwkspc_devices(wid, devid, keytype, devkey, status) "
-					"VALUES('%s','%s','%s','%s','active');" % (
-						account['wid'], account['devices'][i]['id'], 
-						account['devices'][i]['keytype'],
-						account['devices'][i]['public_b85']
-					)
-				)
-		cursor.execute(cmd)
-		i = i + 1
-	
-	cursor.close()
-	dbconn.commit()
-
-
 def validate_uuid(indata):
 	'''Validates a UUID's basic format. Does not check version information.'''
 
@@ -333,3 +292,69 @@ def validate_uuid(indata):
 		return False
 	
 	return True
+
+# Setup functions for tests and commands
+
+def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
+	'''Finishes setting up the admin account by registering it, logging in, and uploading a 
+	root keycard entry'''
+	
+	password = Password('Linguini2Pegboard*Album')
+	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
+	devpair = EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
+	)
+
+	crepair = EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
+	)
+
+	crspair = SigningPair(
+		CryptoString(r'ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|'),
+		CryptoString(r'ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;')
+	)
+
+	epair = EncryptionPair(
+		CryptoString(r'CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F'),
+		CryptoString(r'CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$'	)
+	)
+
+	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
+		devid, devpair, '')
+	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
+
+	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
+	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
+
+	status = serverconn.password(conn, config['admin_wid'], password.hashstring)
+	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
+
+	status = serverconn.device(conn, devid, devpair)
+	assert not status.error(), "init_admin(): device phase failed: " \
+		f"{status.info()}"
+
+	entry = keycard.UserEntry()
+	entry.set_fields({
+		'Name':'Administrator',
+		'Workspace-ID':config['admin_wid'],
+		'User-ID':'admin',
+		'Domain':'example.com',
+		'Contact-Request-Verification-Key':crspair.get_public_key(),
+		'Contact-Request-Encryption-Key':crepair.get_public_key(),
+		'Public-Encryption-Key':epair.get_public_key()
+	})
+
+	status = serverconn.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
+	assert not status.error(), f"init_admin: failed to add entry: {status.info()}"
+
+	status = serverconn.iscurrent(conn, 1, config['admin_wid'])
+	assert not status.error(), "init_admin(): admin iscurrent() success check failed: " \
+		f"{status.info()}"
+
+	status = serverconn.iscurrent(conn, 2, config['admin_wid'])
+	assert not status.error(), "init_admin(): admin iscurrent() failure check failed: " \
+		f"{status.info()}"
+	
+	return RetVal()
