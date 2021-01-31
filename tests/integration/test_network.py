@@ -38,10 +38,10 @@ def test_getwid():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_addentry(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"test_getwid(): failed to connect to server: {status.info()}"
 
 	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_addentry(): init_admin failed: {status.info()}"
+	assert not status.error(), f"test_getwid(): init_admin failed: {status.info()}"
 
 	status = serverconn.getwid(conn, 'admin', 'example.com')
 	assert not status.error(), f"test_getwid(): getwid failed: {status.info()}"
@@ -132,6 +132,10 @@ def test_register():
 	assert not status.error(), f"test_register: failed to register test account: {status.info()}"
 
 	conn.disconnect()
+
+
+def test_unregister():
+	'''Tests the unregister() command'''
 
 
 if __name__ == '__main__':
