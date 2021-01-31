@@ -358,3 +358,29 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		f"{status.info()}"
 	
 	return RetVal()
+
+
+def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
+	'''Creates a test user for command testing'''
+	
+	status = serverconn.preregister(conn, '', 'csimons', 'example.net')
+	assert not status.error(), "init_user(): uid preregistration failed"
+	assert status['domain'] == 'example.net' and 'wid' in status and 'regcode' in status and \
+		status['uid'] == 'csimons', "init_user(): failed to return expected data"
+
+	regdata = status
+	password = Password('MyS3cretPassw*rd')
+	devpair = EncryptionPair()
+	devid = '11111111-1111-1111-1111-111111111111'
+	status = serverconn.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
+		devid, devpair, 'example.net')
+	assert not status.error(), "init_user(): uid regcode failed"
+
+	config['user_wid'] = regdata['wid']
+	config['user_uid'] = regdata['uid']
+	config['user_domain'] = regdata['domain']
+	config['user_devid'] = devid
+	config['user_devpair'] = devpair
+	config['user_password'] = password
+
+	return RetVal()
