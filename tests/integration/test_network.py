@@ -50,7 +50,7 @@ def test_getwid():
 	conn.disconnect()
 
 
-def test_iscurrent_org():
+def test_iscurrent():
 	'''Tests the iscurrent() command'''
 
 	dbconn = setup_test()
