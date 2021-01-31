@@ -1,5 +1,6 @@
 # pylint: disable=import-error
-from integration_setup import setup_test, init_server, load_server_config_file, init_admin
+from integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
+	init_user
 from pyanselus.cryptostring import CryptoString
 from pyanselus.encryption import EncryptionPair, Password
 import pyanselus.serverconn as serverconn
@@ -136,6 +137,35 @@ def test_register():
 
 def test_unregister():
 	'''Tests the unregister() command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_unregister(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_unregister(): init_admin failed: {status.info()}"
+
+	status = init_user(conn, dbdata)
+	assert not status.error(), f"test_unregister(): init_user failed: {status.info()}"
+	
+	status = serverconn.logout(conn)
+	assert not status.error(), f"test_unregister(): logout failed: {status.info()}"
+
+	status = serverconn.login(conn, dbdata['user_wid'], CryptoString(dbdata['oekey']))
+	assert not status.error(), f"test_unregister(): user login phase failed: {status.info()}"
+
+	status = serverconn.password(conn, dbdata['user_wid'], dbdata['user_password'].hashstring)
+	assert not status.error(), f"test_unregister(): password phase failed: {status.info()}"
+
+	status = serverconn.device(conn, dbdata['user_devid'], dbdata['user_devpair'])
+	assert not status.error(), f"test_unregister(): device phase failed: {status.info()}"
+
+	status = serverconn.unregister(conn, dbdata['user_password'].hashstring, '')
+	assert not status.error(), f"test_unregister(): unregister failed: {status.info()}"
+
+	conn.disconnect()
 
 
 if __name__ == '__main__':
@@ -144,4 +174,5 @@ if __name__ == '__main__':
 	# test_iscurrent()
 	# test_addentry()
 	# test_register()
-	test_preregister_regcode()
+	# test_preregister_regcode()
+	test_unregister()
