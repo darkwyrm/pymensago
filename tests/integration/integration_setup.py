@@ -248,8 +248,6 @@ def init_server(dbconn) -> dict:
 	regcode = 'Undamaged Shining Amaretto Improve Scuttle Uptake'
 	cur.execute(f"INSERT INTO prereg(wid, uid, domain, regcode) VALUES('{admin_wid}', 'admin', "
 		f"'example.com', '{regcode}');")
-	cur.execute(f"INSERT INTO workspaces(wid, uid, domain, wtype, status) VALUES('{admin_wid}', "
-		f"'admin', 'example.com', 'individual', 'awaiting');")
 	
 	# Set up abuse/support forwarding to admin
 	abuse_wid = 'f8cfdbdf-62fe-4275-b490-736f5fdc82e3'
@@ -363,7 +361,8 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Creates a test user for command testing'''
 	
-	status = serverconn.preregister(conn, '', 'csimons', 'example.net')
+	userwid = '33333333-3333-3333-3333-333333333333'
+	status = serverconn.preregister(conn, userwid, 'csimons', 'example.net')
 	assert not status.error(), "init_user(): uid preregistration failed"
 	assert status['domain'] == 'example.net' and 'wid' in status and 'regcode' in status and \
 		status['uid'] == 'csimons', "init_user(): failed to return expected data"
@@ -376,7 +375,7 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		devid, devpair, 'example.net')
 	assert not status.error(), "init_user(): uid regcode failed"
 
-	config['user_wid'] = regdata['wid']
+	config['user_wid'] = userwid
 	config['user_uid'] = regdata['uid']
 	config['user_domain'] = regdata['domain']
 	config['user_devid'] = devid
