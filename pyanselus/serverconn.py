@@ -119,6 +119,7 @@ class ServerConnection:
 		response = RetVal()
 		response['Code'] = rawresponse['Code']
 		response['Status'] = rawresponse['Status']
+		response['Info'] = rawresponse['Info']
 		response['Data'] = rawresponse['Data']
 		return response
 	
@@ -148,10 +149,16 @@ class ServerConnection:
 
 def wrap_server_error(response) -> RetVal:
 	'''Wraps a server response into a RetVal object'''
-	return RetVal(ServerError, response['Status']).set_values({
+	out = RetVal(ServerError, response['Status']).set_values({
 		'Code' : response['Code'],
-		'Status' : response['Status']
+		'Status' : response['Status'],
+		'Info' : ''
 	})
+	
+	if 'Info' in response:
+		out['Info'] = response['Info']
+	
+	return out
 
 
 def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
