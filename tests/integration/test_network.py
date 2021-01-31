@@ -30,6 +30,26 @@ def test_connect():
 	conn.disconnect()
 
 
+def test_getwid():
+	'''Tests serverconn.getwid(), which returns a WID for an Anselus address'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_addentry(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_addentry(): init_admin failed: {status.info()}"
+
+	status = serverconn.getwid(conn, 'admin', 'example.com')
+	assert not status.error(), f"test_getwid(): getwid failed: {status.info()}"
+	assert status['Workspace-ID'] == dbdata['admin_wid'], "test_getwid(): admin wid mismatch"
+
+	conn.disconnect()
+
+
 def test_iscurrent_org():
 	'''Tests the iscurrent() command'''
 
