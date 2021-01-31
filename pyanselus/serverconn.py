@@ -398,6 +398,19 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	return RetVal()
 
 
+def logout(conn: ServerConnection) -> RetVal:
+	'''Starts the login process by sending the requested workspace ID.'''
+	status = conn.send_message({'Action':'LOGOUT', 'Data':{}})
+	if status.error():
+		return wrap_server_error(status)
+	
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	'''Continues the login process sending a password hash to the server.'''
 	if not password or not utils.validate_uuid(wid):
