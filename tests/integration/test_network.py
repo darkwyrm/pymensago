@@ -135,6 +135,33 @@ def test_register():
 	conn.disconnect()
 
 
+def test_set_password():
+	'''Test the SETPASSWORD command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_set_password(): failed to connect to server: {status.info()}"
+
+	# Moved all the test code to integration_setup.init_admin(), because that kind of setup is 
+	# needed for other tests.
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_set_password(): init_admin failed: {status.info()}"
+
+	badpassword = Password('MyS3cretPassw*rd')
+	newpassword = Password('Renovate-Baggy-Grunt-Override')
+	status = serverconn.setpassword(conn, badpassword.hashstring, newpassword.hashstring)
+	assert status.error() and status['Code'] == 402, \
+		"test_set_password: failed to catch bad password"
+	
+	status = serverconn.setpassword(conn, dbdata['admin_password'].hashstring,
+		newpassword.hashstring)
+	assert not status.error(), "test_set_password: failed to update password"
+
+	conn.disconnect()
+
+
 def test_unregister():
 	'''Tests the unregister() command'''
 	dbconn = setup_test()
@@ -169,10 +196,11 @@ def test_unregister():
 
 
 if __name__ == '__main__':
-	# test_connect()
-	# test_login_regcode()
-	# test_iscurrent()
 	# test_addentry()
-	# test_register()
+	# test_connect()
+	# test_iscurrent()
+	# test_login_regcode()
 	# test_preregister_regcode()
-	test_unregister()
+	# test_register()
+	test_set_password()
+	# test_unregister()

@@ -583,6 +583,23 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devkey: CryptoString
 	return out
 
 
+def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
+	'''Changes the password for the workspace'''
+	
+	conn.send_message({
+		'Action' : 'SETPASSWORD',
+		'Data' : {
+			'Password-Hash': pwhash,
+			'NewPassword-Hash': newpwhash
+		}
+	})
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 	'''Deletes the online account at the specified server.'''
 

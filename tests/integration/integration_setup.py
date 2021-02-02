@@ -298,6 +298,8 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	root keycard entry'''
 	
 	password = Password('Linguini2Pegboard*Album')
+	config['admin_password'] = password
+	
 	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
 	devpair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
