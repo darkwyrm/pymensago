@@ -305,21 +305,26 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
+	config['admin_devid'] = devid
+	config['admin_devpair'] = devpair
 
 	crepair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
+	config['admin_crepair'] = devpair
 
 	crspair = SigningPair(
 		CryptoString(r'ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|'),
 		CryptoString(r'ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;')
 	)
+	config['admin_crspair'] = devpair
 
 	epair = EncryptionPair(
 		CryptoString(r'CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F'),
 		CryptoString(r'CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$'	)
 	)
+	config['admin_epair'] = devpair
 
 	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
 		devid, devpair, '')

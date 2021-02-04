@@ -31,6 +31,30 @@ def test_connect():
 	conn.disconnect()
 
 
+def test_devkey():
+	'''Tests the devkey() command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_devkey(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_devkey(): init_admin failed: {status.info()}"
+
+	newdevpair = EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
+	)
+
+	status = serverconn.devkey(conn, dbdata['admin_wid'], dbdata['admin_devid'], 
+		dbdata['admin_devpair'], newdevpair)
+	assert not status.error(), f"test_devkey(): error returned: {status.info()}"
+
+	conn.disconnect()
+
+
 def test_getwid():
 	'''Tests serverconn.getwid(), which returns a WID for an Anselus address'''
 
@@ -198,9 +222,10 @@ def test_unregister():
 if __name__ == '__main__':
 	# test_addentry()
 	# test_connect()
+	test_devkey()
 	# test_iscurrent()
 	# test_login_regcode()
 	# test_preregister_regcode()
 	# test_register()
-	test_set_password()
+	# test_set_password()
 	# test_unregister()

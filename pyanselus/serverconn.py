@@ -279,6 +279,62 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 	return wrap_server_error(response)
 
 
+def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair: EncryptionPair):
+	'''Replaces the specified device's key stored on the server'''
+	if not utils.validate_uuid(devid):
+		return RetVal(AnsBadRequest, 'Invalid device ID').set_value('status', 400)
+
+	conn.send_message({
+		'Action' : "DEVKEY",
+		'Data' : { 
+			'Device-ID': devid,
+			'Old-Key': oldpair.public.as_string(),
+			'New-Key': newpair.public.as_string()
+		}
+	})
+
+	# Receive, decrypt, and return the server challenge
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 100:
+		return wrap_server_error(response)
+
+	if 'Challenge' not in response['Data'] or 'New-Challenge' not in response['Data']:
+		return RetVal(ServerError, 'server did not return both device challenges')
+	
+	status = oldpair.decrypt(response['Data']['Challenge'])
+	if status.error():
+		cancel(conn)
+		return RetVal(DecryptionFailure, 'failed to decrypt device challenge for old key')
+
+	request = {
+		'Action' : "DEVKEY",
+		'Data' : { 
+			'Response' : status['data']
+		}
+	}
+
+	status = newpair.decrypt(response['Data']['New-Challenge'])
+	if status.error():
+		cancel(conn)
+		return RetVal(DecryptionFailure, 'failed to decrypt device challenge for new key')
+	request['New-Response'] = status['data']
+	conn.send_message(request)
+
+	response = conn.read_response(None)
+	if response.error():
+		return response
+	
+	if response['Code'] == 200:
+		return RetVal()
+	
+	return wrap_server_error(response)
+
+
+
+
 def exists(conn: ServerConnection, path: str) -> RetVal:
 	'''Checks to see if a path exists on the server side.'''
 	if not path: 
