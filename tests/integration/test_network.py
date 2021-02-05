@@ -48,8 +48,7 @@ def test_devkey():
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
 
-	status = serverconn.devkey(conn, dbdata['admin_wid'], dbdata['admin_devid'], 
-		dbdata['admin_devpair'], newdevpair)
+	status = serverconn.devkey(conn, dbdata['admin_devid'], dbdata['admin_devpair'], newdevpair)
 	assert not status.error(), f"test_devkey(): error returned: {status.info()}"
 
 	conn.disconnect()

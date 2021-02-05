@@ -320,7 +320,7 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 	if status.error():
 		cancel(conn)
 		return RetVal(DecryptionFailure, 'failed to decrypt device challenge for new key')
-	request['New-Response'] = status['data']
+	request['Data']['New-Response'] = status['data']
 	conn.send_message(request)
 
 	response = conn.read_response(None)
