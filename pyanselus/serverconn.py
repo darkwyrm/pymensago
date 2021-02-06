@@ -656,6 +656,28 @@ def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 	return RetVal()
 
 
+def setworkstatus(conn: ServerConnection, wid: str, status: str):
+	'''Sets the activity status of the workspace specified. Requires admin privileges'''
+	if status not in ['active', 'disabled', 'approved']:
+		return RetVal(BadParameterValue, "status must be 'active','disabled', or 'approved'")
+	
+	if not utils.validate_uuid(wid):
+		return RetVal(BadParameterValue, 'bad wid')
+
+	conn.send_message({
+		'Action' : 'SETWORKSTATUS',
+		'Data' : {
+			'Workspace-ID': wid,
+			'Status': status
+		}
+	})
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+
+	return RetVal()
+
+
 def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 	'''Deletes the online account at the specified server.'''
 

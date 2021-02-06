@@ -185,6 +185,27 @@ def test_set_password():
 	conn.disconnect()
 
 
+def test_set_workstatus():
+	'''Test the SETWORKSTATUS command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_set_workstatus(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_set_workstatus(): init_admin failed: {status.info()}"
+
+	status = init_user(conn, dbdata)
+	assert not status.error(), f"test_set_workstatus(): init_user failed: {status.info()}"
+
+	status = serverconn.setworkstatus(conn, dbdata['user_wid'], 'disabled')
+	assert not status.error(), f"test_set_workstatus(): set_workstatus failed: {status.info()}"
+
+	conn.disconnect()
+
+
 def test_unregister():
 	'''Tests the unregister() command'''
 	dbconn = setup_test()
