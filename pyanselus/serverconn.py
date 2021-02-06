@@ -531,7 +531,7 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 
 
 def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: str, 
-	devkey: EncryptionPair, domain: str) -> RetVal:
+	devpair: EncryptionPair, domain: str) -> RetVal:
 	'''Finishes registration of a workspace'''
 	
 	request = {
@@ -540,7 +540,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 			'Reg-Code': code,
 			'Password-Hash':pwhash,
 			'Device-ID':devid,
-			'Device-Key':devkey.public.as_string()
+			'Device-Key':devpair.public.as_string()
 		}
 	}
 
@@ -566,7 +566,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 	return RetVal()
 	
 
-def register(conn: ServerConnection, uid: str, pwhash: str, devkey: CryptoString) -> RetVal:
+def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoString) -> RetVal:
 	'''Creates an account on the server.'''
 	
 	if uid and len(re.findall(r'[\/" \s]',uid)) > 0:
@@ -596,7 +596,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devkey: CryptoString
 				'Workspace-ID' : wid,
 				'Password-Hash' : pwhash,
 				'Device-ID' : devid,
-				'Device-Key' : devkey.as_string()
+				'Device-Key' : devicekey.as_string()
 			}
 		}
 		if uid:
