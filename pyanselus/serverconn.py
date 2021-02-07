@@ -695,7 +695,7 @@ def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 	return RetVal()
 
 
-def setworkstatus(conn: ServerConnection, wid: str, status: str):
+def setstatus(conn: ServerConnection, wid: str, status: str):
 	'''Sets the activity status of the workspace specified. Requires admin privileges'''
 	if status not in ['active', 'disabled', 'approved']:
 		return RetVal(BadParameterValue, "status must be 'active','disabled', or 'approved'")
@@ -704,7 +704,7 @@ def setworkstatus(conn: ServerConnection, wid: str, status: str):
 		return RetVal(BadParameterValue, 'bad wid')
 
 	conn.send_message({
-		'Action' : 'SETWORKSTATUS',
+		'Action' : 'SETSTATUS',
 		'Data' : {
 			'Workspace-ID': wid,
 			'Status': status

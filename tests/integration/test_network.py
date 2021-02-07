@@ -230,8 +230,8 @@ def test_set_password():
 	conn.disconnect()
 
 
-def test_set_workstatus():
-	'''Test the SETWORKSTATUS command'''
+def test_set_status():
+	'''Test the SETSTATUS command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 
@@ -245,7 +245,7 @@ def test_set_workstatus():
 	status = init_user(conn, dbdata)
 	assert not status.error(), f"test_set_workstatus(): init_user failed: {status.info()}"
 
-	status = serverconn.setworkstatus(conn, dbdata['user_wid'], 'disabled')
+	status = serverconn.setstatus(conn, dbdata['user_wid'], 'disabled')
 	assert not status.error(), f"test_set_workstatus(): set_workstatus failed: {status.info()}"
 
 	conn.disconnect()
@@ -292,6 +292,7 @@ if __name__ == '__main__':
 	# test_login_regcode()
 	# test_preregister_regcode()
 	# test_register()
-	test_reset_password()
+	# test_reset_password()
 	# test_set_password()
+	test_set_status()
 	# test_unregister()
