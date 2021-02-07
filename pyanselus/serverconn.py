@@ -467,6 +467,24 @@ def logout(conn: ServerConnection) -> RetVal:
 	return RetVal()
 
 
+def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
+	'''Resets a workspace's password'''
+
+	conn.send_message({
+		'Action': 'PASSCODE',
+		'Data': {
+			'Workspace-ID': wid,
+			'Reset-Code': reset_code,
+			'Password-Hash': pwhash
+		}
+	})
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	'''Continues the login process sending a password hash to the server.'''
 	if not password or not utils.validate_uuid(wid):
@@ -636,6 +654,27 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 			# Something we didn't expect -- reg closed, payment req'd, etc.
 			return wrap_server_error(response)
 	
+	return out
+
+
+def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') -> RetVal:
+	'''Resets a workspace's password'''
+
+	conn.send_message({
+		'Action': 'RESETPASSWORD',
+		'Data': {
+			'Workspace-ID': wid,
+			'Reset-Code': reset_code,
+			'Expires': expires
+		}
+	})
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	out = RetVal()
+	out['resetcode'] = response['Data']['Reset-Code']
+	out['expires'] = response['Data']['Expires']
 	return out
 
 

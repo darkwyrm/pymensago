@@ -158,6 +158,51 @@ def test_register():
 	conn.disconnect()
 
 
+def test_reset_password():
+	'''Tests password reset code'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+
+	password = Password('Linguini2Pegboard*Album')
+	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
+	keypair = EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
+	)
+	status = serverconn.regcode(conn, 'admin', dbdata['admin_regcode'], password.hashstring, 
+		devid, keypair, '')
+	assert not status.error(), f"test_reset_password(): regcode failed: {status.info()}"
+
+	status = serverconn.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
+	assert not status.error(), f"test_reset_password(): login phase failed: {status.info()}"
+
+	status = serverconn.password(conn, dbdata['admin_wid'], password.hashstring)
+	assert not status.error(), f"test_reset_password(): password phase failed: {status.info()}"
+
+	status = serverconn.device(conn, devid, keypair)
+	assert not status.error(), "test_reset_password(): device phase failed: " \
+		f"{status.info()}"
+
+	status = init_user(conn, dbdata)
+	assert not status.error(), f"test_reset_password(): user init failed: {status.info()}"
+
+	status = serverconn.reset_password(conn, dbdata['user_wid'])
+	assert not status.error(), f"test_reset_password(): password reset failed: {status.info()}"
+	resetdata = status
+
+	status = serverconn.logout(conn)
+	assert not status.error(), f"test_reset_password(): admin logout failed: {status.info()}"
+
+	newpassword = Password('SomeOth3rPassw*rd')
+	status = serverconn.passcode(conn, dbdata['user_wid'], resetdata['resetcode'],
+		newpassword.hashstring)
+	assert not status.error(), f"test_reset_password(): passcode failed: {status.info()}"
+
+
 def test_set_password():
 	'''Test the SETPASSWORD command'''
 	dbconn = setup_test()
@@ -242,10 +287,11 @@ def test_unregister():
 if __name__ == '__main__':
 	# test_addentry()
 	# test_connect()
-	test_devkey()
+	# test_devkey()
 	# test_iscurrent()
 	# test_login_regcode()
 	# test_preregister_regcode()
 	# test_register()
+	test_reset_password()
 	# test_set_password()
 	# test_unregister()
