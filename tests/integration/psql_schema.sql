@@ -35,6 +35,9 @@ CREATE TABLE orgkeys(rowid SERIAL PRIMARY KEY, creationtime TIMESTAMP NOT NULL,
 	pubkey VARCHAR(7000), privkey VARCHAR(7000) NOT NULL, 
 	purpose VARCHAR(8) NOT NULL, fingerprint VARCHAR(96) NOT NULL);
 
+CREATE TABLE quotas(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL, 
+			usage BIGINT, quota BIGINT);
+
 -- Information about individual workspaces
 
 CREATE TABLE iwkspc_folders(rowid SERIAL PRIMARY KEY, wid char(36) NOT NULL, 
