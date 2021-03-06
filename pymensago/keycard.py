@@ -13,10 +13,10 @@ import time
 import nacl.public
 import nacl.signing
 
-from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import EncryptionPair, SigningPair, Base85Encoder
-from pyanselus.hash import blake2hash
-from pyanselus.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
+from pymensago.cryptostring import CryptoString
+from pymensago.encryption import EncryptionPair, SigningPair, Base85Encoder
+from pymensago.hash import blake2hash
+from pymensago.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
 		ResourceNotFound
 
 FeatureNotAvailable = 'FeatureNotAvailable'

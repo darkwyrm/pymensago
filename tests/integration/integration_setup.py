@@ -8,11 +8,11 @@ import psycopg2
 import toml
 
 # pylint: disable=import-error
-from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import Password, EncryptionPair, SigningPair
-import pyanselus.keycard as keycard
-from pyanselus.retval import RetVal
-import pyanselus.serverconn as serverconn
+from pymensago.cryptostring import CryptoString
+from pymensago.encryption import Password, EncryptionPair, SigningPair
+import pymensago.keycard as keycard
+from pymensago.retval import RetVal
+import pymensago.serverconn as serverconn
 
 # Keys used in the various tests. 
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
@@ -64,11 +64,11 @@ import pyanselus.serverconn as serverconn
 # Initial User Primary Decryption Key: 4A!nTPZSVD#tm78d=-?1OIQ43{ipSpE;@il{lYkg
 
 def load_server_config_file() -> dict:
-	'''Loads the Anselus server configuration from the config file'''
+	'''Loads the Mensago server configuration from the config file'''
 	
-	config_file_path = '/etc/anselusd/serverconfig.toml'
+	config_file_path = '/etc/mensagod/serverconfig.toml'
 	if platform.system() == 'Windows':
-		config_file_path = 'C:\\ProgramData\\anselusd\\serverconfig.toml'
+		config_file_path = 'C:\\ProgramData\\mensagod\\serverconfig.toml'
 
 	if os.path.exists(config_file_path):
 		try:
@@ -83,8 +83,8 @@ def load_server_config_file() -> dict:
 	serverconfig['database'].setdefault('engine','postgresql')
 	serverconfig['database'].setdefault('ip','127.0.0.1')
 	serverconfig['database'].setdefault('port','5432')
-	serverconfig['database'].setdefault('name','anselus')
-	serverconfig['database'].setdefault('user','anselus')
+	serverconfig['database'].setdefault('name','mensago')
+	serverconfig['database'].setdefault('user','mensago')
 	serverconfig['database'].setdefault('password','CHANGEME')
 
 	serverconfig.setdefault('network', dict())
@@ -92,7 +92,7 @@ def load_server_config_file() -> dict:
 	serverconfig['network'].setdefault('port','2001')
 
 	serverconfig.setdefault('global', dict())
-	serverconfig['global'].setdefault('workspace_dir','/var/anselus')
+	serverconfig['global'].setdefault('workspace_dir','/var/mensago')
 	serverconfig['global'].setdefault('registration','private')
 	serverconfig['global'].setdefault('default_quota',0)
 
@@ -118,7 +118,7 @@ def setup_test():
 	try:
 		conn = psycopg2.connect(host=serverconfig['database']['ip'],
 								port=serverconfig['database']['port'],
-								database="anselus",
+								database="mensago",
 								user=serverconfig['database']['user'],
 								password=serverconfig['database']['password'])
 	except Exception as e:

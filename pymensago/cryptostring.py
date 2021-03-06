@@ -5,7 +5,7 @@ and use only capital ASCII letters, numbers, and dashes.'''
 import base64
 import re
 
-from pyanselus.retval import RetVal, BadData, BadParameterValue
+from pymensago.retval import RetVal, BadData, BadParameterValue
 
 class CryptoString:
 	'''This class encapsulates code for working with strings associated with an algorithm. This 

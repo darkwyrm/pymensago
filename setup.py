@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-	name='pyanselus',
+	name='pymensago',
 	version='0.1',
-	description='library for writing Anselus clients',
-	url='https://github.com/darkwyrm/pyanselus',
+	description='library for writing Mensago clients',
+	url='https://github.com/darkwyrm/pymensago',
 	author='Jon Yoder',
 	author_email='jsyoder@mailfence.com',
 	license='MIT',

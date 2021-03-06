@@ -1,4 +1,4 @@
-'''This module contains the functions needed by any Anselus client for 
+'''This module contains the functions needed by any Mensago client for 
 communications. Commands largely map 1-to-1 to the commands outlined in the 
 spec.'''
 
@@ -12,17 +12,17 @@ import uuid
 
 import jsonschema
 
-from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
-from pyanselus.keycard import EntryBase
-from pyanselus.retval import RetVal, BadParameterValue, ExceptionThrown, NetworkError, \
+from pymensago.cryptostring import CryptoString
+from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
+from pymensago.keycard import EntryBase
+from pymensago.retval import RetVal, BadParameterValue, ExceptionThrown, NetworkError, \
 	ResourceExists, ServerError
-import pyanselus.utils as utils
+import pymensago.utils as utils
 
 AnsBadRequest = '400-BadRequest'
 
 server_response = {
-	'title' : 'Anselus Server Response',
+	'title' : 'Mensago Server Response',
 	'type' : 'object',
 	'required' : [ 'Code', 'Status', 'Data' ],
 	'properties' : {

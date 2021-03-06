@@ -3,9 +3,9 @@
 import base64
 import sqlite3
 
-import pyanselus.encryption as encryption
-import pyanselus.utils as utils
-from pyanselus.retval import RetVal, ResourceNotFound, ResourceExists, BadParameterValue
+import pymensago.encryption as encryption
+import pymensago.utils as utils
+from pymensago.retval import RetVal, ResourceNotFound, ResourceExists, BadParameterValue
 
 def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
@@ -121,7 +121,7 @@ def add_key(db: sqlite3.Connection, key: encryption.CryptoKey, address: str) -> 
 	'''Adds an encryption key to a workspace.
 	Parameters:
 	key: CryptoKey from encryption module
-	address: full Anselus address, i.e. wid + domain
+	address: full Mensago address, i.e. wid + domain
 	
 	Returns:
 	error : string

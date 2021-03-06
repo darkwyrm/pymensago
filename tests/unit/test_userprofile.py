@@ -4,7 +4,7 @@ import shutil
 import time
 
 # pylint: disable=import-error
-from pyanselus.userprofile import Profile, ProfileManager
+from pymensago.userprofile import Profile, ProfileManager
 
 def setup_test(name):
 	'''Creates a new profile folder hierarchy'''

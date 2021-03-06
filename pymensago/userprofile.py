@@ -7,9 +7,9 @@ import shutil
 import sqlite3
 import uuid
 
-from pyanselus.retval import RetVal, ResourceExists, ExceptionThrown, BadParameterValue, \
+from pymensago.retval import RetVal, ResourceExists, ExceptionThrown, BadParameterValue, \
 		ResourceNotFound
-import pyanselus.utils as utils
+import pymensago.utils as utils
 
 BadProfileList = 'BadProfileList'
 InvalidProfile = 'InvalidProfile'
@@ -200,9 +200,9 @@ class ProfileManager:
 		else:
 			osname = platform.system().casefold()
 			if osname == 'windows':
-				self.profile_folder = os.path.join(os.getenv('LOCALAPPDATA'), 'anselus')
+				self.profile_folder = os.path.join(os.getenv('LOCALAPPDATA'), 'mensago')
 			else:
-				self.profile_folder = os.path.join(os.getenv('HOME'), '.config','anselus')
+				self.profile_folder = os.path.join(os.getenv('HOME'), '.config','mensago')
 		
 		if not os.path.exists(self.profile_folder):
 			os.mkdir(self.profile_folder)

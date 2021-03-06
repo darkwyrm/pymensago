@@ -4,9 +4,9 @@ import pathlib
 
 import sqlite3
 
-import pyanselus.auth as auth
-import pyanselus.encryption as encryption
-from pyanselus.retval import RetVal, ResourceExists, ResourceNotFound, ExceptionThrown, \
+import pymensago.auth as auth
+import pymensago.encryption as encryption
+from pymensago.retval import RetVal, ResourceExists, ResourceNotFound, ExceptionThrown, \
 		BadParameterValue
 
 class Workspace:

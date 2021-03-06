@@ -1,5 +1,5 @@
 greeting = {
-	'title' : 'Anselus Hello Message',
+	'title' : 'Mensago Hello Message',
 	'type' : 'object',
 	'required' : [ 'Name', 'Version', 'Code', 'Status' ],
 	'properties' : {
@@ -19,7 +19,7 @@ greeting = {
 }
 
 server_response = {
-	'title' : 'Anselus Server Response',
+	'title' : 'Mensago Server Response',
 	'type' : 'object',
 	'required' : [ 'Code', 'Status', 'Data' ],
 	'properties' : {

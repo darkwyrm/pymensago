@@ -8,9 +8,9 @@ import time
 import nacl.signing
 
 # pylint: disable=import-error
-import pyanselus.keycard as keycard
-from pyanselus.cryptostring import CryptoString
-from pyanselus.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
+import pymensago.keycard as keycard
+from pymensago.cryptostring import CryptoString
+from pymensago.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 
 # Keys used in the various tests
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
@@ -540,17 +540,17 @@ def test_is_data_compliant_org():
 
 	entry.set_field('Contact-Admin', 'admin/example.com')
 	assert entry.is_data_compliant().error(), \
-		'is_data_compliant_org: passed an entry with an Anselus address for Contact-Admin'
+		'is_data_compliant_org: passed an entry with an Mensago address for Contact-Admin'
 	entry.set_field('Contact-Admin', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
 
 	entry.set_field('Contact-Abuse', 'abuse/example.com')
 	assert entry.is_data_compliant().error(), \
-		'is_data_compliant_org: passed an entry with an Anselus address for Contact-abuse'
+		'is_data_compliant_org: passed an entry with an Mensago address for Contact-abuse'
 	entry.set_field('Contact-Abuse', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
 
 	entry.set_field('Contact-Support', 'support/example.com')
 	assert entry.is_data_compliant().error(), \
-		'is_data_compliant_org: passed an entry with an Anselus address for Contact-Support'
+		'is_data_compliant_org: passed an entry with an Mensago address for Contact-Support'
 	entry.set_field('Contact-Support', '54025843-bacc-40cc-a0e4-df48a099c2f3/example.com')
 
 	entry.set_field('Language', 'en-us')

@@ -3,4 +3,4 @@
 tests/unit/testfiles/*
 .cache/*
 testcards/*
-pyanselus.egg-info/*
+pymensago.egg-info/*

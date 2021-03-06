@@ -12,9 +12,9 @@ import nacl.pwhash
 import nacl.secret
 import nacl.signing
 import nacl.utils
-from pyanselus.cryptostring import CryptoString
-from pyanselus.hash import blake2hash
-from pyanselus.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
+from pymensago.cryptostring import CryptoString
+from pymensago.hash import blake2hash
+from pymensago.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
 	ExceptionThrown, InternalError, ResourceExists, ResourceNotFound
 
 VerificationError = 'VerificationError'
@@ -45,7 +45,7 @@ __secret_key_schema = {
 }
 
 class CryptoKey:
-	'''Defines a generic interface to an Anselus encryption key, which contains more
+	'''Defines a generic interface to an Mensago encryption key, which contains more
 	information than just the key itself'''
 	def __init__(self):
 		self.id = str(uuid.uuid4())
@@ -207,7 +207,7 @@ def load_encryptionpair(path: str) -> RetVal:
 		return RetVal(ExceptionThrown, e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Anselus JSON keypair')
+		return RetVal(BadData, 'File does not contain an Mensago JSON keypair')
 
 	try:
 		jsonschema.validate(indata, __encryption_pair_schema)
@@ -382,7 +382,7 @@ def load_signingpair(path: str) -> RetVal:
 		return RetVal(ExceptionThrown, e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Anselus JSON signing pair')
+		return RetVal(BadData, 'File does not contain an Mensago JSON signing pair')
 
 	try:
 		jsonschema.validate(indata, __signing_pair_schema)
@@ -486,7 +486,7 @@ def load_secretkey(path: str) -> RetVal:
 		return RetVal(ExceptionThrown, e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Anselus JSON secret key')
+		return RetVal(BadData, 'File does not contain an Mensago JSON secret key')
 
 	try:
 		jsonschema.validate(indata, __secret_key_schema)
@@ -536,7 +536,7 @@ def check_password_complexity(indata: str) -> RetVal:
 	strength_score = 0
 	strength_strings = [ 'error', 'very weak', 'weak', 'medium', 'strong', 'very strong']
 
-	# Anselus *absolutely* permits UTF-8-encoded passwords. This greatly increases the
+	# Mensago *absolutely* permits UTF-8-encoded passwords. This greatly increases the
 	# keyspace
 	try:
 		indata.encode().decode('ascii')

@@ -1,4 +1,4 @@
-'''Module for encapsulating Anselus' RPC protocol'''
+'''Module for encapsulating Mensago' RPC protocol'''
 
 import json
 import socket
@@ -6,9 +6,9 @@ import socket
 import jsonschema
 
 
-from pyanselus.retval import RetVal, ExceptionThrown, NetworkError, \
+from pymensago.retval import RetVal, ExceptionThrown, NetworkError, \
 	ResourceNotFound
-import pyanselus.rpc_schemas
+import pymensago.rpc_schemas
 
 InvalidJSON = 'InvalidJSON'
 InvalidMessage = 'InvalidMessage'
@@ -21,7 +21,7 @@ CONN_TIMEOUT = 900.0
 READ_BUFFER_SIZE = 8192
 
 class ServerConnection:
-	'''Represents a connection to an Anselus server'''
+	'''Represents a connection to an Mensago server'''
 	
 	def __init__(self):
 		self.__sock = None
@@ -52,7 +52,7 @@ class ServerConnection:
 			self.__sock.connect((self.ip, port))
 			self.port = port
 			
-			status = self.read_msg(pyanselus.rpc_schemas.greeting)
+			status = self.read_msg(pymensago.rpc_schemas.greeting)
 			if not status.error():
 				self.version = status['msg']['version'].strip()
 

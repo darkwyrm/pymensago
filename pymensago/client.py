@@ -1,16 +1,16 @@
 '''This module provides a simple interface to the handling storage and networking needs for an 
-Anselus client'''
+Mensago client'''
 import socket
 
-import pyanselus.auth as auth
-import pyanselus.serverconn as serverconn
-from pyanselus.encryption import Password, EncryptionPair
-from pyanselus.retval import RetVal, InternalError, BadParameterValue, ResourceExists
-from pyanselus.storage import ClientStorage
-from pyanselus.userprofile import Profile
-from pyanselus.workspace import Workspace
+import pymensago.auth as auth
+import pymensago.serverconn as serverconn
+from pymensago.encryption import Password, EncryptionPair
+from pymensago.retval import RetVal, InternalError, BadParameterValue, ResourceExists
+from pymensago.storage import ClientStorage
+from pymensago.userprofile import Profile
+from pymensago.workspace import Workspace
 
-class AnselusClient:
+class MensagoClient:
 	'''
 	The role of this class is to provide an interface to the client as a whole, not just the 
 	storage aspects. It does duplicate the ClientStorage interface,	but it also handles network 

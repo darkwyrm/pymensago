@@ -1,7 +1,7 @@
 '''Implements tests for the utils module'''
 
 # pylint: disable=import-error
-import pyanselus.utils as utils
+import pymensago.utils as utils
 
 def test_validate_uuid():
 	'''Tests utils.validate_uuid'''

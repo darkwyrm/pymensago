@@ -1,9 +1,9 @@
 # pylint: disable=import-error
 from integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
 	init_user
-from pyanselus.cryptostring import CryptoString
-from pyanselus.encryption import EncryptionPair, Password
-import pyanselus.serverconn as serverconn
+from pymensago.cryptostring import CryptoString
+from pymensago.encryption import EncryptionPair, Password
+import pymensago.serverconn as serverconn
 
 def test_addentry():
 	'''Tests the addentry() command'''
@@ -55,7 +55,7 @@ def test_devkey():
 
 
 def test_getwid():
-	'''Tests serverconn.getwid(), which returns a WID for an Anselus address'''
+	'''Tests serverconn.getwid(), which returns a WID for an Mensago address'''
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)

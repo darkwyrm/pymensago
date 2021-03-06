@@ -2,9 +2,9 @@
 
 import re
 
-from pyanselus.retval import RetVal, BadParameterValue
+from pymensago.retval import RetVal, BadParameterValue
 
-# This function is needed because the Anselus admin ID is purposely nonconformant -- a user can
+# This function is needed because the Mensago admin ID is purposely nonconformant -- a user can
 # *never* accidentally get assigned the value, and for the purposes of the platform, version 
 # information doesn't matter.
 def validate_uuid(indata):
@@ -24,7 +24,7 @@ def validate_uuid(indata):
 
 
 def split_address(address):
-	'''Splits an Anselus numeric address into its two parts.'''
+	'''Splits an Mensago numeric address into its two parts.'''
 	parts = address.split('/')
 	if len(parts) != 2 or \
 		not parts[0] or \

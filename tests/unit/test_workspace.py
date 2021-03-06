@@ -4,9 +4,9 @@ import shutil
 import time
 
 # pylint: disable=import-error
-from pyanselus.encryption import Password
-from pyanselus.userprofile import Profile
-from pyanselus.workspace import Workspace
+from pymensago.encryption import Password
+from pymensago.userprofile import Profile
+from pymensago.workspace import Workspace
 
 def setup_test(name):
 	'''Creates a new test folder hierarchy'''

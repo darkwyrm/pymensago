@@ -7,8 +7,8 @@ import time
 import nacl.signing
 
 # pylint: disable=import-error
-from pyanselus.cryptostring import CryptoString
-import pyanselus.encryption as encryption
+from pymensago.cryptostring import CryptoString
+import pymensago.encryption as encryption
 
 def setup_test(name):
 	'''Creates a test folder hierarchy'''
