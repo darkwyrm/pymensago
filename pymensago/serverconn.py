@@ -14,11 +14,54 @@ import jsonschema
 
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
-from pymensago.errorcodes import *
+from pymensago.errorcodes import *	# pylint: disable=wildcard-import
 from pymensago.keycard import EntryBase
 from pymensago.retval import RetVal, BadParameterValue, ExceptionThrown, NetworkError, \
 	ResourceExists, ServerError
 import pymensago.utils as utils
+
+__errcode_map = {
+	'100': MsgContinue,
+	'101': MsgPending,
+	'102': MsgItem,
+	'103': MsgUpdate,
+	'104': MsgTransfer,
+
+	# Success Codes
+	'200': MsgOK,
+	'201': MsgRegistered,
+	'202': MsgUnregistered,
+
+	# Server Error Codes
+	'300': MsgInternal,
+	'301': MsgNotImplemented,
+	'302': MsgServerMaint,
+	'303': MsgServerUnavail,
+	'304': MsgRegClosed,
+	'305': MsgInterrupted,
+	'306': MsgKeyFail,
+	'307': MsgDeliveryFailLimit,
+	'308': MsgDeliveryDelay,
+	'309': MsgAlgoNotSupported,
+
+	# Client Error Codes
+	'400': MsgBadRequest,
+	'401': MsgUnauthorized,
+	'402': MsgAuthFailure,
+	'403': MsgForbidden,
+	'404': MsgNotFound,
+	'405': MsgTerminated,
+	'406': MsgPaymentReqd,
+	'407': MsgUnavailable,
+	'408': MsgResExists,
+	'409': MsgQuotaInsuff,
+	'410': MsgHashMismatch,
+	'411': MsgBadKeycard,
+	'412': MsgNonComKeycard,
+	'413': MsgInvalidSig,
+	'414': MsgLimitReached,
+	'415': MsgExpired
+}
 
 server_response = {
 	'title' : 'Mensago Server Response',
@@ -148,7 +191,7 @@ class ServerConnection:
 
 def wrap_server_error(response) -> RetVal:
 	'''Wraps a server response into a RetVal object'''
-	out = RetVal(ServerError, response['Status']).set_values({
+	out = RetVal(__errcode_map.get(response['Code'],ServerError), response['Status']).set_values({
 		'Code' : response['Code'],
 		'Status' : response['Status'],
 		'Info' : ''
