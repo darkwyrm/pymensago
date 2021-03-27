@@ -14,12 +14,11 @@ import jsonschema
 
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
+from pymensago.errorcodes import *
 from pymensago.keycard import EntryBase
 from pymensago.retval import RetVal, BadParameterValue, ExceptionThrown, NetworkError, \
 	ResourceExists, ServerError
 import pymensago.utils as utils
-
-AnsBadRequest = '400-BadRequest'
 
 server_response = {
 	'title' : 'Mensago Server Response',
@@ -231,10 +230,34 @@ def cancel(conn: ServerConnection):
 	return wrap_server_error(response)
 
 
+def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
+	'''Copies a file to the requested directory and returns the name of the new file'''
+	if not srcfile or not destdir:
+		return RetVal(MsgBadRequest).set_value('status', 400)
+	
+	request = {
+		'Action' : 'COPY',
+		'Data' : {
+			'SourceFile' : srcfile,
+			'DestDir' : destdir
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal().set_value('name', response['CopyName'])
+
+
 def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVal:
 	'''Completes the login process by submitting device ID and its session string.'''
 	if not utils.validate_uuid(devid):
-		return RetVal(AnsBadRequest, 'Invalid device ID').set_value('status', 400)
+		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
 	conn.send_message({
 		'Action' : "DEVICE",
@@ -282,7 +305,7 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair: EncryptionPair):
 	'''Replaces the specified device's key stored on the server'''
 	if not utils.validate_uuid(devid):
-		return RetVal(AnsBadRequest, 'Invalid device ID').set_value('status', 400)
+		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
 	conn.send_message({
 		'Action' : "DEVKEY",
@@ -331,8 +354,6 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 		return RetVal()
 	
 	return wrap_server_error(response)
-
-
 
 
 def exists(conn: ServerConnection, path: str) -> RetVal:
@@ -396,7 +417,7 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 	'''Finds out if an entry index is current. If wid is empty, the index is checked for the 
 	organization.'''
 	if wid and not utils.validate_uuid(wid):
-		return RetVal(AnsBadRequest).set_value('status', 400)
+		return RetVal(MsgBadRequest).set_value('status', 400)
 	
 	request = {
 		'Action' : 'ISCURRENT',
