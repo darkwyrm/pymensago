@@ -445,6 +445,31 @@ def exists(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal().set_value('exists', True)
 
 
+def getquotainfo(conn: ServerConnection, wid='') -> RetVal:
+	'''Gets the disk usage and limit for the current workspace. If in an administrator session, 
+	another workspace may be specified.'''
+	if wid and not utils.validate_uuid(wid):
+		return RetVal(MsgBadRequest).set_value('Status', 400)
+	
+	request = {
+		'Action' : 'GETQUOTAINFO',
+		'Data' : {}
+	}
+	if wid:
+		request['Data']['Workspace-ID'] = wid
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal().set_values({'usage': response['Data']['DiskUsage'], 
+		'quota': response['Data']['QuotaSize']})
+
+
 def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	'''Looks up a wid based on the specified user ID and optional domain'''
 
