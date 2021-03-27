@@ -276,7 +276,7 @@ def cancel(conn: ServerConnection):
 def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 	'''Copies a file to the requested directory and returns the name of the new file'''
 	if not srcfile or not destdir:
-		return RetVal(MsgBadRequest).set_value('status', 400)
+		return RetVal(MsgBadRequest).set_value('Status', 400)
 	
 	request = {
 		'Action' : 'COPY',
@@ -295,6 +295,29 @@ def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 		return wrap_server_error(response)
 	
 	return RetVal().set_value('name', response['CopyName'])
+
+
+def delete(conn: ServerConnection, path: str) -> RetVal:
+	'''Deletes a file'''
+	if not path:
+		return RetVal(MsgBadRequest).set_value('Status', 400)
+	
+	request = {
+		'Action' : 'DELETE',
+		'Data' : {
+			'Path' : path
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
 
 
 def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVal:
