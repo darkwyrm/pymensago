@@ -12,6 +12,7 @@ from pymensago.cryptostring import CryptoString
 from pymensago.encryption import Password, EncryptionPair, SigningPair
 import pymensago.keycard as keycard
 from pymensago.retval import RetVal
+import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
 
 # Keys used in the various tests. 
@@ -326,17 +327,17 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	)
 	config['admin_epair'] = devpair
 
-	status = serverconn.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
+	status = iscmds.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
 		devid, devpair, '')
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
 
-	status = serverconn.login(conn, config['admin_wid'], CryptoString(config['oekey']))
+	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
 
-	status = serverconn.password(conn, config['admin_wid'], password.hashstring)
+	status = iscmds.password(conn, config['admin_wid'], password.hashstring)
 	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
 
-	status = serverconn.device(conn, devid, devpair)
+	status = iscmds.device(conn, devid, devpair)
 	assert not status.error(), "init_admin(): device phase failed: " \
 		f"{status.info()}"
 
@@ -351,14 +352,14 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		'Public-Encryption-Key':epair.get_public_key()
 	})
 
-	status = serverconn.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
+	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
 	assert not status.error(), f"init_admin: failed to add entry: {status.info()}"
 
-	status = serverconn.iscurrent(conn, 1, config['admin_wid'])
+	status = iscmds.iscurrent(conn, 1, config['admin_wid'])
 	assert not status.error(), "init_admin(): admin iscurrent() success check failed: " \
 		f"{status.info()}"
 
-	status = serverconn.iscurrent(conn, 2, config['admin_wid'])
+	status = iscmds.iscurrent(conn, 2, config['admin_wid'])
 	assert not status.error(), "init_admin(): admin iscurrent() failure check failed: " \
 		f"{status.info()}"
 	
@@ -369,7 +370,7 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Creates a test user for command testing'''
 	
 	userwid = '33333333-3333-3333-3333-333333333333'
-	status = serverconn.preregister(conn, userwid, 'csimons', 'example.net')
+	status = iscmds.preregister(conn, userwid, 'csimons', 'example.net')
 	assert not status.error(), "init_user(): uid preregistration failed"
 	assert status['domain'] == 'example.net' and 'wid' in status and 'regcode' in status and \
 		status['uid'] == 'csimons', "init_user(): failed to return expected data"
@@ -378,7 +379,7 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
 	devid = '11111111-1111-1111-1111-111111111111'
-	status = serverconn.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
+	status = iscmds.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
 		devid, devpair, 'example.net')
 	assert not status.error(), "init_user(): uid regcode failed"
 
