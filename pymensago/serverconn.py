@@ -533,6 +533,42 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 	return RetVal().set_value('iscurrent', bool(response['Data']['Is-Current'] == 'YES'))
 
 
+def listfiles(conn: ServerConnection, epochTime=0) -> RetVal:
+	'''Obtains a list of entries in the current directory. If epochTime is specified, all files 
+	created after the specified time are returned.'''
+
+	request = {
+		'Action' : 'LIST',
+		'Data' : {}
+	}
+	if epochTime > 0:
+		request['Data']['Time'] = epochTime
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal().set_value('files', response['Data']['Files'])
+	
+
+def listdirs(conn: ServerConnection) -> RetVal:
+	'''Obtains a list of subdirectories in the current directory.'''
+
+	conn.send_message({'Action' : 'LISTDIRS','Data' : {}})
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal().set_value('directories', response['Data']['directories'])
+	
+
 def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	'''Starts the login process by sending the requested workspace ID.'''
 	if not utils.validate_uuid(wid):
@@ -573,6 +609,28 @@ def logout(conn: ServerConnection) -> RetVal:
 		return wrap_server_error(status)
 	
 	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
+def mkdir(conn: ServerConnection, path: str) -> RetVal:
+	'''Creates one or more directories. 'path' is a Mensago-style path and the command ensures that 
+	the directory exists, creating any parent directories as needed. '''
+
+	request = {
+		'Action' : 'MKDIR',
+		'Data' : {
+			'Path': path
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
