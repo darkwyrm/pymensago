@@ -2,6 +2,7 @@
 keycard.'''
 
 import base64
+import calendar
 import datetime
 import hashlib
 import os
@@ -772,7 +773,11 @@ class UserEntry(EntryBase):
 		
 		self.fields['Index'] = '1'
 		self.fields['Time-To-Live'] = '7'
-		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
+
+		# Introduce a 5-minute delay to ensure that any minor clock differences between the client
+		# and the server aren't going to cause trouble.
+		timestamp = time.gmtime(calendar.timegm(time.gmtime()) - 300)
+		self.fields['Timestamp'] = time.strftime('%Y%m%dT%H%M%SZ', timestamp)
 		self.set_expiration()
 	
 	def chain(self, key: CryptoString, rotate_optional: bool) -> RetVal:
