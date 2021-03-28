@@ -637,6 +637,28 @@ def mkdir(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal()
 
 
+def move(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
+	'''Moves the specified source file to the destination directory'''
+
+	request = {
+		'Action' : 'MOVE',
+		'Data' : {
+			'SourceFile': srcfile,
+			'DestDir': destdir
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
 	'''Resets a workspace's password'''
 
@@ -846,6 +868,29 @@ def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') 
 	out['resetcode'] = response['Data']['Reset-Code']
 	out['expires'] = response['Data']['Expires']
 	return out
+
+
+def rmdir(conn: ServerConnection, path: str, recursive: bool) -> RetVal:
+	'''Removes a directory. If recursive is True, all files and subdirectories are also deleted.'''
+
+	request = {
+		'Action' : 'RMDIR',
+		'Data' : {
+			'Path': path
+		}
+	}
+	if recursive:
+		request['Data']['Recursive'] = 'True'
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
 
 
 def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
