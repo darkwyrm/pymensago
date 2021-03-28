@@ -893,6 +893,27 @@ def rmdir(conn: ServerConnection, path: str, recursive: bool) -> RetVal:
 	return RetVal()
 
 
+def select(conn: ServerConnection, path: str) -> RetVal:
+	'''Changes the working directory on the server'''
+
+	request = {
+		'Action' : 'SELECT',
+		'Data' : {
+			'Path': path
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 	'''Changes the password for the workspace'''
 	
