@@ -117,7 +117,33 @@ def test_exists():
 	conn.disconnect()
 
 
-# def test_getquotainfo():
+def test_getquotainfo():
+	'''Tests the GETQUOTAINFO command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_getquotainfo(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_getquotainfo: init_admin failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+
+	status = make_test_file(admin_dir)
+	assert not status.error(), f"test_getquotainfo(): error creating test file: {status.info()}"
+
+	status = serverconn.getquotainfo(conn)
+	assert not status.error(), f"test_getquotainfo(): error checking for test file: {status.info()}"
+
+	conn.disconnect()
+
+
 # def test_list():
 # def test_listdirs():
 
@@ -151,5 +177,6 @@ def test_mkdir():
 if __name__ == '__main__':
 	# test_copy()
 	# test_delete()
-	test_exists()
+	# test_exists()
+	test_getquotainfo()
 	# test_mkdir()
