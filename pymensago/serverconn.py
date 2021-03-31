@@ -218,7 +218,7 @@ def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
-	return RetVal().set_value('name', response['CopyName'])
+	return RetVal().set_value('name', response['Data']['NewName'])
 
 
 def delete(conn: ServerConnection, path: str) -> RetVal:
