@@ -316,10 +316,16 @@ def listfiles(conn: ServerConnection, path='', epochTime=0) -> RetVal:
 	return RetVal().set_value('files', response['Data']['Files'])
 	
 
-def listdirs(conn: ServerConnection) -> RetVal:
+def listdirs(conn: ServerConnection, path='') -> RetVal:
 	'''Obtains a list of subdirectories in the current directory.'''
 
-	conn.send_message({'Action' : 'LISTDIRS','Data' : {}})
+	request = {
+		'Action' : 'LISTDIRS',
+		'Data' : {}
+	}
+	if path:
+		request['Data']['Path'] = path
+	conn.send_message(request)
 	response = conn.read_response(server_response)
 	if response.error():
 		return response
@@ -327,7 +333,7 @@ def listdirs(conn: ServerConnection) -> RetVal:
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
-	return RetVal().set_value('directories', response['Data']['directories'])
+	return RetVal().set_value('directories', response['Data']['Directories'])
 	
 
 def mkdir(conn: ServerConnection, path: str) -> RetVal:

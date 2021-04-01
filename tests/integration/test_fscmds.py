@@ -174,7 +174,6 @@ def test_listfiles():
 		fhandle.write('0' * 500)
 		fhandle.close()
 
-	
 	status = serverconn.listfiles(conn, f"/ {dbdata['admin_wid']} {subdir}", 3000)
 	assert not status.error() and len(status['files']) == 3, \
 		f"test_listfiles(): error listing test files: {status.info()}"
@@ -182,7 +181,41 @@ def test_listfiles():
 	conn.disconnect()
 
 
-# def test_listdirs():
+def test_listdirs():
+	'''Tests the LISTDIRS command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_listdirs(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_listdirs: init_admin failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+	subdir = '11111111-1111-1111-1111-111111111111'
+
+	os.mkdir(os.path.join(admin_dir, subdir))
+	for i in range(2,7):
+		tempname = '-'.join([(str(i) * 8), (str(i) * 4), (str(i) * 4), (str(i) * 4), (str(i) * 12)])
+		try:
+			os.mkdir(os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111', tempname))
+		except Exception as e:
+			assert False, 'test_listdirs: failed to create test directory: ' + e
+		
+		make_test_file(os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111'))
+
+	status = serverconn.listdirs(conn, f"/ {dbdata['admin_wid']} {subdir}")
+	assert not status.error() and len(status['directories']) == 5, \
+		f"test_listdirs(): error listing test directories: {status.info()}"
+
+	conn.disconnect()
+
 
 
 def test_mkdir():
@@ -216,5 +249,6 @@ if __name__ == '__main__':
 	# test_delete()
 	# test_exists()
 	# test_getquotainfo()
-	test_listfiles()
+	# test_listfiles()
+	test_listdirs()
 	# test_mkdir()
