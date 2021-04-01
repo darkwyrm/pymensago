@@ -144,7 +144,44 @@ def test_getquotainfo():
 	conn.disconnect()
 
 
-# def test_list():
+def test_listfiles():
+	'''Tests the LIST command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_listfiles(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_listfiles: init_admin failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+	subdir = '11111111-1111-1111-1111-111111111111'
+
+	os.mkdir(os.path.join(admin_dir, subdir))
+	for i in range(1,6):
+		tempname = '.'.join([str(1000 * i), '500', str(uuid.uuid4())])
+		try:
+			fhandle = open(os.path.join(admin_dir, subdir, tempname), 'w')
+		except Exception as e:
+			assert False, f"test_listfiles: failed to create test file: {str(e)}"
+		
+		fhandle.write('0' * 500)
+		fhandle.close()
+
+	
+	status = serverconn.listfiles(conn, f"/ {dbdata['admin_wid']} {subdir}", 3000)
+	assert not status.error() and len(status['files']) == 3, \
+		f"test_listfiles(): error listing test files: {status.info()}"
+
+	conn.disconnect()
+
+
 # def test_listdirs():
 
 
@@ -178,5 +215,6 @@ if __name__ == '__main__':
 	# test_copy()
 	# test_delete()
 	# test_exists()
-	test_getquotainfo()
+	# test_getquotainfo()
+	test_listfiles()
 	# test_mkdir()

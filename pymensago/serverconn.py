@@ -292,7 +292,7 @@ def getquotainfo(conn: ServerConnection, wid='') -> RetVal:
 		'quota': response['Data']['QuotaSize']})
 
 
-def listfiles(conn: ServerConnection, epochTime=0) -> RetVal:
+def listfiles(conn: ServerConnection, path='', epochTime=0) -> RetVal:
 	'''Obtains a list of entries in the current directory. If epochTime is specified, all files 
 	created after the specified time are returned.'''
 
@@ -300,8 +300,10 @@ def listfiles(conn: ServerConnection, epochTime=0) -> RetVal:
 		'Action' : 'LIST',
 		'Data' : {}
 	}
+	if path:
+		request['Data']['Path'] = path
 	if epochTime > 0:
-		request['Data']['Time'] = epochTime
+		request['Data']['Time'] = str(epochTime)
 	conn.send_message(request)
 
 	response = conn.read_response(server_response)
