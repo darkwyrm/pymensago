@@ -217,7 +217,6 @@ def test_listdirs():
 	conn.disconnect()
 
 
-
 def test_mkdir():
 	'''Tests the MKDIR command'''
 
@@ -238,7 +237,37 @@ def test_mkdir():
 
 	conn.disconnect()
 
-# def test_move():
+def test_move():
+	'''Tests the MOVE command'''
+	
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_move(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_move: init_admin failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+	inner_dir = os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111')
+	os.mkdir(inner_dir)
+
+	status = make_test_file(admin_dir)
+	assert not status.error(), f"test_move(): error creating test file: {status.info()}"
+	testname = status['name']
+
+	status = serverconn.copy(conn, f"/ {dbdata['admin_wid']} {testname}", 
+		f"/ {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+	assert not status.error(), f"test_move(): error moving test file: {status.info()}"
+
+	conn.disconnect()
+
+
 # def test_rmdir():
 # def test_select():
 # def test_setquota():
@@ -250,5 +279,6 @@ if __name__ == '__main__':
 	# test_exists()
 	# test_getquotainfo()
 	# test_listfiles()
-	test_listdirs()
+	# test_listdirs()
 	# test_mkdir()
+	test_move()
