@@ -361,6 +361,7 @@ def test_upload():
 
 	conn.disconnect()
 
+# TODO: Implement a test_upload_resume test
 
 if __name__ == '__main__':
 	# test_copy()
