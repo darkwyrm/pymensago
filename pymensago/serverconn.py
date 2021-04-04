@@ -424,6 +424,28 @@ def select(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal()
 
 
+def setquota(conn: ServerConnection, wid: str, size: int) -> RetVal:
+	'''Admin-only: set size of a workspace's quota'''
+
+	request = {
+		'Action' : 'SETQUOTA',
+		'Data' : {
+			'Workspaces': wid,
+			'Size': str(size)
+		}
+	}
+	conn.send_message(request)
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
 def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	offset=-1, hashstr=''):
 	'''Uploads a local file to the server. tempname and offset are passed to the function if 

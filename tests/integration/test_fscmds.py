@@ -311,7 +311,27 @@ def test_select():
 	conn.disconnect()
 
 
-# def test_setquota():
+def test_setquota():
+	'''Tests the SETQUOTA command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_setquota(): failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_setquota: init_admin failed: {status.info()}"
+
+	status = serverconn.setquota(conn, dbdata['admin_wid'], 10240)
+	assert not status.error(), f"test_setquota: quota size change failed: {status.info()}"
+
+	conn.disconnect()
+
+
 # def test_upload():
 
 if __name__ == '__main__':
@@ -323,4 +343,5 @@ if __name__ == '__main__':
 	# test_listdirs()
 	# test_mkdir()
 	# test_move()
-	test_select()
+	# test_select()
+	test_setquota()
