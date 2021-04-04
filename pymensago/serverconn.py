@@ -477,7 +477,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	conn.send_message({
 		'Action': 'UPLOAD',
 		'Data': {
-			'Size': filesize,
+			'Size': str(filesize),
 			'Hash': hashstr,
 			'Path': serverpath
 		}
@@ -523,4 +523,8 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 			})
 	handle.close()
 
-	return RetVal()
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+
+	return RetVal().set_value("FileName", response['Data']['FileName'])

@@ -279,7 +279,7 @@ def test_rmdir():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_rmdir(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"test_rmdir: failed to connect to server: {status.info()}"
 
 	status = init_admin(conn, dbdata)
 	assert not status.error(), f"test_rmdir: init_admin failed: {status.info()}"
@@ -300,7 +300,7 @@ def test_select():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_select(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"test_select: failed to connect to server: {status.info()}"
 
 	status = init_admin(conn, dbdata)
 	assert not status.error(), f"test_select: init_admin failed: {status.info()}"
@@ -321,7 +321,7 @@ def test_setquota():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_setquota(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"test_setquota: failed to connect to server: {status.info()}"
 
 	status = init_admin(conn, dbdata)
 	assert not status.error(), f"test_setquota: init_admin failed: {status.info()}"
@@ -332,7 +332,35 @@ def test_setquota():
 	conn.disconnect()
 
 
-# def test_upload():
+def test_upload():
+	'''Tests the UPLOAD command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_upload: failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_upload: init_admin failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+	inner_dir = f"/ {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111"
+	serverconn.mkdir(conn, inner_dir)
+
+	status = make_test_file(admin_dir)
+	assert not status.error(), f"test_upload: error creating test file: {status.info()}"
+	testname = status['name']
+
+	status = serverconn.upload(conn, f"{admin_dir}\\{testname}", inner_dir)
+	assert not status.error(), f"test_upload: upload failed: {status.info()}"
+	assert "FileName" in status, "test_upload: file name missing"
+
+	conn.disconnect()
+
 
 if __name__ == '__main__':
 	# test_copy()
@@ -344,4 +372,5 @@ if __name__ == '__main__':
 	# test_mkdir()
 	# test_move()
 	# test_select()
-	test_setquota()
+	# test_setquota()
+	test_upload()
