@@ -77,4 +77,4 @@ def hashfile(path: str, algorithm='BLAKE2B-256') -> RetVal:
 	
 	handle.close()
 
-	return RetVal().set_value('hash', base64.b85encode(hasher.digest()).decode())
+	return RetVal().set_value('hash', f"{algorithm}:{base64.b85encode(hasher.digest()).decode()}")
