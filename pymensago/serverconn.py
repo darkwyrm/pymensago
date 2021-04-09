@@ -244,6 +244,71 @@ def delete(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal()
 
 
+def download(conn: ServerConnection, server_path: str, local_path: str, offset=-1):
+	'''Downloads a file from the server. If an offset is given, resuming an interrupted download 
+	is possible.'''
+
+	try:
+		handle = open(local_path, "wb")
+	except Exception as e:
+		return RetVal(ExceptionThrown, e)
+	
+	request = {
+		'Action' : 'DOWNLOAD',
+		'Data' : {
+			'Path' : server_path
+		}
+	}
+	if offset > 0:
+		request['Data']['Offset'] = str(offset)
+	
+	status = conn.send_message(request)
+	if status.error():
+		handle.close()
+		return status
+	
+	response = conn.read_response()
+	if response.error():
+		handle.close()
+		return response
+
+	if response['Code'] != 100:
+		handle.close()
+		return wrap_server_error(response)
+
+	if 'Size' not in response['Data']:
+		handle.close()
+		return RetVal(ServerError, "Server gave invalid response: missing Size field")
+	
+	# This might seem silly at first, but adding the Size field is the client's way of confirming
+	# readiness to download the file	
+	try:
+		sizeToRead = int(response['Data']['Size'])
+	except:
+		handle.close()
+		return RetVal(ServerError, "Server gave invalid response: bad Size field")
+
+	if offset > 0:
+		handle.seek(offset)
+		sizeToRead = sizeToRead - offset	
+
+	request['Data']['Size'] = response['Data']['Size']
+
+	status = conn.send_message(request)
+	if status.error():
+		handle.close()
+		return status
+
+	rawdata = conn.read()
+	sizeRead = len(rawdata)
+	while rawdata and sizeToRead > 0:
+		handle.write(rawdata)
+		sizeToRead = sizeToRead - sizeRead
+		rawdata = conn.read()
+
+	handle.close()
+
+
 def exists(conn: ServerConnection, path: str) -> RetVal:
 	'''Checks to see if a path exists on the server side.'''
 	if not path: 
