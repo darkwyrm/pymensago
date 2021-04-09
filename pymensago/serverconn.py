@@ -493,6 +493,8 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	except Exception as e:
 		return RetVal(FilesystemError, e)
 
+	if offset > 0:
+		handle.seek(offset)
 
 	try:
 		filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
