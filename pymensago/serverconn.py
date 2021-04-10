@@ -267,7 +267,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 		handle.close()
 		return status
 	
-	response = conn.read_response()
+	response = conn.read_response(server_response)
 	if response.error():
 		handle.close()
 		return response
@@ -302,7 +302,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 	rawdata = conn.read()
 	sizeRead = len(rawdata)
 	while rawdata and sizeToRead > 0:
-		handle.write(rawdata)
+		handle.write(rawdata.encode())
 		sizeToRead = sizeToRead - sizeRead
 		rawdata = conn.read()
 

@@ -89,6 +89,36 @@ def test_delete():
 	conn.disconnect()
 
 
+def test_download():
+	'''Tests the DOWNLOAD command'''
+	
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"test_download: failed to connect to server: {status.info()}"
+
+	status = init_admin(conn, dbdata)
+	assert not status.error(), f"test_download: init_admin failed: {status.info()}"
+
+	local_admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'])
+	local_inner_dir = os.path.join(local_admin_dir, '11111111-1111-1111-1111-111111111111')
+	serverconn.mkdir(conn, local_inner_dir)
+
+	status = make_test_file(local_admin_dir)
+	assert not status.error(), f"test_download: error creating test file: {status.info()}"
+	testname = status['name']
+
+	status = serverconn.download(conn, f"/ {dbdata['admin_wid']} {testname}", local_inner_dir)
+	assert not status.error(), f"test_download: download failed: {status.info()}"
+
+	conn.disconnect()
+
+
 def test_exists():
 	'''Tests the EXISTS command'''
 
@@ -361,11 +391,10 @@ def test_upload():
 
 	conn.disconnect()
 
-# TODO: Implement a test_upload_resume test
-
 if __name__ == '__main__':
 	# test_copy()
 	# test_delete()
+	test_download()
 	# test_exists()
 	# test_getquotainfo()
 	# test_listfiles()
@@ -374,4 +403,4 @@ if __name__ == '__main__':
 	# test_move()
 	# test_select()
 	# test_setquota()
-	test_upload()
+	# test_upload()
