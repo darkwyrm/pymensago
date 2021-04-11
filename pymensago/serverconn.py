@@ -244,7 +244,7 @@ def delete(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal()
 
 
-def download(conn: ServerConnection, server_path: str, local_path: str, offset=-1):
+def download(conn: ServerConnection, server_path: str, local_path: str, offset=-1) -> RetVal:
 	'''Downloads a file from the server. If an offset is given, resuming an interrupted download 
 	is possible.'''
 
@@ -304,9 +304,13 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 	while rawdata and sizeToRead > 0:
 		handle.write(rawdata.encode())
 		sizeToRead = sizeToRead - sizeRead
+		if sizeToRead == 0:
+			break
 		rawdata = conn.read()
+		sizeRead = len(rawdata)
 
 	handle.close()
+	return RetVal().set_value('Size', int(request['Data']['Size']))
 
 
 def exists(conn: ServerConnection, path: str) -> RetVal:
