@@ -62,7 +62,7 @@ CREATE TABLE quotas(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL, usage BIGIN
 --    package.
 
 CREATE TABLE updates(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL, update_type INTEGER,
-	update_data VARCHAR(2048));
+	update_data VARCHAR(2048), unixtime BIGINT);
 
 -- Information about individual workspaces
 
