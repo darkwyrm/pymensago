@@ -2,6 +2,9 @@
 # These classes are data containers and will have a lot of instance attributes and not many
 # methods
 
+from pymensago.utils import MAddress
+
+
 class ClientItem():
 	'''Provides a base interface for all client items'''
 	def __init__(self):
@@ -36,8 +39,8 @@ class Message(ClientItem):
 		ClientItem.__init__(self)
 		self.type = 'usermessage'
 		self.version = 1.0
-		self.sender = ''
-		self.recipient = ''
+		self.sender = MAddress()
+		self.recipient = MAddress()
 		self.cc = list()
 		self.bcc = list()
 		self.date = ''
