@@ -21,6 +21,7 @@ setup(
 	install_requires=[
 		# 'blake3>=0.1.7',
 		'PyNaCl>=1.3.0',
-		'jsonschema>=3.2.0'
+		'jsonschema>=3.2.0',
+		'pillow>=8.2.0'
 	]
 )
