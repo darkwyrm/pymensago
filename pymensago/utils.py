@@ -4,10 +4,10 @@ import re
 
 from pymensago.retval import RetVal, BadParameterValue
 
-__uuid_pattern = re.compile(
+_uuid_pattern = re.compile(
 			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
-__domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
-__illegal_pattern = re.compile(r'[\s\\/\"]')
+_domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
+_illegal_pattern = re.compile(r'[\s\\/\"]')
 
 
 class MAddress:
@@ -26,21 +26,21 @@ class MAddress:
 		made to the object'''
 		
 		parts = addr.split('/')
-		if len(parts) != 2:
+		if len(parts) != 2 or not parts[0] or not parts[1]:
 			return RetVal(BadParameterValue, 'bad address given')
 		
+		if len(parts[0]) > 64:
+			return RetVal(BadParameterValue, 'user id too long')
+		
 		id_type = 0
-		if __uuid_pattern.match(parts[0]):
+		if _uuid_pattern.match(parts[0]):
 			id_type = 1
 		else:
-			if __illegal_pattern.match(parts[0]):
+			if _illegal_pattern.search(parts[0]):
 				return RetVal(BadParameterValue, 'illegal characters in user id')
-		
-			if len(parts[0]) > 64:
-				return RetVal(BadParameterValue, 'user id too long')
 			id_type = 2
 
-		if not __domain_pattern.match(parts[1]):
+		if not _domain_pattern.match(parts[1]):
 			return RetVal(BadParameterValue, 'bad domain')
 		
 		self.id_type = id_type
@@ -55,13 +55,13 @@ class MAddress:
 def validate_uuid(indata: str) -> bool:
 	'''Validates a UUID's basic format. Does not check version information.'''
 
-	return __uuid_pattern.match(indata)
+	return _uuid_pattern.match(indata)
 
 
 def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
 
-	return __domain_pattern.match(indata)
+	return _domain_pattern.match(indata)
 
 
 def split_address(address):
