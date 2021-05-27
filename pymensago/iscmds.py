@@ -8,7 +8,7 @@ from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
 from pymensago.keycard import EntryBase
-from pymensago.retval import RetVal, BadParameterValue, ResourceExists, ServerError
+from pymensago.retval import RetVal, BadParameterValue, ResourceExists, ServerError, Unimplemented
 from pymensago.serverconn import ServerConnection, server_response, wrap_server_error
 import pymensago.utils as utils
 
@@ -293,6 +293,13 @@ def logout(conn: ServerConnection) -> RetVal:
 	return RetVal()
 
 
+def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
+	'''Obtains an organization's keycard'''
+
+	# TODO: implement orgcard()
+	return RetVal(Unimplemented)
+
+
 def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
 	'''Resets a workspace's password'''
 
@@ -571,3 +578,11 @@ def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 	# one of three possible types of responses: success, pending (for private/moderated 
 	# registration modes), or an error. In all of those cases there isn't anything else to do.
 	return wrap_server_error(response)
+
+def usercard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
+	'''Obtains a user's keycard'''
+	
+	# TODO: implement usercard()
+	return RetVal(Unimplemented)
+
+
