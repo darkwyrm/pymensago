@@ -71,5 +71,5 @@ CREATE TABLE iwkspc_folders(rowid SERIAL PRIMARY KEY, wid char(36) NOT NULL,
 
 -- Devices registered to each individual's workspace
 CREATE TABLE iwkspc_devices(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL,
-	devid CHAR(36) NOT NULL, devkey VARCHAR(1000) NOT NULL, status VARCHAR(16) NOT NULL);
-
+	devid CHAR(36) NOT NULL, devkey VARCHAR(1000) NOT NULL, lastlogin VARCHAR(32) NOT NULL, 
+	status VARCHAR(16) NOT NULL);
