@@ -9,7 +9,7 @@ class ClientItem():
 		self.type = ''
 		self.version = 0.0
 		self.attachments = list()
-		self.tags = list()
+		self.tags = list()	# client-side only field
 
 
 class Event(ClientItem):
@@ -34,16 +34,16 @@ class Message(ClientItem):
 	'''Represents a message sent by a user.'''
 	def __init__(self):
 		ClientItem.__init__(self)
-		self.type = 'message'
+		self.type = 'usermessage'
 		self.version = 1.0
-		self.sender = ''
-		self.recipients = list()
-		self.ccrecipients = list()
-		self.bccrecipients = list()
+		self.from = ''
+		self.to = ''
+		self.cc = list()
+		self.bcc = list()
 		self.date = ''
+		self.thread_id = ''
 		self.subject = ''
 		self.body = ''
-		self.thread_id = ''
 
 
 class Note(ClientItem):
