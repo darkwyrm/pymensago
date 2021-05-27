@@ -77,3 +77,4 @@ class Task(ClientItem):
 		self.checklist = list()
 		self.watchers = list()
 		self.members = list()
+
