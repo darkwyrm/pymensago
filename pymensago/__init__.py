@@ -7,7 +7,6 @@ from . import encryption
 from . import items
 from . import keycard
 from . import retval
-from . import rpc
 from . import serverconn
 from . import storage
 from . import userprofile
