@@ -4,23 +4,64 @@ import re
 
 from pymensago.retval import RetVal, BadParameterValue
 
-# This function is needed because the Mensago admin ID is purposely nonconformant -- a user can
-# *never* accidentally get assigned the value, and for the purposes of the platform, version 
-# information doesn't matter.
-def validate_uuid(indata):
+__uuid_pattern = re.compile(
+			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
+__domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
+__illegal_pattern = re.compile(r'[\s\\/\"]')
+
+
+class MAddress:
+	'''Represents a Mensago or workspace address'''
+	
+	def __init__(self, addr = ''):
+		self.id = ''
+		self.id_type = 0
+		self.domain = ''
+
+	def __str__(self) -> str:
+		return self.id + '/' + self.domain
+
+	def set(self, addr: str) -> RetVal:
+		'''Validates input and assigns the address. If the given address is invalid, no change is 
+		made to the object'''
+		
+		parts = addr.split('/')
+		if len(parts) != 2:
+			return RetVal(BadParameterValue, 'bad address given')
+		
+		id_type = 0
+		if __uuid_pattern.match(parts[0]):
+			id_type = 1
+		else:
+			if __illegal_pattern.match(parts[0]):
+				return RetVal(BadParameterValue, 'illegal characters in user id')
+		
+			if len(parts[0]) > 64:
+				return RetVal(BadParameterValue, 'user id too long')
+			id_type = 2
+
+		if not __domain_pattern.match(parts[1]):
+			return RetVal(BadParameterValue, 'bad domain')
+		
+		self.id_type = id_type
+		self.id, self.domain = parts
+
+		return RetVal()
+	
+	def is_valid(self) -> bool:
+		return self.id_type in [1,2] and self.id and self.domain
+	
+
+def validate_uuid(indata: str) -> bool:
 	'''Validates a UUID's basic format. Does not check version information.'''
 
-	# With dashes, should be 36 characters or 32 without
-	if (len(indata) != 36 and len(indata) != 32) or len(indata) == 0:
-		return False
-	
-	uuid_pattern = re.compile(
-			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
-	
-	if not uuid_pattern.match(indata):
-		return False
-	
-	return True
+	return __uuid_pattern.match(indata)
+
+
+def validate_domain(indata: str) -> bool:
+	'''Validates a string as being a valid domain'''
+
+	return __domain_pattern.match(indata)
 
 
 def split_address(address):
