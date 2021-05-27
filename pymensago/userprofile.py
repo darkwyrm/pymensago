@@ -134,12 +134,12 @@ class Profile:
 				"algorithm" TEXT NOT NULL
 			);''', '''
 			CREATE table "keycards"(
-				rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-				owner TEXT NOT NULL,
-				index INTEGER NOT NULL,
-				entry TEXT NOT NULL,
-				fingerprint TEXT NOT NULL,
-				expires TEXT NOT NULL
+				"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,
+				"owner" TEXT NOT NULL,
+				"index" INTEGER,
+				"entry" TEXT NOT NULL,
+				"fingerprint" TEXT NOT NULL,
+				"expires" TEXT NOT NULL
 			);''', '''
 			CREATE table "messages"(
 				"id" TEXT NOT NULL UNIQUE,
