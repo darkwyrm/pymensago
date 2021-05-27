@@ -43,7 +43,7 @@ class Contact(dict):
 			return RetVal()
 			
 		try:
-			fileinfo = os.state(path)
+			fileinfo = os.stat(path)
 		except Exception as e:
 			return RetVal(ExceptionThrown, e)
 		
@@ -62,9 +62,9 @@ class Contact(dict):
 		filetype = img.get_format_mimetype()
 		if filetype not in ['image/jpeg', 'image/webp']:
 			temphandle, temppath = tempfile.mkstemp(suffix='.webp')
-			temphandle.close()
+			os.close(temphandle)
 			try:
-				img.save(temppath, 'image/webp', lossless=True, quality=3)
+				img.save(temppath, 'WEBP', lossless=True, quality=3)
 			except Exception as e:
 				os.remove(temppath)
 				return RetVal(ExceptionThrown, e)
