@@ -36,8 +36,8 @@ class Message(ClientItem):
 		ClientItem.__init__(self)
 		self.type = 'usermessage'
 		self.version = 1.0
-		self.from = ''
-		self.to = ''
+		self.sender = ''
+		self.recipient = ''
 		self.cc = list()
 		self.bcc = list()
 		self.date = ''
