@@ -44,7 +44,8 @@ class MAddress:
 			return RetVal(BadParameterValue, 'bad domain')
 		
 		self.id_type = id_type
-		self.id, self.domain = parts
+		self.id = parts[0].casefold()
+		self.domain = parts[1].casefold()
 
 		return RetVal()
 	
