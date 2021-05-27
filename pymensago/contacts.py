@@ -36,9 +36,12 @@ class Contact(dict):
 		# This call enables recursion
 		_merge_dict(self, contact, clobber)
 	
-	def addphoto(self, path: str) -> RetVal:
+	def setphoto(self, path: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
-
+		if path == '' and 'Photo' in self:
+			del self['Photo']
+			return RetVal()
+			
 		try:
 			fileinfo = os.state(path)
 		except Exception as e:
@@ -84,6 +87,7 @@ class Contact(dict):
 		if temppath:
 			os.remove(temppath)
 
+		return RetVal()
 
 
 
