@@ -55,7 +55,7 @@ class KCResolver:
 			# from that record.
 			return RetVal(Unimplemented)
 		
-		# Step 2: Connect and check for updates
+		# Step 2: Connect and get card
 		conn = ServerConnection()
 		status = conn.connect(ip, 2001)
 		if status.error():
