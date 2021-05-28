@@ -1,20 +1,22 @@
 '''This module provides an API to interact with the filesystem'''
 import os
 import platform
-# import sqlite3
 
-# import auth
 from pymensago.userprofile import ProfileManager
 
 class ClientStorage:
 	'''Provides a storage API for the rest of the client.'''
 
-	def __init__(self):
-		osname = platform.system().casefold()
-		if osname == 'windows':
-			self.profile_folder = os.path.join(os.getenv('LOCALAPPDATA'), 'mensago')
+	def __init__(self, profile_folder=''):
+
+		if not profile_folder:
+			osname = platform.system().casefold()
+			if osname == 'windows':
+				self.profile_folder = os.path.join(os.getenv('LOCALAPPDATA'), 'mensago')
+			else:
+				self.profile_folder = os.path.join(os.getenv('HOME'), '.config','mensago')
 		else:
-			self.profile_folder = os.path.join(os.getenv('HOME'), '.config','mensago')
+			self.profile_folder = profile_folder
 		
 		if not os.path.exists(self.profile_folder):
 			os.mkdir(self.profile_folder)

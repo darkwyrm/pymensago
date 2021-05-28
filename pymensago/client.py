@@ -16,8 +16,8 @@ class MensagoClient:
 	storage aspects. It does duplicate the ClientStorage interface,	but it also handles network 
 	interaction where needed. In short, the user's commands map pretty much one-to-one to this class.
 	'''
-	def __init__(self):
-		self.fs = ClientStorage()
+	def __init__(self, profile_folder=''):
+		self.fs = ClientStorage(profile_folder)
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
 
