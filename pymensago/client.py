@@ -1,4 +1,4 @@
-'''This module provides a simple interface to the handling storage and networking needs for an 
+'''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
 import socket
 
