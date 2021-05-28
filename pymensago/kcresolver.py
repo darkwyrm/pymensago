@@ -109,7 +109,7 @@ class KCResolver:
 		return out
 	
 	def _add_card_to_db(self, owner: str, isorg: bool, card: keycard.Keycard) -> RetVal:
-		'''adds a keycard to the database cache'''
+		'''adds a keycard to the database cache after removing any stale entries'''
 
 		cursor = self.db.cursor()
 		cursor.execute("DELETE FROM keycards WHERE owner=?", (owner,))
@@ -121,11 +121,34 @@ class KCResolver:
 
 		return RetVal()
 
-	def _update_card_in_db(self, card: keycard.Keycard) -> RetVal:
+	def _update_card_in_db(self, owner: str, isorg: bool, card: keycard.Keycard) -> RetVal:
 		'''updates a keycard in the database cache'''
 
-		# TODO: implement KCResolver._update_card_in_db()
-		return RetVal(Unimplemented)
+		# Because keycards are append-only, we just have to find out what the last index stored
+		# in the database is and then add any remaining entries to the database
+		index = -1
+
+		cursor = self.db.cursor()
+		cursor.execute("SELECT index FROM keycards WHERE owner=? ORDER BY 'index' DESC LIMIT 1")
+		row = cursor.fetchone()
+		if row:
+			try:
+				index = int(row[0])
+			except:
+				pass
+		
+		if index < 0:
+			self._add_card_to_db(owner, isorg, card)
+			return RetVal()
+		
+		if index < len(card.entries):
+			for entry in card.entries[index:]:
+				cursor.execute('''INSERT INTO keycards(owner,index,entry,fingerprint,expires)
+					VALUES(?,?,?,?,?)''',
+					(owner, entry['Index'], str(entry), entry.hash, entry['Expires']))
+			self.db.commit()
+
+		return RetVal()
 
 
 def resolve_address(addr: MAddress) -> RetVal:
