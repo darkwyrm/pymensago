@@ -17,8 +17,8 @@ class KCResolver:
 
 	def get_card(self, owner: str) -> RetVal:
 		'''returns a Keycard object in the 'keycard' field if successful'''
-		# TODO: implement KCResolver.get_card()
-		return RetVal(Unimplemented)
+		
+		return self._resolve_card(owner)
 
 	def _resolve_card(self, owner: str) -> RetVal:
 		'''internal method which does all the actual resolving if the card isn't in the db'''
