@@ -84,7 +84,7 @@ class KCResolver:
 		card = keycard.Keycard()
 
 		# This is an internal call and owner has already been validated once, so we don't have to
-		# do it again. Likewise, we validate everything ruthlessly when added to the database, so
+		# do it again. Likewise, we validate everything ruthlessly when data is brought in, so
 		# because that's already been done once, we don't need to do it again here -- just create
 		# entries from each row and add them to the card.
 		cursor = self.db.cursor()
