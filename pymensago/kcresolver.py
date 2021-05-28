@@ -61,6 +61,7 @@ class KCResolver:
 		if status.error():
 			return status
 
+		# Validation of the card data is done inside these calls
 		card = None
 		if orgcard:
 			out = iscmds.orgcard(conn, 1, -1)
@@ -71,7 +72,7 @@ class KCResolver:
 		if out.error():
 			return out
 		
-		status = self._update_card_in_db(out['keycard'])
+		status = self._add_card_to_db(owner, orgcard, out['keycard'])
 		if status.error():
 			return status
 
@@ -100,17 +101,25 @@ class KCResolver:
 			if status.error():
 				return status
 			card.entries.append(card)
+			row = cursor.fetchone()
 		
 		if len(card.entries) > 0:
 			out.set_value('keycard',card)
 		
 		return out
 	
-	def _add_card_to_db(self, card: keycard.Keycard) -> RetVal:
+	def _add_card_to_db(self, owner: str, isorg: bool, card: keycard.Keycard) -> RetVal:
 		'''adds a keycard to the database cache'''
 
-		# TODO: implement KCResolver._add_card_to_db()
-		return RetVal(Unimplemented)
+		cursor = self.db.cursor()
+		cursor.execute("DELETE FROM keycards WHERE owner=?", (owner,))
+		for entry in card.entries:
+			cursor.execute('''INSERT INTO keycards(owner,index,entry,fingerprint,expires)
+				VALUES(?,?,?,?,?)''',
+				(owner, entry['Index'], str(entry), entry.hash, entry['Expires']))
+		self.db.commit()
+
+		return RetVal()
 
 	def _update_card_in_db(self, card: keycard.Keycard) -> RetVal:
 		'''updates a keycard in the database cache'''
