@@ -35,7 +35,7 @@ class KCResolver:
 			if status.error():
 				return status
 		
-		status = self._get_card_from_db(owner)
+		status = self._get_card_from_db(owner, orgcard)
 		if status.error() != ResourceNotFound:
 			return status
 
@@ -77,11 +77,34 @@ class KCResolver:
 
 		return out
 
-	def _get_card_from_db(self, owner: str) -> RetVal:
+	def _get_card_from_db(self, owner: str, isorg: bool) -> RetVal:
 		'''gets a keycard from the db cache if it exists'''
 		
-		# TODO: implement KCResolver._get_card_from_db()
-		return RetVal(Unimplemented)
+		out = RetVal()
+		card = keycard.Keycard()
+
+		# This is an internal call and owner has already been validated once, so we don't have to
+		# do it again. Likewise, we validate everything ruthlessly when added to the database, so
+		# because that's already been done once, we don't need to do it again here -- just create
+		# entries from each row and add them to the card.
+		cursor = self.db.cursor()
+		cursor.execute("SELECT entry FROM keycards WHERE owner=? ORDER BY 'index'", (owner,))
+		row = cursor.fetchone()
+		while row:
+			entry = None
+			if isorg:
+				entry = keycard.OrgEntry()
+			else:
+				entry = keycard.UserEntry()
+			status = entry.set(row[0].encode())
+			if status.error():
+				return status
+			card.entries.append(card)
+		
+		if len(card.entries) > 0:
+			out.set_value('keycard',card)
+		
+		return out
 	
 	def _add_card_to_db(self, card: keycard.Keycard) -> RetVal:
 		'''adds a keycard to the database cache'''
