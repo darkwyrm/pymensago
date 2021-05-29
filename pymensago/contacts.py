@@ -3,6 +3,7 @@
 from base64 import b85decode, b85encode
 import os
 import tempfile
+import time
 
 from pymensago.retval import BadData, ExceptionThrown, RetVal
 from PIL import Image
@@ -90,7 +91,6 @@ class Contact(dict):
 		return RetVal()
 
 
-
 class PIP(Contact):
 	'''Class to hold a personal information profile'''
 	def __init__(self) -> None:
@@ -98,3 +98,18 @@ class PIP(Contact):
 		self['PIPName'] = ''
 
 
+class ContactRequest1:
+	'''Class which sets up the initial message in the Contact Request processs'''
+	def __init__(self) -> None:
+		# These are just the required fields. Others, like a name, are... useful. 😏
+		self.fields = {
+			"Type" : "sysmessage",
+			"Subtype" : "contactreq.1",
+			"Version" : "1.0",
+			"From" : "",
+			"To" : "",
+			"Date" : time.strftime('%Y%m%dT%H%M%SZ', time.gmtime()),
+			"Sensitivity" : "Public",
+			"EntityType" : "",
+		}
+	
