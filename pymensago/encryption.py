@@ -74,6 +74,7 @@ class PublicKey (CryptoKey):
 		if not isinstance(public, CryptoString):
 			raise TypeError
 		self.public = public
+		self.pubhash = blake2hash(self.public.data.encode())
 
 	def encrypt(self, data : bytes) -> RetVal:
 		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
@@ -231,6 +232,7 @@ class VerificationKey (CryptoKey):
 		if not isinstance(public, CryptoString):
 			raise TypeError
 		self.public = public
+		self.pubhash = blake2hash(self.public.data.encode())
 
 	def verify(self, data : bytes, data_signature : CryptoString) -> RetVal:
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
