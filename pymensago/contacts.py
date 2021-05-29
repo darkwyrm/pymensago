@@ -102,6 +102,8 @@ class ContactRequest1:
 	'''Class which sets up the initial message in the Contact Request processs'''
 	def __init__(self) -> None:
 		# These are just the required fields. Others, like a name, are... useful. 😏
+
+		# TODO: finish implementing ContactRequest1
 		self.fields = {
 			"Type" : "sysmessage",
 			"Subtype" : "contactreq.1",
@@ -113,3 +115,5 @@ class ContactRequest1:
 			"EntityType" : "",
 		}
 	
+
+# TODO: Create JSON schemas for contacts and the contact request message type

@@ -34,6 +34,8 @@ class Envelope:
 
 	def marshall(self) -> RetVal:
 		'''Converts the object to the task-specific text format for Mensago data files'''
+		
+		# TODO: Implement Envelope::marshal()
 		pass
 
 	def set_msg_key(self, recipientkey: cs.CryptoString) -> RetVal:
