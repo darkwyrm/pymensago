@@ -4,7 +4,7 @@ import json
 import time
 
 import pymensago.cryptostring as cs
-from pymensago.encryption import PublicKey
+from pymensago.encryption import PublicKey, SecretKey
 from pymensago.retval import BadData, BadParameterValue, RetVal
 from pymensago.utils import MAddress
 
@@ -38,7 +38,21 @@ class Envelope:
 
 	def set_msg_key(self, recipientkey: cs.CryptoString) -> RetVal:
 		'''Generates a message-specific key and attaches it to the message in encrypted form'''
-		pass
+		
+		if not recipientkey.is_valid():
+			return RetVal(BadParameterValue)
+		
+		pubkey = PublicKey(recipientkey)
+		self.msgkey = SecretKey()
+		status = pubkey.encrypt(str(self.msgkey).encode())
+		if status.error():
+			return status
+		
+		self.fields['PayloadKey'] = status['data']
+		self.fields['KeyHash'] = pubkey.pubhash
+		
+		return RetVal()
+
 
 	def set_sender(self, sender: MAddress, recipient: MAddress, orgkey: cs.CryptoString) -> RetVal:
 		'''Sets the encrypted sender tag'''
@@ -62,7 +76,7 @@ class Envelope:
 
 	def set_receiver(self, sender: MAddress, recipient: MAddress, orgkey: cs.CryptoString) -> RetVal:
 		'''Sets the encrypted reciver tag'''
-		
+
 		if not (sender.is_valid() and recipient.is_valid() and orgkey.is_valid()):
 			return RetVal(BadParameterValue)
 		
