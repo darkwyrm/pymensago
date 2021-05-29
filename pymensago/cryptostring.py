@@ -20,24 +20,11 @@ class CryptoString:
 	def set(self, data: str) -> RetVal:
 		'''Initializes the instance from data passed to it. The string is expected to follow the 
 		format ALGORITHM:DATA, where DATA is assumed to be base85-encoded raw byte data'''
-		
-		self.prefix = self.data = ''
+		status = validate(data)
+		if status.error():
+			return status
 
-		m = re.match(r'^[A-Z0-9-]{1,15}:', data)
-		if not m:
-			return RetVal(BadParameterValue, 'prefix is non-compliant')
-	
-		parts = data.split(':', 1)
-		if len(parts) != 2:
-			return RetVal(BadParameterValue, 'bad data string')
-		
-		try:
-			_ = base64.b85decode(parts[1])
-		except:
-			return RetVal(BadParameterValue, 'error decoding data')
-		
-		self.prefix = parts[0]
-		self.data = parts[1]
+		self.prefix, self.data = data.split(':', 1)
 		return RetVal()
 
 	def set_bytes(self, data: bytes) -> RetVal:
@@ -76,3 +63,20 @@ class CryptoString:
 		'''Makes the entry empty'''
 		self.prefix = ''
 		self.data = ''
+
+
+def validate(string: str) -> RetVal:
+	'''Checks a string to see if it matches the CryptoString format'''
+	
+	m = re.match(r'^[A-Z0-9-]{1,15}:', string)
+	if not m:
+		return RetVal(BadParameterValue, 'prefix is non-compliant')
+
+	parts = string.split(':', 1)
+	if len(parts) != 2:
+		return RetVal(BadParameterValue, 'bad data string')
+
+	try:
+		_ = base64.b85decode(parts[1])
+	except:
+		return RetVal(BadParameterValue, 'error decoding data')
