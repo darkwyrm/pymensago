@@ -1,14 +1,15 @@
 '''Messaging-related code, mostly for message construction'''
 
 import json
+import jsonschema
 import time
 
 import pymensago.cryptostring as cs
 from pymensago.encryption import PublicKey, SecretKey
-from pymensago.retval import BadData, BadParameterValue, RetVal
+from pymensago.retval import BadData, BadParameterValue, ExceptionThrown, InternalError, RetVal
 from pymensago.utils import MAddress
 
-RequiredFieldMissing = 'required field missing'
+RequiredDataMissing = 'required data missing'
 
 class Envelope:
 	'''The main message container class.'''
@@ -35,8 +36,35 @@ class Envelope:
 	def marshall(self) -> RetVal:
 		'''Converts the object to the task-specific text format for Mensago data files'''
 		
-		# TODO: Implement Envelope::marshal()
-		pass
+		# We have a lot of validation to do before we can actually generate the string
+		if not self.msgkey.is_valid():
+			return RetVal(RequiredDataMissing, 'message key missing')
+		
+		status = cs.validate(self.fields['KeyHash'])
+		if status.error():
+			return RetVal(InternalError, 'BUG: bad msg key hash')
+		
+		status = cs.validate(self.fields['PayloadKey'])
+		if status.error():
+			return RetVal(InternalError, 'BUG: bad payload key')
+		
+		if self.fields['Version'] != '1.0':
+			return RetVal(BadData, 'bad version value')
+		
+		# Marshall and encrypt the payload. Because the internal structure of the payload varies,
+		# we have to assume that the payload is valid. Minimal validation is possible, but largely
+		# pointless
+		try:
+			envstr = json.dumps(self.fields)
+		except Exception as e:
+			return RetVal(ExceptionThrown, e)
+		
+		secretkey = SecretKey(self.msgkey)
+		paystr = secretkey.encrypt(json.dumps(self.fields).encode())
+
+		return RetVal().set_value('envelope',
+					'\n'.join[ 'MENSAGO', envstr, '----------', self.msgkey.prefix, paystr ])
+		
 
 	def set_msg_key(self, recipientkey: cs.CryptoString) -> RetVal:
 		'''Generates a message-specific key and attaches it to the message in encrypted form'''
