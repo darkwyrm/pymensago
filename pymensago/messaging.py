@@ -50,7 +50,7 @@ class Envelope:
 		
 		self.fields['PayloadKey'] = status['data']
 		self.fields['KeyHash'] = pubkey.pubhash
-		
+
 		return RetVal()
 
 
@@ -92,3 +92,61 @@ class Envelope:
 		
 		self.fields['Receiver'] = status['data']
 		return RetVal()
+
+
+__DataFileSchema = {
+	'title': 'Mensago Data File',
+	'description': 'The generic JSON container for all Mensago data files',
+	'type': 'object',
+	'properties': {
+		'Version': { 'type': 'string' },
+		'Date': { 'type': 'string' },
+		'KeyHash': { 'type': 'string' },
+		'PayloadKey': { 'type': 'string' },
+		'Receiver': { 'type': 'string' },
+		'Sender': { 'type': 'string' },
+	},
+	'required': [ 'Version', 'Date', 'KeyHash', 'PayloadKey' ],
+}
+
+__UserMsgSchema = {
+	'title': 'User Message Payload',
+	'description': 'The structure of a Mensago user message',
+	'type': 'object',
+	'properties': {
+		'Type': { 'type': 'string' },
+		'Version': { 'type': 'string' },
+		'From': { 'type': 'string' },
+		'To': { 'type': 'string' },
+		'Date': { 'type': 'string' },
+		'ThreadID': { 'type': 'string' },
+		'Subject': { 'type': 'string' },
+		'Body': { 'type': 'string' },
+		'Images': {
+			'type': 'array',
+			'items': {
+				'type': 'object',
+				'properties': {
+					'Name': { 'type': 'string' },
+					'Type': { 'type': 'string' },
+					'Data': { 'type': 'string' },
+				},
+				'required': [ 'Name', 'Type', 'Data' ]
+			}
+		},
+		'Attachments': {
+			'type': 'array',
+			'items': {
+				'type': 'object',
+				'properties': {
+					'Name': { 'type': 'string' },
+					'Type': { 'type': 'string' },
+					'Data': { 'type': 'string' },
+				},
+				'required': [ 'Name', 'Type', 'Data' ]
+			}
+		},
+	},
+	'required': [ 'Type', 'Version', 'From', 'To', 'Date', 'ThreadID', 'Subject', 'Body' ],
+}
+
