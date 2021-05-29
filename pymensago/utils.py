@@ -2,7 +2,7 @@
 
 import re
 
-from pymensago.retval import RetVal, BadParameterValue
+from retval import RetVal, ErrBadValue
 
 _uuid_pattern = re.compile(
 			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
@@ -30,21 +30,21 @@ class MAddress:
 		
 		parts = addr.split('/')
 		if len(parts) != 2 or not parts[0] or not parts[1]:
-			return RetVal(BadParameterValue, 'bad address given')
+			return RetVal(ErrBadValue, 'bad address given')
 		
 		if len(parts[0]) > 64:
-			return RetVal(BadParameterValue, 'user id too long')
+			return RetVal(ErrBadValue, 'user id too long')
 		
 		id_type = 0
 		if _uuid_pattern.match(parts[0]):
 			id_type = 1
 		else:
 			if _illegal_pattern.search(parts[0]):
-				return RetVal(BadParameterValue, 'illegal characters in user id')
+				return RetVal(ErrBadValue, 'illegal characters in user id')
 			id_type = 2
 
 		if not _domain_pattern.match(parts[1]):
-			return RetVal(BadParameterValue, 'bad domain')
+			return RetVal(ErrBadValue, 'bad domain')
 		
 		self.id_type = id_type
 		self.id = parts[0].casefold()
@@ -75,7 +75,7 @@ def split_address(address):
 		not parts[0] or \
 		not parts[1] or \
 		not validate_uuid(parts[0]):
-		return RetVal(BadParameterValue, 'Bad workspace address')
+		return RetVal(ErrBadValue, 'Bad workspace address')
 	out = RetVal()
 	out.set_value('wid', parts[0])
 	out.set_value('domain', parts[1])

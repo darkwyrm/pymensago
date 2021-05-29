@@ -13,12 +13,11 @@ import time
 # import blake3
 import nacl.public
 import nacl.signing
+from retval import RetVal, ErrBadData, ErrBadValue, ErrExists, ErrNotFound
 
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pymensago.hash import blake2hash
-from pymensago.retval import RetVal, BadData, BadParameterValue, ExceptionThrown, ResourceExists, \
-		ResourceNotFound
 
 FeatureNotAvailable = 'FeatureNotAvailable'
 UnsupportedKeycardType = 'UnsupportedKeycardType'
@@ -96,23 +95,23 @@ class EntryBase:
 	def __validate_integer(self, fieldname : str, minVal=-1, maxVal=-1) -> RetVal:
 		'''Validates a non-negative integer. Checks range of value if supplied.'''
 		if fieldname not in self.fields.keys():
-			return RetVal(BadParameterValue, f"field {fieldname} does not exist")
+			return RetVal(ErrBadValue, f"field {fieldname} does not exist")
 		
 		m = re.match(r'^[0-9]+$', self.fields[fieldname])
 		if not m:
-			return RetVal(BadData, 'bad field value')
+			return RetVal(ErrBadData, 'bad field value')
 		
 		intValue = 0
 		try:
 			intValue = int(m[0])
 		except:
-			return RetVal(BadData, 'bad field value')
+			return RetVal(ErrBadData, 'bad field value')
 		
 		if minVal != -1 and intValue < minVal:
-			return RetVal(BadData, f"field {fieldname} less than minimum")
+			return RetVal(ErrBadData, f"field {fieldname} less than minimum")
 
 		if maxVal != -1 and intValue > maxVal:
-			return RetVal(BadData, f"field {fieldname} greater than maximum")
+			return RetVal(ErrBadData, f"field {fieldname} greater than maximum")
 		
 		return RetVal()
 
@@ -131,7 +130,7 @@ class EntryBase:
 		if 'Name' in self.fields.keys():
 			m = re.match(r'\w+', self.fields['Name'])
 			if not m or len(self.fields['Name']) >= 64:
-				return RetVal(BadData, 'bad name value')
+				return RetVal(ErrBadData, 'bad name value')
 
 		# Required field: Time to Live
 		outStatus = self.__validate_integer('Time-To-Live', 1, 30)
@@ -145,7 +144,7 @@ class EntryBase:
 		'''Checks the validity of all data fields'''
 		
 		if self.type != 'Organization':
-			return RetVal(BadData, 'invalid entry type %s' % self.type)
+			return RetVal(ErrBadData, 'invalid entry type %s' % self.type)
 		
 		outStatus = self.__validate_common_data()
 		if outStatus.error():
@@ -155,14 +154,14 @@ class EntryBase:
 		m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
 			r'-?[\da-fA-F]{12}/([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+$', self.fields['Contact-Admin'])
 		if not m:
-			return RetVal(BadData, 'bad admin contact address')
+			return RetVal(ErrBadData, 'bad admin contact address')
 
 		# Required fields: Primary Verification Key, Encryption Key
 		# We can't verify the actual key data, but we can at least ensure that it's formatted
 		# correctly and we can b85decode the key itself
 		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
 			if not CryptoString(self.fields[keyfield]).is_valid():
-				return RetVal(BadData, f"bad key field {keyfield}")
+				return RetVal(ErrBadData, f"bad key field {keyfield}")
 		
 		# Optional fields: Support and Abuse addresses
 		for contactfield in ['Contact-Support','Contact-Abuse']:
@@ -171,25 +170,25 @@ class EntryBase:
 					r'-?[\da-fA-F]{12}/([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+$',
 					self.fields[contactfield])
 				if not m:
-					return RetVal(BadData, f"bad contact address {contactfield}")
+					return RetVal(ErrBadData, f"bad contact address {contactfield}")
 		
 		# Optional field: Language
 		if 'Language' in self.fields.keys():
 			m = re.match(r'^[a-zA-Z]{2,3}(,[a-zA-Z]{2,3})*?$', self.fields['Language'])
 			if not m:
-				return RetVal(BadData, 'bad language list')
+				return RetVal(ErrBadData, 'bad language list')
 
 		# Optional field: Secondary Verification Key
 		if 'Secondary-Verification-Key' in self.fields.keys():
 			if not CryptoString(self.fields['Secondary-Verification-Key']).is_valid():
-				return RetVal(BadData, 'bad secondary verification key')
+				return RetVal(ErrBadData, 'bad secondary verification key')
 		
 		return RetVal()
 
 	def __validate_user_data(self) -> RetVal:
 		'''Checks the validity of all data fields'''
 		if self.type != 'User':
-			return RetVal(BadData, 'invalid entry type %s' % self.type)
+			return RetVal(ErrBadData, 'invalid entry type %s' % self.type)
 		
 		outStatus = self.__validate_common_data()
 		if outStatus.error():
@@ -199,13 +198,13 @@ class EntryBase:
 		m = re.match(r'^[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}'
 			r'-?[\da-fA-F]{12}$', self.fields['Workspace-ID'])
 		if not m:
-			return RetVal(BadData, 'bad workspace ID')
+			return RetVal(ErrBadData, 'bad workspace ID')
 
 		# Required field: Domain
 		# Although mostly freeform, the Name field has a couple requirements:
 		m = re.match(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+', self.fields['Domain'])
 		if not m or len(self.fields['Domain']) >= 64:
-			return RetVal(BadData, 'bad domain value')
+			return RetVal(ErrBadData, 'bad domain value')
 
 		# Required fields: Contact Request Verification Key, Contact Request Encryption Key,
 		#	Public-Encryption-Key
@@ -213,17 +212,17 @@ class EntryBase:
 						 'Contact-Request-Encryption-Key',
 						 'Public-Encryption-Key']:
 			if not CryptoString(self.fields[keyfield]).is_valid():
-				return RetVal(BadData, f"bad key field {keyfield}")
+				return RetVal(ErrBadData, f"bad key field {keyfield}")
 
 		# Optional field: User ID
 		if 'User-ID' in self.fields.keys():
 			if re.findall(r'[\\\/\s"]', self.fields['User-ID']) or \
 				len(self.fields['User-ID']) >= 64:
-				return RetVal(BadData, 'bad user id value')
+				return RetVal(ErrBadData, 'bad user id value')
 			
 		if 'Alternate-Encryption-Key' in self.fields.keys():
 			if not CryptoString(self.fields['Alternate-Encryption-Key']).is_valid():
-				return RetVal(BadData, 'bad alternate encryption key')
+				return RetVal(ErrBadData, 'bad alternate encryption key')
 
 		return RetVal()
 
@@ -281,7 +280,7 @@ class EntryBase:
 				return RetVal(RequiredFieldMissing, f"missing field {field}")
 		
 			if field != field.strip():
-				return RetVal(BadData, f"leading/trailing whitespace in field {field}")
+				return RetVal(ErrBadData, f"leading/trailing whitespace in field {field}")
 		
 		if self.type == 'User':
 			return self.__validate_user_data()
@@ -318,7 +317,7 @@ class EntryBase:
 		expiration date field, but it does not check if the entry is actually expired'''
 		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
 		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1])):
-			return RetVal(BadData, 'bad expiration date')
+			return RetVal(ErrBadData, 'bad expiration date')
 		expire_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
 			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
@@ -326,13 +325,13 @@ class EntryBase:
 			self.fields['Timestamp'])
 		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1]), 
 			int(m[4]), int(m[5]), int(m[6])):
-			return RetVal(BadData, 'bad timestamp')
+			return RetVal(ErrBadData, 'bad timestamp')
 		timestamp_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
 			int(m[4]), int(m[5]), int(m[6]),
 			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
 		if timestamp_time > expire_time:
-			return RetVal(BadData, 'bad timestamp')
+			return RetVal(ErrBadData, 'bad timestamp')
 		
 		return RetVal()
 
@@ -343,19 +342,19 @@ class EntryBase:
 		
 		m = re.match(r'^([0-9]{4})([0-9]{2})([0-9]{2})$', self.fields['Expires'])
 		if not m or not _is_valid_date(int(m[2]), int(m[3]), int(m[1])):
-			return RetVal(BadData, 'bad expiration date')
+			return RetVal(ErrBadData, 'bad expiration date')
 		expire_time = datetime.datetime(int(m[1]), int(m[2]), int(m[3]),
 			tzinfo=datetime.timezone(datetime.timedelta(hours=0)))
 
 		if datetime.datetime.now() > expire_time:
-			return RetVal(BadData, 'entry is expired')
+			return RetVal(ErrBadData, 'entry is expired')
 
 		return RetVal()
 
 	def get_signature(self, sigtype: str) -> RetVal:
 		'''Retrieves the requested signature and type'''
 		if sigtype not in self.signatures:
-			return RetVal(ResourceNotFound, sigtype)
+			return RetVal(ErrNotFound, sigtype)
 		
 		if len(self.signatures[sigtype]) < 1:
 			return RetVal(SignatureMissing, sigtype)
@@ -370,7 +369,7 @@ class EntryBase:
 				SIGINFO_SIGNATURE : parts[1]
 			})
 		
-		return RetVal(BadData, self.signatures[sigtype])
+		return RetVal(ErrBadData, self.signatures[sigtype])
 	
 	def make_bytestring(self, signature_level : int) -> bytes:
 		'''Creates a byte string from the fields in the keycard. Because this doesn't use join(), 
@@ -408,17 +407,17 @@ class EntryBase:
 		caused by line endings invalidating signatures.'''
 
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if os.path.exists(path) and not clobber:
-			return RetVal(ResourceExists)
+			return RetVal(ErrExists)
 		
 		try:
 			with open(path, 'wb') as f:
 				f.write(self.make_bytestring(-1))
 		
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal.wrap_exception(e)
 
 		return RetVal()
 	
@@ -441,7 +440,7 @@ class EntryBase:
 			if k.endswith('Signature'):
 				sigparts = k.split('-', 1)
 				if sigparts[0] not in [ 'Custody', 'User', 'Organization', 'Entry' ]:
-					return RetVal(BadData, 'bad signature line %s' % sigparts[0])
+					return RetVal(ErrBadData, 'bad signature line %s' % sigparts[0])
 				self.signatures[sigparts[0]] = v
 			else:
 				self.fields[k] = v
@@ -454,7 +453,7 @@ class EntryBase:
 		try:
 			rawstring = data.decode()
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 		
 		lines = rawstring.split('\r\n')
 		for line in lines:
@@ -467,16 +466,16 @@ class EntryBase:
 
 			parts = stripped.split(':', 1)
 			if len(parts) != 2:
-				return RetVal(BadData, line)
+				return RetVal(ErrBadData, line)
 			
 			if parts[0] == 'Type':
 				if parts[1] != self.type:
-					return RetVal(BadData, "can't use %s data on a %s entry" % (parts[0], self.type))
+					return RetVal(ErrBadData, "can't use %s data on a %s entry" % (parts[0], self.type))
 			
 			elif parts[0].endswith('Signature'):
 				sigparts = parts[0].split('-', 1)
 				if sigparts[0] not in [ 'Custody', 'User', 'Organization', 'Entry' ]:
-					return RetVal(BadData, 'bad signature line %s' % sigparts[0])
+					return RetVal(ErrBadData, 'bad signature line %s' % sigparts[0])
 				self.signatures[sigparts[0]] = parts[1]
 			
 			else:
@@ -508,14 +507,14 @@ class EntryBase:
 		updating a User signature will delete the Organization signature which depends on it. The 
 		sigtype must be Custody, User, or Organization, and the type is case-sensitive.'''
 		if not signing_key.is_valid():
-			return RetVal(BadParameterValue, 'signing key')
+			return RetVal(ErrBadValue, 'signing key')
 		
 		if signing_key.prefix != 'ED25519':
 			return RetVal(UnsupportedEncryptionType, signing_key.prefix)
 		
 		sig_names = [x['name'] for x in self.signature_info]
 		if sigtype not in sig_names:
-			return RetVal(BadParameterValue, 'sigtype')
+			return RetVal(ErrBadValue, 'sigtype')
 		
 		key = nacl.signing.SigningKey(signing_key.raw_data())
 
@@ -566,11 +565,11 @@ class EntryBase:
 		'''Verifies a signature, given a verification key'''
 	
 		if not verify_key.is_valid():
-			return RetVal(BadParameterValue, 'bad verify key')
+			return RetVal(ErrBadValue, 'bad verify key')
 		
 		sig_names = [x['name'] for x in self.signature_info]
 		if sigtype not in sig_names:
-			return RetVal(BadParameterValue, 'bad signature type')
+			return RetVal(ErrBadValue, 'bad signature type')
 		
 		if verify_key.prefix != 'ED25519':
 			return RetVal(UnsupportedEncryptionType, verify_key.prefix)
@@ -586,7 +585,7 @@ class EntryBase:
 		try:
 			vkey = nacl.signing.VerifyKey(verify_key.raw_data())
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 
 		try:
 			data = self.make_bytestring(sig_names.index(sigtype))
@@ -655,7 +654,7 @@ class OrgEntry(EntryBase):
 		when rotate_optional is True is the field altsign.private returned.
 		'''
 		if key.prefix != 'ED25519':
-			return RetVal(BadParameterValue, f'wrong key type {key.prefix}')
+			return RetVal(ErrBadValue, f'wrong key type {key.prefix}')
 		
 		status = self.is_compliant()
 		if status.error():
@@ -668,7 +667,7 @@ class OrgEntry(EntryBase):
 			index = int(new_entry.fields['Index'])
 			new_entry.fields['Index'] = str(index + 1)
 		except Exception:
-			return RetVal(BadData, 'invalid entry index')
+			return RetVal(ErrBadData, 'invalid entry index')
 		
 		out = RetVal()
 
@@ -707,24 +706,24 @@ class OrgEntry(EntryBase):
 		'''Verifies the chain of custody between the provided previous entry and the current one.'''
 
 		if previous.type != 'Organization':
-			return RetVal(BadParameterValue, 'entry type mismatch')
+			return RetVal(ErrBadValue, 'entry type mismatch')
 		
 		if 'Custody' not in self.signatures or not self.signatures['Custody']:
-			return RetVal(ResourceNotFound, 'custody signature missing')
+			return RetVal(ErrNotFound, 'custody signature missing')
 		
 		if 'Primary-Verification-Key' not in previous.fields or \
 				not previous.fields['Primary-Verification-Key']:
-			return RetVal(ResourceNotFound, 'signing key missing')
+			return RetVal(ErrNotFound, 'signing key missing')
 		
 		try:
 			prev_index = int(previous['Index'])
 		except:
-			return RetVal(BadData, 'previous entry has a bad index')
+			return RetVal(ErrBadData, 'previous entry has a bad index')
 		
 		try:
 			index = int(self['Index'])
 		except:
-			return RetVal(BadData, 'current entry has a bad index')
+			return RetVal(ErrBadData, 'current entry has a bad index')
 		
 		if index != prev_index + 1:
 			return RetVal(InvalidKeycard, 'entry index compliance failure')
@@ -797,7 +796,7 @@ class UserEntry(EntryBase):
 		'''
 
 		if key.prefix != 'ED25519':
-			return RetVal(BadParameterValue, f'wrong key type {key.prefix}')
+			return RetVal(ErrBadValue, f'wrong key type {key.prefix}')
 		
 		status = self.is_compliant()
 		if status.error():
@@ -809,7 +808,7 @@ class UserEntry(EntryBase):
 			index = int(new_entry.fields['Index'])
 			new_entry.fields['Index'] = str(index + 1)
 		except Exception:
-			return RetVal(BadData, 'invalid entry index')
+			return RetVal(ErrBadData, 'invalid entry index')
 
 		out = RetVal()
 
@@ -855,14 +854,14 @@ class UserEntry(EntryBase):
 		'''Verifies the chain of custody between the provided previous entry and the current one.'''
 
 		if previous.type != 'User':
-			return RetVal(BadParameterValue, 'entry type mismatch')
+			return RetVal(ErrBadValue, 'entry type mismatch')
 		
 		if 'Custody' not in self.signatures or not self.signatures['Custody']:
-			return RetVal(ResourceNotFound, 'custody signature missing')
+			return RetVal(ErrNotFound, 'custody signature missing')
 		
 		if 'Contact-Request-Verification-Key' not in previous.fields or \
 				not previous.fields['Contact-Request-Verification-Key']:
-			return RetVal(ResourceNotFound, 'signing key missing')
+			return RetVal(ErrNotFound, 'signing key missing')
 		
 		status = self.verify_signature(CryptoString(previous.fields['Contact-Request-Verification-Key']),
 				'Custody')
@@ -880,7 +879,7 @@ class Keycard:
 		changed. This method requires that the root entry already exist. Note that user cards will 
 		not have all the required signatures when the call returns'''
 		if len(self.entries) < 1:
-			return RetVal(ResourceNotFound, 'missing root entry')
+			return RetVal(ErrNotFound, 'missing root entry')
 
 		# Just in case we get some squirrelly non-Org, non-User card type
 		chain_method = getattr(self.entries[-1], "chain", None)
@@ -912,10 +911,10 @@ class Keycard:
 	def load(self, path: str) -> RetVal:
 		'''Loads a keycard from a file'''
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if not os.path.exists(path):
-			return RetVal(ResourceNotFound)
+			return RetVal(ErrNotFound)
 		
 		# Although we care very much about saving keycards with the Windows-style line endings,
 		# we actually want the line endings to get stripped on load because the fields aren't
@@ -956,12 +955,12 @@ class Keycard:
 					else:
 						parts = line.split(':', 1)
 						if len(parts) != 2:
-							return RetVal(BadData, f'invalid line {line_index}')
+							return RetVal(ErrBadData, f'invalid line {line_index}')
 						
 						if parts[0] == 'Type':
 							if card_type:
 								if card_type != parts[1]:
-									return RetVal(BadData, 'entry type does not match keycard')
+									return RetVal(ErrBadData, 'entry type does not match keycard')
 							else:
 								card_type = parts[1]
 
@@ -972,7 +971,7 @@ class Keycard:
 
 		
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal.wrap_exception(e)
 
 
 
@@ -982,10 +981,10 @@ class Keycard:
 	def save(self, path: str, clobber: bool) -> RetVal:
 		'''Saves a keycard to a file'''
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if os.path.exists(path) and not clobber:
-			return RetVal(ResourceExists)
+			return RetVal(ErrExists)
 			
 		try:
 			with open(path, 'wb') as f:
@@ -995,7 +994,7 @@ class Keycard:
 					f.write(b'----- END ENTRY -----\r\n')
 			
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal.wrap_exception(e)
 
 		return RetVal()
 	
@@ -1003,7 +1002,7 @@ class Keycard:
 		'''Verifies the card's entire chain of entries'''
 		
 		if len(self.entries) == 0:
-			return RetVal(ResourceNotFound, 'keycard contains no entries')
+			return RetVal(ErrNotFound, 'keycard contains no entries')
 		
 		if len(self.entries) == 1:
 			return RetVal()

@@ -4,11 +4,12 @@ import secrets
 import time
 import uuid
 
+from retval import RetVal, BadParameterValue, ResourceExists, ServerError, Unimplemented
+
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
 from pymensago.keycard import EntryBase
-from pymensago.retval import RetVal, BadParameterValue, ResourceExists, ServerError, Unimplemented
 from pymensago.serverconn import ServerConnection, server_response, wrap_server_error
 import pymensago.utils as utils
 

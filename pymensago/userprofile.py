@@ -7,8 +7,7 @@ import shutil
 import sqlite3
 import uuid
 
-from pymensago.retval import RetVal, ResourceExists, ExceptionThrown, BadParameterValue, \
-		ResourceNotFound
+from retval import RetVal, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
 
 BadProfileList = 'BadProfileList'
@@ -263,7 +262,7 @@ class ProfileManager:
 				json.dump(profile_data, fhandle, ensure_ascii=False, indent=1)
 			
 		except Exception as e:
-			return RetVal(ExceptionThrown, e.__str__())
+			return RetVal.wrap_exception(e)
 
 		return RetVal()
 
@@ -317,11 +316,11 @@ class ProfileManager:
 		RetVal error state also contains a copy of the created profile as "profile"
 		'''
 		if not name:
-			return RetVal(BadParameterValue, "BUG: name may not be empty")
+			return RetVal(ErrBadValue, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
 		if self.__index_for_profile(name_squashed) >= 0:
-			return RetVal(ResourceExists, name)
+			return RetVal(ErrExists, name)
 
 		profile = Profile(os.path.join(self.profile_folder, name_squashed))
 		profile.make_id()
@@ -343,22 +342,22 @@ class ProfileManager:
 		Deletes the named profile and all files on disk contained in it.
 		'''
 		if name == 'default':
-			return RetVal(BadParameterValue, "'default' is reserved")
+			return RetVal(ErrBadValue, "'default' is reserved")
 		
 		if not name:
-			return RetVal(BadParameterValue, "BUG: name may not be empty")
+			return RetVal(ErrBadValue, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
 		itemindex = self.__index_for_profile(name_squashed)
 		if itemindex < 0:
-			return RetVal(ResourceNotFound, "%s doesn't exist" % name)
+			return RetVal(ErrNotFound, "%s doesn't exist" % name)
 
 		profile = self.profiles.pop(itemindex)
 		if os.path.exists(profile.path):
 			try:
 				shutil.rmtree(profile.path)
 			except Exception as e:
-				return RetVal(ExceptionThrown, e.__str__())
+				return RetVal.wrap_exception(e)
 		
 		if profile.isdefault:
 			if self.profiles:
@@ -372,7 +371,7 @@ class ProfileManager:
 		'''
 		
 		if not oldname or not newname:
-			return RetVal(BadParameterValue, "BUG: name may not be empty")
+			return RetVal(ErrBadValue, "BUG: name may not be empty")
 		
 		old_squashed = oldname.casefold()
 		new_squashed = newname.casefold()
@@ -382,10 +381,10 @@ class ProfileManager:
 		
 		index = self.__index_for_profile(old_squashed)
 		if index < 0:
-			return RetVal(ResourceNotFound, "%s doesn't exist" % oldname)
+			return RetVal(ErrNotFound, "%s doesn't exist" % oldname)
 
 		if self.__index_for_profile(new_squashed) >= 0:
-			return RetVal(ResourceExists, "%s already exists" % newname)
+			return RetVal(ErrExists, "%s already exists" % newname)
 
 		if index == self.active_index:
 			self.profiles[index].deactivate()
@@ -397,7 +396,7 @@ class ProfileManager:
 		except Exception as e:
 			if index == self.active_index:
 				self.profiles[index].activate()
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal.wrap_exception(e)
 
 		self.profiles[index].name = new_squashed
 		self.profiles[index].path = newpath
@@ -426,7 +425,7 @@ class ProfileManager:
 		no effect.
 		'''
 		if not name:
-			return RetVal(BadParameterValue, "BUG: name may not be empty")
+			return RetVal(ErrBadValue, "BUG: name may not be empty")
 		
 		if len(self.profiles) == 1:
 			if self.profiles[0].isdefault:
@@ -443,7 +442,7 @@ class ProfileManager:
 		newindex = self.__index_for_profile(name_squashed)
 		
 		if newindex < 0:
-			return RetVal(ResourceNotFound, "New profile %s not found" % name_squashed)
+			return RetVal(ErrNotFound, "New profile %s not found" % name_squashed)
 		
 		if oldindex >= 0:
 			if name_squashed == self.profiles[oldindex].name:
@@ -468,12 +467,12 @@ class ProfileManager:
 			self.active_index = -1
 		
 		if not name:
-			return RetVal(BadParameterValue, "BUG: name may not be empty")
+			return RetVal(ErrBadValue, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
 		active_index = self.__index_for_profile(name_squashed)
 		if active_index < 0:
-			return RetVal(ResourceNotFound, "%s doesn't exist" % name_squashed)
+			return RetVal(ErrNotFound, "%s doesn't exist" % name_squashed)
 		
 		self.profile_id = name_squashed
 

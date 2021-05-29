@@ -1,7 +1,8 @@
 import os
 
+from retval import ErrBadData
+
 import pymensago.contacts as contacts
-from pymensago.retval import BadData
 
 def test_contact_import():
 	'''Tests the ability to import a contact into another'''
@@ -41,7 +42,7 @@ def test_contact_setphoto():
 	
 	contact1 = contacts.Contact()
 	status = contact1.setphoto(os.path.join(imgfolder, 'toolarge.png'))
-	assert status.error() == BadData, 'contact_setphoto failed to handle a too-large photo'
+	assert status.error() == ErrBadData, 'contact_setphoto failed to handle a too-large photo'
 
 	status = contact1.setphoto(os.path.join(imgfolder, 'toconvert.gif'))
 	assert not status.error(), 'contact_setphoto failed to handle a GIF'

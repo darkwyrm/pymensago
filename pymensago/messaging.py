@@ -4,9 +4,10 @@ import json
 import jsonschema
 import time
 
+from retval import RetVal, ErrBadData, ErrBadValue, ErrInternalError
+
 import pymensago.cryptostring as cs
 from pymensago.encryption import PublicKey, SecretKey
-from pymensago.retval import BadData, BadParameterValue, ExceptionThrown, InternalError, RetVal
 from pymensago.utils import MAddress
 
 RequiredDataMissing = 'required data missing'
@@ -42,14 +43,14 @@ class Envelope:
 		
 		status = cs.validate(self.fields['KeyHash'])
 		if status.error():
-			return RetVal(InternalError, 'BUG: bad msg key hash')
+			return RetVal(ErrInternalError, 'BUG: bad msg key hash')
 		
 		status = cs.validate(self.fields['PayloadKey'])
 		if status.error():
-			return RetVal(InternalError, 'BUG: bad payload key')
+			return RetVal(ErrInternalError, 'BUG: bad payload key')
 		
 		if self.fields['Version'] != '1.0':
-			return RetVal(BadData, 'bad version value')
+			return RetVal(ErrBadData, 'bad version value')
 		
 		# Marshall and encrypt the payload. Because the internal structure of the payload varies,
 		# we have to assume that the payload is valid. Minimal validation is possible, but largely
@@ -57,7 +58,7 @@ class Envelope:
 		try:
 			envstr = json.dumps(self.fields)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 		
 		secretkey = SecretKey(self.msgkey)
 		paystr = secretkey.encrypt(json.dumps(self.fields).encode())
@@ -70,7 +71,7 @@ class Envelope:
 		'''Generates a message-specific key and attaches it to the message in encrypted form'''
 		
 		if not recipientkey.is_valid():
-			return RetVal(BadParameterValue)
+			return RetVal(ErrBadValue)
 		
 		pubkey = PublicKey(recipientkey)
 		self.msgkey = SecretKey()
@@ -88,12 +89,12 @@ class Envelope:
 		'''Sets the encrypted sender tag'''
 		
 		if not (sender.is_valid() and recipient.is_valid() and orgkey.is_valid()):
-			return RetVal(BadParameterValue)
+			return RetVal(ErrBadValue)
 		
 		try:
 			tag = json.dumps({ 'From': sender.as_string(), 'RecipientDomain': recipient.domain })
 		except Exception as e:
-			return RetVal(BadData, 'JSON marshalling error')
+			return RetVal(ErrBadData, 'JSON marshalling error')
 
 		pubkey = PublicKey(orgkey)
 		status = pubkey.encrypt(tag.encode())
@@ -108,12 +109,12 @@ class Envelope:
 		'''Sets the encrypted reciver tag'''
 
 		if not (sender.is_valid() and recipient.is_valid() and orgkey.is_valid()):
-			return RetVal(BadParameterValue)
+			return RetVal(ErrBadValue)
 		
 		try:
 			tag = json.dumps({ 'To': recipient.as_string(), 'SenderDomain': sender.domain })
 		except Exception as e:
-			return RetVal(BadData, 'JSON marshalling error')
+			return RetVal(ErrBadData, 'JSON marshalling error')
 
 		pubkey = PublicKey(orgkey)
 		status = pubkey.encrypt(tag.encode())

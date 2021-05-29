@@ -3,9 +3,10 @@
 import socket
 import sqlite3
 
+from retval import RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
+
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
-from pymensago.retval import BadParameterValue, ExceptionThrown, ResourceNotFound, RetVal, Unimplemented
 from pymensago.serverconn import ServerConnection
 from pymensago.utils import validate_domain, MAddress
 
@@ -36,7 +37,7 @@ class KCResolver:
 				return status
 		
 		status = self._get_card_from_db(owner, orgcard)
-		if status.error() != ResourceNotFound:
+		if status.error() != ErrNotFound:
 			return status
 
 		# The card has been returned, so we have *something*. It might, however, need updates.
@@ -53,7 +54,7 @@ class KCResolver:
 			# TODO: Implement Mensago server lookup in _resolve_card()
 			# This requires getting the management record from DNS and finding out the IP of the server
 			# from that record.
-			return RetVal(Unimplemented)
+			return RetVal(ErrUnimplemented)
 		
 		# Step 2: Connect and get card
 		conn = ServerConnection()
@@ -160,7 +161,7 @@ class KCResolver:
 def resolve_address(addr: MAddress) -> RetVal:
 	'''obtains the workspace ID for a Mensago address'''
 	if not addr.is_valid():
-		return RetVal(BadParameterValue)
+		return RetVal(ErrBadValue)
 	
 	if addr.id_type == 1:
 		return RetVal().set_value('Workspace-ID', addr.id)
@@ -176,7 +177,7 @@ def resolve_address(addr: MAddress) -> RetVal:
 		# TODO: Implement Mensago server lookup in resolve_address()
 		# This requires getting the management record from DNS and finding out the IP of the server
 		# from that record.
-		return RetVal(Unimplemented)
+		return RetVal(ErrUnimplemented)
 	
 	# Step 2: Connect and request the address
 	conn = ServerConnection()

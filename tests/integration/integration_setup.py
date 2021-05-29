@@ -7,13 +7,13 @@ import sys
 import time
 
 import psycopg2
+from retval import RetVal
 import toml
 
 # pylint: disable=import-error
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import Password, EncryptionPair, SigningPair
 import pymensago.keycard as keycard
-from pymensago.retval import RetVal
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
 

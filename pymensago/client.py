@@ -2,10 +2,11 @@
 Mensago client'''
 import socket
 
+from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
+
 import pymensago.auth as auth
 import pymensago.serverconn as serverconn
 from pymensago.encryption import Password, EncryptionPair
-from pymensago.retval import RetVal, InternalError, BadParameterValue, ResourceExists
 from pymensago.storage import ClientStorage
 from pymensago.userprofile import Profile
 from pymensago.workspace import Workspace
@@ -75,15 +76,15 @@ class MensagoClient:
 			try:
 				port = int(port_str)
 			except:
-				return RetVal(BadParameterValue, 'Bad port number')
+				return RetVal(ErrBadValue, 'Bad port number')
 		else:
 			port = 2001
 		
 		if port < 0 or port > 65535:
-			return RetVal(BadParameterValue, 'Bad port number')
+			return RetVal(ErrBadValue, 'Bad port number')
 
 		if '"' in uid or '/' in uid:
-			return RetVal(BadParameterValue, "User ID can't contain \" or /")
+			return RetVal(ErrBadValue, "User ID can't contain \" or /")
 
 		status = self.conn.connect('127.0.0.1', port)
 		if status.error():
@@ -98,7 +99,7 @@ class MensagoClient:
 			return regdata
 		
 		if 'wid' not in regdata or 'regcode' not in regdata:
-			return RetVal(InternalError, 'BUG: bad data from serverconn.preregister()') \
+			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.preregister()') \
 					.set_value('status', 300)
 
 		return regdata
@@ -137,7 +138,7 @@ class MensagoClient:
 		# user's password has the archive encryption password and upload the archive to the server.
 		
 		if self.fs.pman.get_active_profile().domain:
-			return RetVal(ResourceExists, 'a user workspace already exists')
+			return RetVal(ErrExists, 'a user workspace already exists')
 
 		# Parse server string. Should be in the form of (ip/domain):portnum
 		host = ''
@@ -148,7 +149,7 @@ class MensagoClient:
 			try:
 				port = int(addressparts[1])
 			except ValueError:
-				return RetVal(BadParameterValue, 'bad server string')
+				return RetVal(ErrBadValue, 'bad server string')
 			serverstring = server
 		else:
 			host = server
@@ -185,7 +186,7 @@ class MensagoClient:
 		
 		# Just a basic sanity check
 		if 'wid' not in regdata:
-			return RetVal(InternalError, 'BUG: bad data from serverconn.register()') \
+			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
 		w = Workspace(self.fs.pman.get_active_profile().db, self.fs.pman.get_active_profile().path)

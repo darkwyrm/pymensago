@@ -7,11 +7,10 @@ import os
 import socket
 
 import jsonschema
+from retval import RetVal, ErrBadValue, ErrFilesystemError, ErrNetworkError, ErrServerError
 
 from pymensago.errorcodes import *	# pylint: disable=wildcard-import
 from pymensago.hash import hashfile
-from pymensago.retval import RetVal, BadParameterValue, ExceptionThrown, FilesystemError, \
-	NetworkError, ServerError
 import pymensago.utils as utils
 
 __errcode_map = {
@@ -93,7 +92,7 @@ class ServerConnection:
 			# which is the expectation as soon as a client connects.
 			sock.settimeout(10.0)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 		
 		try:
 			sock.connect((address, port))
@@ -103,7 +102,7 @@ class ServerConnection:
 
 		except Exception as e:
 			sock.close()
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 
 		# Set a timeout of 30 minutes
 		sock.settimeout(1800.0)
@@ -124,13 +123,13 @@ class ServerConnection:
 		cmdstr = json.dumps(command) + '\r\n'
 		
 		if not self.socket:
-			return RetVal(NetworkError, 'not connected')
+			return RetVal(ErrNetworkError, 'not connected')
 		
 		try:
 			self.socket.send(cmdstr.encode())
 		except Exception as e:
 			self.socket.close()
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 		
 		return RetVal()
 
@@ -150,7 +149,7 @@ class ServerConnection:
 			if schema:
 				jsonschema.validate(rawresponse, schema)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal.wrap_exception(e)
 
 		response = RetVal()
 		response['Code'] = rawresponse['Code']
@@ -172,20 +171,20 @@ class ServerConnection:
 		'''Sends a string over a socket'''
 
 		if not self.socket:
-			return RetVal(NetworkError, 'Invalid connection')
+			return RetVal(ErrNetworkError, 'Invalid connection')
 		
 		try:
 			self.socket.send(text.encode())
-		except Exception as exc:
+		except Exception as e:
 			self.socket.close()
-			return RetVal(ExceptionThrown, exc.__str__())
+			return RetVal.wrap_exception(e)
 		
 		return RetVal()
 
 
 def wrap_server_error(response) -> RetVal:
 	'''Wraps a server response into a RetVal object'''
-	out = RetVal(__errcode_map.get(response['Code'],ServerError), response['Status']).set_values({
+	out = RetVal(__errcode_map.get(response['Code'],ErrServerError), response['Status']).set_values({
 		'Code' : response['Code'],
 		'Status' : response['Status'],
 		'Info' : ''
@@ -251,7 +250,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 	try:
 		handle = open(local_path, "wb")
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal.wrap_exception(e)
 	
 	request = {
 		'Action' : 'DOWNLOAD',
@@ -278,7 +277,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 
 	if 'Size' not in response['Data']:
 		handle.close()
-		return RetVal(ServerError, "Server gave invalid response: missing Size field")
+		return RetVal(ErrServerError, "Server gave invalid response: missing Size field")
 	
 	# This might seem silly at first, but adding the Size field is the client's way of confirming
 	# readiness to download the file	
@@ -286,7 +285,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 		sizeToRead = int(response['Data']['Size'])
 	except:
 		handle.close()
-		return RetVal(ServerError, "Server gave invalid response: bad Size field")
+		return RetVal(ErrServerError, "Server gave invalid response: bad Size field")
 
 	if offset > 0:
 		handle.seek(offset)
@@ -524,18 +523,18 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	try:	
 		filesize = os.path.getsize(localpath)
 	except OSError as e:
-		return RetVal(BadParameterValue, str(e))
+		return RetVal(ErrBadValue, str(e))
 	except Exception as e:
-		return RetVal(ExceptionThrown, str(e))
+		return RetVal.wrap_exception(e)
 	
 	if offset >= 0 and offset > filesize:
-		return RetVal(BadParameterValue, 'bad offset')
+		return RetVal(ErrBadValue, 'bad offset')
 	
 	if (offset >= 0 and not tempname) or (offset < 0 and tempname):
-		return RetVal(BadParameterValue, 'both tempname and offset must both be set')
+		return RetVal(ErrBadValue, 'both tempname and offset must both be set')
 	
 	if not serverpath:
-		return RetVal(BadParameterValue, 'empty server path')
+		return RetVal(ErrBadValue, 'empty server path')
 	
 	if not hashstr:
 		status = hashfile(localpath)
@@ -560,7 +559,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	try:
 		handle = open(localpath, 'rb')
 	except Exception as e:
-		return RetVal(FilesystemError, e)
+		return RetVal(ErrFilesystemError, e)
 
 	if offset > 0:
 		handle.seek(offset)
@@ -569,7 +568,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 		filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
 	except Exception as e:
 		handle.close()
-		return RetVal(FilesystemError, e).set_values({
+		return RetVal(ErrFilesystemError, e).set_values({
 			'sent': totalsent,
 			'tempname': response['TempName']
 		})
@@ -578,7 +577,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 			sent_size = conn.socket.send(filedata)
 		except Exception as e:
 			handle.close()
-			return RetVal(NetworkError, e).set_values({
+			return RetVal(ErrNetworkError, e).set_values({
 				'sent': totalsent,
 				'tempname': response['TempName']
 			})
@@ -588,7 +587,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 			filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
 		except Exception as e:
 			handle.close()
-			return RetVal(FilesystemError, e).set_values({
+			return RetVal(ErrFilesystemError, e).set_values({
 				'sent': totalsent,
 				'tempname': response['TempName']
 			})

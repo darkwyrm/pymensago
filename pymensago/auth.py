@@ -3,9 +3,10 @@
 import base64
 import sqlite3
 
+from retval import RetVal, ErrNotFound, ErrExists, ErrBadValue
+
 import pymensago.encryption as encryption
 import pymensago.utils as utils
-from pymensago.retval import RetVal, ResourceNotFound, ResourceExists, BadParameterValue
 
 def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
@@ -14,7 +15,7 @@ def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 		(wid,domain))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 	
 	out = encryption.Password()
 	status = out.Assign(results[0])
@@ -29,7 +30,7 @@ def set_credentials(db, wid: str, domain: str, pw: encryption.Password) -> RetVa
 	cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 
 	cursor = db.cursor()
 	cursor.execute("UPDATE workspaces SET password=?,pwhashtype=? WHERE wid=? AND domain=?",
@@ -42,10 +43,10 @@ def add_device_session(db, address: str, devid: str, enctype: str, public_key: s
 	'''Adds a device to a workspace'''
 
 	if not address or not devid or not enctype or not public_key or not private_key:
-		return RetVal(BadParameterValue, "Empty parameter")
+		return RetVal(ErrBadValue, "Empty parameter")
 	
 	if enctype != 'curve25519':
-		return RetVal(BadParameterValue, "enctype must be 'curve25519'")
+		return RetVal(ErrBadValue, "enctype must be 'curve25519'")
 
 	# Normally we don't validate the input, relying on the caller to ensure valid data because
 	# in most cases, bad data just corrupts the database integrity, not crash the program.
@@ -59,13 +60,13 @@ def add_device_session(db, address: str, devid: str, enctype: str, public_key: s
 	cursor.execute("SELECT wid FROM workspaces WHERE wid=?", (parts['wid'],))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 
 	# Can't have a session on the server already
 	cursor.execute("SELECT address FROM sessions WHERE address=?", (address,))
 	results = cursor.fetchone()
 	if results:
-		return RetVal(ResourceExists)
+		return RetVal(ErrExists)
 	
 	cursor = db.cursor()
 	if devname:
@@ -90,7 +91,7 @@ def remove_device_session(db, devid: str) -> RetVal:
 	cursor.execute("SELECT devid FROM sessions WHERE devid=?", (devid,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 
 	cursor.execute("DELETE FROM sessions WHERE devid=?", (devid,))
 	db.commit()
@@ -103,7 +104,7 @@ def get_session_public_key(db: sqlite3.Connection, address: str) -> RetVal:
 	cursor.execute("SELECT public_key FROM sessions WHERE address=?", (address,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 	return RetVal().set_value('key', results[0])
 
 
@@ -113,7 +114,7 @@ def get_session_private_key(db: sqlite3.Connection, address: str) -> RetVal:
 	cursor.execute("SELECT private_key FROM sessions WHERE address=?", (address,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 	return RetVal().set_value('key', results[0])
 
 
@@ -130,7 +131,7 @@ def add_key(db: sqlite3.Connection, key: encryption.CryptoKey, address: str) -> 
 	cursor.execute("SELECT keyid FROM keys WHERE keyid=?", (key.get_id(),))
 	results = cursor.fetchone()
 	if results:
-		return RetVal(ResourceExists)
+		return RetVal(ErrExists)
 	
 	if key.enctype == 'XSALSA20':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,algorithm)
@@ -146,7 +147,7 @@ def add_key(db: sqlite3.Connection, key: encryption.CryptoKey, address: str) -> 
 		db.commit()
 		return RetVal()
 	
-	return RetVal(BadParameterValue, "Key must be 'asymmetric' or 'symmetric'")
+	return RetVal(ErrBadValue, "Key must be 'asymmetric' or 'symmetric'")
 
 
 def remove_key(db: sqlite3.Connection, keyid: str) -> RetVal:
@@ -161,7 +162,7 @@ def remove_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	cursor.execute("SELECT keyid FROM keys WHERE keyid=?", (keyid,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 
 	cursor.execute("DELETE FROM keys WHERE keyid=?", (keyid,))
 	db.commit()
@@ -185,7 +186,7 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 		(keyid,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
-		return RetVal(ResourceNotFound)
+		return RetVal(ErrNotFound)
 	
 	if results[1] == 'asymmetric':
 		public = base64.b85decode(results[4])
@@ -198,4 +199,4 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 		key = encryption.SecretKey(private)
 		return RetVal().set_value('key', key)
 	
-	return RetVal(BadParameterValue, "Key must be 'asymmetric' or 'symmetric'")
+	return RetVal(ErrBadValue, "Key must be 'asymmetric' or 'symmetric'")

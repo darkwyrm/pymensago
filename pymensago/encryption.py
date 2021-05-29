@@ -6,6 +6,8 @@ import re
 import uuid
 
 import jsonschema
+from retval import RetVal, ErrBadData, ErrBadValue, ErrBadType, ErrInternalError, ErrExists, \
+	ErrNotFound
 
 import nacl.public
 import nacl.pwhash
@@ -14,8 +16,6 @@ import nacl.signing
 import nacl.utils
 from pymensago.cryptostring import CryptoString
 from pymensago.hash import blake2hash
-from pymensago.retval import RetVal, BadData, BadParameterValue, BadParameterType, \
-	ExceptionThrown, InternalError, ResourceExists, ResourceNotFound
 
 VerificationError = 'VerificationError'
 DecryptionFailure = 'DecryptionFailure'
@@ -93,13 +93,13 @@ class PublicKey (CryptoKey):
 		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
 		field 'data'.'''
 		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected')
+			return RetVal(ErrBadType, 'bytes expected')
 		
 		try:
 			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
 			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 		
 		return RetVal().set_values({'prefix':self.public.prefix, 'data':encrypted_data})
 
@@ -153,10 +153,10 @@ class EncryptionPair (CryptoKey):
 	def save(self, path: str):
 		'''Saves the keypair to a file'''
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if os.path.exists(path):
-			return RetVal(ResourceExists, '%s exists' % path)
+			return RetVal(ErrExists, '%s exists' % path)
 
 		outdata = {
 			'PublicKey' : self.get_public_key(),
@@ -171,7 +171,7 @@ class EncryptionPair (CryptoKey):
 			fhandle.close()
 		
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 
 		return RetVal()
 
@@ -179,13 +179,13 @@ class EncryptionPair (CryptoKey):
 		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
 		field 'data'.'''
 		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected')
+			return RetVal(ErrBadType, 'bytes expected')
 		
 		try:
 			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
 			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 		
 		return RetVal().set_values({'prefix':self.public.prefix, 'data':encrypted_data})
 
@@ -193,13 +193,13 @@ class EncryptionPair (CryptoKey):
 		'''Decrypt the passed data using the private key and return the raw data in the field 
 		'data'. Base85 decoding of the data is optional, but enabled by default.'''
 		if not isinstance(data, str):
-			return RetVal(BadParameterType, 'string expected')
+			return RetVal(ErrBadType, 'string expected')
 		
 		try:
 			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.raw_data()))
 			decrypted_data = sealedbox.decrypt(data.encode(), Base85Encoder)
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 		
 		return RetVal().set_value('data', decrypted_data.decode())
 
@@ -207,10 +207,10 @@ class EncryptionPair (CryptoKey):
 def load_encryptionpair(path: str) -> RetVal:
 	'''Instantiates a keypair from a file'''
 	if not path:
-		return RetVal(BadParameterValue, 'path may not be empty')
+		return RetVal(ErrBadValue, 'path may not be empty')
 	
 	if not os.path.exists(path):
-		return RetVal(ResourceNotFound, '%s exists' % path)
+		return RetVal(ErrNotFound, '%s exists' % path)
 	
 	indata = None
 	try:
@@ -218,22 +218,22 @@ def load_encryptionpair(path: str) -> RetVal:
 			indata = json.load(fhandle)
 	
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal().wrap_exception(e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Mensago JSON keypair')
+		return RetVal(ErrBadData, 'File does not contain an Mensago JSON keypair')
 
 	try:
 		jsonschema.validate(indata, __encryption_pair_schema)
 	except jsonschema.ValidationError:
-		return RetVal(BadData, "file data does not validate")
+		return RetVal(ErrBadData, "file data does not validate")
 	except jsonschema.SchemaError:
-		return RetVal(InternalError, "BUG: invalid EncryptionPair schema")
+		return RetVal(ErrInternalError, "BUG: invalid EncryptionPair schema")
 
 	public_key = CryptoString(indata['PublicKey'])
 	private_key = CryptoString(indata['PrivateKey'])
 	if not public_key.is_valid() or not private_key.is_valid():
-		return RetVal(BadData, 'Failure to base85 decode key data')
+		return RetVal(ErrBadData, 'Failure to base85 decode key data')
 	
 	return RetVal().set_value('keypair', EncryptionPair(public_key, private_key))
 
@@ -251,9 +251,9 @@ class VerificationKey (CryptoKey):
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
 		
 		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected for data')
+			return RetVal(ErrBadType, 'bytes expected for data')
 		if not isinstance(data_signature, CryptoString):
-			return RetVal(BadParameterType, 'signature parameter must be a CryptoString')
+			return RetVal(ErrBadType, 'signature parameter must be a CryptoString')
 		
 		key = nacl.signing.VerifyKey(self.public.raw_data())
 
@@ -316,10 +316,10 @@ class SigningPair:
 	def save(self, path: str) -> RetVal:
 		'''Saves the key to a file'''
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if os.path.exists(path):
-			return RetVal(ResourceExists, '%s exists' % path)
+			return RetVal(ErrExists, '%s exists' % path)
 
 		outdata = {
 			'VerificationKey' : self.get_public_key(),
@@ -334,21 +334,21 @@ class SigningPair:
 			fhandle.close()
 		
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 
 		return RetVal()
 	
 	def sign(self, data : bytes) -> RetVal:
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
 		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected for data')
+			return RetVal(ErrBadType, 'bytes expected for data')
 		
 		key = nacl.signing.SigningKey(self.private.raw_data())
 
 		try:
 			signed = key.sign(data, Base85Encoder)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal().wrap_exception(e)
 		
 		return RetVal().set_value('signature', 'ED25519:' + signed.signature.decode())
 	
@@ -356,9 +356,9 @@ class SigningPair:
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
 		
 		if not isinstance(data, bytes):
-			return RetVal(BadParameterType, 'bytes expected for data')
+			return RetVal(ErrBadType, 'bytes expected for data')
 		if not isinstance(data_signature, CryptoString):
-			return RetVal(BadParameterType, 'signature parameter must be a CryptoString')
+			return RetVal(ErrBadType, 'signature parameter must be a CryptoString')
 		
 		key = nacl.signing.VerifyKey(self.public.raw_data())
 
@@ -383,10 +383,10 @@ def signingpair_from_string(keystr : str) -> SigningPair:
 def load_signingpair(path: str) -> RetVal:
 	'''Instantiates a signing pair from a file'''
 	if not path:
-		return RetVal(BadParameterValue, 'path may not be empty')
+		return RetVal(ErrBadValue, 'path may not be empty')
 	
 	if not os.path.exists(path):
-		return RetVal(ResourceNotFound, '%s exists' % path)
+		return RetVal(ErrNotFound, '%s exists' % path)
 	
 	indata = None
 	try:
@@ -394,22 +394,22 @@ def load_signingpair(path: str) -> RetVal:
 			indata = json.load(fhandle)
 	
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal().wrap_exception(e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Mensago JSON signing pair')
+		return RetVal(ErrBadData, 'File does not contain an Mensago JSON signing pair')
 
 	try:
 		jsonschema.validate(indata, __signing_pair_schema)
 	except jsonschema.ValidationError:
-		return RetVal(BadData, "file data does not validate")
+		return RetVal(ErrBadData, "file data does not validate")
 	except jsonschema.SchemaError:
-		return RetVal(InternalError, "BUG: invalid SigningPair schema")
+		return RetVal(ErrInternalError, "BUG: invalid SigningPair schema")
 
 	public_key = CryptoString(indata['VerificationKey'])
 	private_key = CryptoString(indata['SigningKey'])
 	if not public_key.is_valid() or not private_key.is_valid():
-		return RetVal(BadData, 'Failure to base85 decode key data')
+		return RetVal(ErrBadData, 'Failure to base85 decode key data')
 	
 	return RetVal().set_value('keypair', SigningPair(public_key, private_key))
 
@@ -439,10 +439,10 @@ class SecretKey (CryptoKey):
 	def save(self, path: str) -> RetVal:
 		'''Saves the key to a file'''
 		if not path:
-			return RetVal(BadParameterValue, 'path may not be empty')
+			return RetVal(ErrBadValue, 'path may not be empty')
 		
 		if os.path.exists(path):
-			return RetVal(ResourceExists, '%s exists' % path)
+			return RetVal(ErrExists, '%s exists' % path)
 
 		outdata = {
 			'SecretKey' : self.get_key()
@@ -454,7 +454,7 @@ class SecretKey (CryptoKey):
 			fhandle.close()
 		
 		except Exception as e:
-			return RetVal(ExceptionThrown, str(e))
+			return RetVal().wrap_exception(e)
 
 		return RetVal()
 	
@@ -487,10 +487,10 @@ class SecretKey (CryptoKey):
 def load_secretkey(path: str) -> RetVal:
 	'''Instantiates a secret key from a file'''
 	if not path:
-		return RetVal(BadParameterValue, 'path may not be empty')
+		return RetVal(ErrBadValue, 'path may not be empty')
 	
 	if not os.path.exists(path):
-		return RetVal(ResourceNotFound, '%s exists' % path)
+		return RetVal(ErrNotFound, '%s exists' % path)
 	
 	indata = None
 	try:
@@ -498,21 +498,21 @@ def load_secretkey(path: str) -> RetVal:
 			indata = json.load(fhandle)
 	
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal().wrap_exception(e)
 	
 	if not isinstance(indata, dict):
-		return RetVal(BadData, 'File does not contain an Mensago JSON secret key')
+		return RetVal(ErrBadData, 'File does not contain an Mensago JSON secret key')
 
 	try:
 		jsonschema.validate(indata, __secret_key_schema)
 	except jsonschema.ValidationError:
-		return RetVal(BadData, "file data does not validate")
+		return RetVal(ErrBadData, "file data does not validate")
 	except jsonschema.SchemaError:
-		return RetVal(InternalError, "BUG: invalid SecretKey schema")
+		return RetVal(ErrInternalError, "BUG: invalid SecretKey schema")
 
 	key = CryptoString(indata['SecretKey'])
 	if not key.is_valid():
-		return RetVal(BadData, 'Failure to base85 decode key data')
+		return RetVal(ErrBadData, 'Failure to base85 decode key data')
 	
 	return RetVal().set_value('key', SecretKey(key))
 
@@ -545,7 +545,7 @@ def check_password_complexity(indata: str) -> RetVal:
 	strength: string in [very weak', 'weak', 'medium', 'strong']
 	'''
 	if len(indata) < 8:
-		return RetVal(BadParameterValue, 'Passphrase must be at least 8 characters.') \
+		return RetVal(ErrBadValue, 'Passphrase must be at least 8 characters.') \
 			.set_value('strength', 'very weak')
 	
 	strength_score = 0
@@ -572,7 +572,7 @@ def check_password_complexity(indata: str) -> RetVal:
 
 	if (len(indata) < 12 and strength_score < 3) or strength_score < 2:
 		# If the passphrase is less than 12 characters, require complexity
-		status = RetVal(BadParameterValue, 'passphrase too weak')
+		status = RetVal(ErrBadValue, 'passphrase too weak')
 		status.set_value('strength', strength_strings[strength_score])
 		return status
 	return RetVal().set_value('strength', strength_strings[strength_score])

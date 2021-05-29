@@ -4,8 +4,7 @@ import base64
 import hashlib
 
 import blake3
-
-from pymensago.retval import RetVal, BadParameterValue, ExceptionThrown
+from retval import RetVal, ErrBadValue
 
 def blake2hash(data: bytes) -> str:
 	'''Returns a CryptoString-format BLAKE2B-256 hash string of the passed data'''
@@ -51,7 +50,7 @@ def hashfile(path: str, algorithm='BLAKE2B-256') -> RetVal:
 	'''Returns a RetVal containing the hash of the passed file in the 'hash' field. The algorithm 
 	used may be specified, but defaults to BLAKE2B-256.'''
 	if not path:
-		return RetVal(BadParameterValue, 'bad path')
+		return RetVal(ErrBadValue, 'bad path')
 	
 	hasher = None
 	if algorithm == 'BLAKE2B-256':
@@ -63,12 +62,12 @@ def hashfile(path: str, algorithm='BLAKE2B-256') -> RetVal:
 	elif algorithm == 'SHA3-256':
 		hasher = hashlib.sha3_256()
 	else:
-		return RetVal(BadParameterValue, 'bad algorithm')
+		return RetVal(ErrBadValue, 'bad algorithm')
 	
 	try:
 		handle = open(path, 'rb')
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal().wrap_exception(e)
 
 	filedata = handle.read(8192)
 	while filedata:

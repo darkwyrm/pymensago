@@ -3,11 +3,10 @@
 import pathlib
 
 import sqlite3
+from retval import RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
-from pymensago.retval import RetVal, ResourceExists, ResourceNotFound, ExceptionThrown, \
-		BadParameterValue
 
 class Workspace:
 	'''Workspace provides high-level operations for managing workspace data.'''
@@ -73,7 +72,7 @@ class Workspace:
 			self.path.mkdir(parents=True, exist_ok=True)
 		except Exception as e:
 			self.remove_from_db()
-			return RetVal(ExceptionThrown, e.__str__())
+			return RetVal.wrap_exception(e)
 		
 		self.path.joinpath('files').mkdir(exist_ok=True)
 		self.path.joinpath('files','attachments').mkdir(exist_ok=True)
@@ -88,7 +87,7 @@ class Workspace:
 		cursor.execute("SELECT wid FROM workspaces WHERE wid=?", (self.wid,))
 		results = cursor.fetchone()
 		if results:
-			return RetVal(ResourceExists, self.wid)
+			return RetVal(ErrExists, self.wid)
 		
 		cursor.execute('''INSERT INTO workspaces(wid,domain,password,pwhashtype,type)
 			VALUES(?,?,?,?,?)''', (self.wid, self.domain, pw.hashstring, pw.hashtype, self.type))
@@ -104,7 +103,7 @@ class Workspace:
 		cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (self.wid,self.domain))
 		results = cursor.fetchone()
 		if not results or not results[0]:
-			return RetVal(ResourceNotFound, "%s/%s" % (self.wid, self.domain))
+			return RetVal(ErrNotFound, "%s/%s" % (self.wid, self.domain))
 		
 		address = '/'.join([self.wid,self.domain])
 		cursor.execute("DELETE FROM workspaces WHERE wid=? AND domain=?", (self.wid,self.domain))
@@ -126,7 +125,7 @@ class Workspace:
 		cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
 		results = cursor.fetchone()
 		if not results or not results[0]:
-			return RetVal(ResourceNotFound, "%s/%s not found" % (wid,domain))
+			return RetVal(ErrNotFound, "%s/%s not found" % (wid,domain))
 		
 		cursor.execute("DELETE FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
 		self.db.commit()
@@ -142,7 +141,7 @@ class Workspace:
 		cursor.execute("SELECT fid FROM folders WHERE fid=?", (folder.fid,))
 		results = cursor.fetchone()
 		if results:
-			return RetVal(ResourceExists, folder.fid)
+			return RetVal(ErrExists, folder.fid)
 		
 		cursor.execute('''INSERT INTO folders(fid,address,keyid,path,permissions)
 			VALUES(?,?,?,?,?)''', (folder.fid, folder.address, folder.keyid, folder.path,
@@ -162,7 +161,7 @@ class Workspace:
 		cursor.execute("SELECT fid FROM folders WHERE fid=?", (fid,))
 		results = cursor.fetchone()
 		if not results or not results[0]:
-			return RetVal(ResourceNotFound, fid)
+			return RetVal(ErrNotFound, fid)
 
 		cursor.execute("DELETE FROM folders WHERE fid=?", (fid,))
 		self.db.commit()
@@ -183,7 +182,7 @@ class Workspace:
 			SELECT address,keyid,path,permissions FROM folders WHERE fid=?''', (fid,))
 		results = cursor.fetchone()
 		if not results or not results[0]:
-			return RetVal(ResourceNotFound, fid)
+			return RetVal(ErrNotFound, fid)
 		
 		folder = encryption.FolderMapping()
 		folder.fid = fid
@@ -195,7 +194,7 @@ class Workspace:
 		'''set_userid() sets the human-friendly name for the workspace'''
 		
 		if ' ' or '"' in userid:
-			return RetVal(BadParameterValue, '" and space not permitted')
+			return RetVal(ErrBadValue, '" and space not permitted')
 		
 		cursor = self.db.cursor()
 		sqlcmd='''

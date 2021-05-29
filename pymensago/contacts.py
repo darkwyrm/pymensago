@@ -5,7 +5,7 @@ import os
 import tempfile
 import time
 
-from pymensago.retval import BadData, ExceptionThrown, RetVal
+from retval import RetVal, ErrBadData 
 from PIL import Image
 
 def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
@@ -46,15 +46,15 @@ class Contact(dict):
 		try:
 			fileinfo = os.stat(path)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal().wrap_exception(e)
 		
 		if fileinfo.st_size > 512_000:
-			return RetVal(BadData, 'file too large')
+			return RetVal(ErrBadData, 'file too large')
 		
 		try:
 			img = Image.open(path)
 		except Exception as e:
-			return RetVal(ExceptionThrown, e)
+			return RetVal().wrap_exception(e)
 		
 		# Now that we have the image opened, let's make sure it uses one of the three formats:
 		# WEBP, JPEG, or PNG. If it isn't one of these three, convert it to WEBP. Then again, we'll
@@ -68,7 +68,7 @@ class Contact(dict):
 				img.save(temppath, 'WEBP', lossless=True, quality=3)
 			except Exception as e:
 				os.remove(temppath)
-				return RetVal(ExceptionThrown, e)
+				return RetVal().wrap_exception(e)
 			filetype = 'image/webp'
 		img.close()
 

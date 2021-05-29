@@ -3,9 +3,10 @@ import random
 import time
 import uuid
 
+from retval import RetVal
+
 # pylint: disable=import-error
 from integration_setup import setup_test, init_server, init_admin, reset_workspace_dir
-from pymensago.retval import RetVal, ExceptionThrown
 import pymensago.serverconn as serverconn
 
 def make_test_file(path: str, file_size=-1, file_name='') -> RetVal:
@@ -22,7 +23,7 @@ def make_test_file(path: str, file_size=-1, file_name='') -> RetVal:
 	try:
 		fhandle = open(os.path.join(path, file_name), 'w')
 	except Exception as e:
-		return RetVal(ExceptionThrown, e)
+		return RetVal.wrap_exception(e)
 	
 	fhandle.write('0' * file_size)
 	fhandle.close()

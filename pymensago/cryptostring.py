@@ -5,7 +5,7 @@ and use only capital ASCII letters, numbers, and dashes.'''
 import base64
 import re
 
-from pymensago.retval import RetVal, BadData, BadParameterValue
+from retval import RetVal, ErrBadData, ErrBadValue
 
 class CryptoString:
 	'''This class encapsulates code for working with strings associated with an algorithm. This 
@@ -32,7 +32,7 @@ class CryptoString:
 		try:
 			return self.set(data.decode())
 		except Exception as e:
-			return RetVal(BadData, e)
+			return RetVal(ErrBadData, e)
 	
 	def __str__(self):
 		return '%s:%s' % (self.prefix, self.data)
@@ -70,13 +70,13 @@ def validate(string: str) -> RetVal:
 	
 	m = re.match(r'^[A-Z0-9-]{1,15}:', string)
 	if not m:
-		return RetVal(BadParameterValue, 'prefix is non-compliant')
+		return RetVal(ErrBadValue, 'prefix is non-compliant')
 
 	parts = string.split(':', 1)
 	if len(parts) != 2:
-		return RetVal(BadParameterValue, 'bad data string')
+		return RetVal(ErrBadValue, 'bad data string')
 
 	try:
 		_ = base64.b85decode(parts[1])
 	except:
-		return RetVal(BadParameterValue, 'error decoding data')
+		return RetVal(ErrBadValue, 'error decoding data')
