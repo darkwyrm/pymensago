@@ -19,6 +19,19 @@ from pymensago.retval import RetVal, BadData, BadParameterValue, BadParameterTyp
 
 VerificationError = 'VerificationError'
 DecryptionFailure = 'DecryptionFailure'
+ErrUnsupportedAlgorithm = 'ErrUnsupportedAlgorithm'
+
+supported_algorithms = [
+	# Hash algorithms
+	'BLAKE2B-256', 'SHA256', 'SHA512', 'SHA3-256', 'SHA3-512',
+
+	# Public key crypto
+	'CURVE25519', 'ED25519',
+
+	# Secret key crypt
+	'XSALSA20', 'SALSA20', 'AES-128', 'AES-256', 
+]
+
 
 # JSON schemas used to validate keyfile data
 __encryption_pair_schema = {
