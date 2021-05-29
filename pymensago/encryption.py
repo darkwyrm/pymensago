@@ -88,7 +88,7 @@ class PublicKey (CryptoKey):
 		except Exception as e:
 			return RetVal(ExceptionThrown, str(e))
 		
-		return RetVal().set_value('data', encrypted_data)
+		return RetVal().set_values({'prefix':self.public.prefix, 'data':encrypted_data})
 
 
 class EncryptionPair (CryptoKey):
@@ -174,7 +174,7 @@ class EncryptionPair (CryptoKey):
 		except Exception as e:
 			return RetVal(ExceptionThrown, str(e))
 		
-		return RetVal().set_value('data', encrypted_data)
+		return RetVal().set_values({'prefix':self.public.prefix, 'data':encrypted_data})
 
 	def decrypt(self, data : str) -> RetVal:
 		'''Decrypt the passed data using the private key and return the raw data in the field 
