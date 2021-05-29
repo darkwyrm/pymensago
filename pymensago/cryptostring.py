@@ -11,11 +11,10 @@ class CryptoString:
 	'''This class encapsulates code for working with strings associated with an algorithm. This 
 	includes hashes and encryption keys.'''
 	def __init__(self, data=''):
+		self.prefix = ''
+		self.data = ''
 		if data:
 			self.set(data)
-		else:
-			self.prefix = ''
-			self.data = ''
 	
 	def set(self, data: str) -> RetVal:
 		'''Initializes the instance from data passed to it. The string is expected to follow the 
@@ -80,3 +79,6 @@ def validate(string: str) -> RetVal:
 		_ = base64.b85decode(parts[1])
 	except:
 		return RetVal(ErrBadValue, 'error decoding data')
+	
+	return RetVal()
+
