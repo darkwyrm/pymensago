@@ -19,6 +19,9 @@ class MAddress:
 		self.domain = ''
 
 	def __str__(self) -> str:
+		return self.as_string()
+	
+	def as_string(self) -> str:
 		return self.id + '/' + self.domain
 
 	def set(self, addr: str) -> RetVal:
