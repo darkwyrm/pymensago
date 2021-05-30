@@ -151,11 +151,12 @@ class ServerConnection:
 		except Exception as e:
 			return RetVal().wrap_exception(e)
 
-		response = RetVal()
-		response['Code'] = rawresponse['Code']
-		response['Status'] = rawresponse['Status']
-		response['Info'] = rawresponse['Info']
-		response['Data'] = rawresponse['Data']
+		response = RetVal().set_values({
+			'Code': rawresponse['Code'],
+			'Status': rawresponse['Status'],
+			'Info': rawresponse['Info'],
+			'Data': rawresponse['Data']
+		})
 		return response
 	
 	def read(self) -> str:
