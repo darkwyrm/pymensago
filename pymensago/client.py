@@ -34,7 +34,7 @@ class MensagoClient:
 		status = self.conn.connect(status['host'],status['port'])
 		return status
 	
-	def get_active_profile(self) -> Profile:
+	def get_active_profile(self) -> RetVal:
 		'''Returns a copy of the active profile'''
 		return self.fs.pman.get_active_profile()
 
