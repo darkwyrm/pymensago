@@ -92,7 +92,7 @@ class ServerConnection:
 			# which is the expectation as soon as a client connects.
 			sock.settimeout(10.0)
 		except Exception as e:
-			return RetVal.wrap_exception(e)
+			return RetVal().wrap_exception(e)
 		
 		try:
 			sock.connect((address, port))
@@ -102,7 +102,7 @@ class ServerConnection:
 
 		except Exception as e:
 			sock.close()
-			return RetVal.wrap_exception(e)
+			return RetVal().wrap_exception(e)
 
 		# Set a timeout of 30 minutes
 		sock.settimeout(1800.0)
@@ -129,7 +129,7 @@ class ServerConnection:
 			self.socket.send(cmdstr.encode())
 		except Exception as e:
 			self.socket.close()
-			return RetVal.wrap_exception(e)
+			return RetVal().wrap_exception(e)
 		
 		return RetVal()
 
@@ -149,7 +149,7 @@ class ServerConnection:
 			if schema:
 				jsonschema.validate(rawresponse, schema)
 		except Exception as e:
-			return RetVal.wrap_exception(e)
+			return RetVal().wrap_exception(e)
 
 		response = RetVal()
 		response['Code'] = rawresponse['Code']
@@ -177,7 +177,7 @@ class ServerConnection:
 			self.socket.send(text.encode())
 		except Exception as e:
 			self.socket.close()
-			return RetVal.wrap_exception(e)
+			return RetVal().wrap_exception(e)
 		
 		return RetVal()
 
@@ -250,7 +250,7 @@ def download(conn: ServerConnection, server_path: str, local_path: str, offset=-
 	try:
 		handle = open(local_path, "wb")
 	except Exception as e:
-		return RetVal.wrap_exception(e)
+		return RetVal().wrap_exception(e)
 	
 	request = {
 		'Action' : 'DOWNLOAD',
@@ -525,7 +525,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 	except OSError as e:
 		return RetVal(ErrBadValue, str(e))
 	except Exception as e:
-		return RetVal.wrap_exception(e)
+		return RetVal().wrap_exception(e)
 	
 	if offset >= 0 and offset > filesize:
 		return RetVal(ErrBadValue, 'bad offset')
