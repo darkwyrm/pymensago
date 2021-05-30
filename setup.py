@@ -6,7 +6,7 @@ setup(
 	description='library for writing Mensago clients',
 	url='https://github.com/darkwyrm/pymensago',
 	author='Jon Yoder',
-	author_email='jsyoder@mailfence.com',
+	author_email='jon@yoder.cloud',
 	license='MIT',
 	packages=find_packages(),
 	classifiers=[
