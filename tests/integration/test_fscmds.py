@@ -5,8 +5,7 @@ import uuid
 
 from retval import RetVal
 
-# pylint: disable=import-error
-from integration_setup import setup_test, init_server, init_admin, reset_workspace_dir
+from .integration_setup import setup_test, init_server, init_admin, reset_workspace_dir
 import pymensago.serverconn as serverconn
 
 def make_test_file(path: str, file_size=-1, file_name='') -> RetVal:

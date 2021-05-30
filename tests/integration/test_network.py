@@ -1,5 +1,4 @@
-# pylint: disable=import-error
-from integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
+from .integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
 	init_user
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import EncryptionPair, Password
