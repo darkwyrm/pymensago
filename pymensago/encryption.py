@@ -96,7 +96,7 @@ class PublicKey (CryptoKey):
 			return RetVal(ErrBadType, 'bytes expected')
 		
 		try:
-			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
+			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.as_raw()))
 			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
 		except Exception as e:
 			return RetVal().wrap_exception(e)
@@ -109,7 +109,7 @@ class EncryptionPair (CryptoKey):
 	def __init__(self, public=None, private=None):
 		super().__init__()
 		if public and private:
-			if not isinstance(public, CryptoString) or not isinstance(private, CryptoString):
+			if not (isinstance(public, CryptoString) and isinstance(private, CryptoString)):
 				raise TypeError
 			
 			if public.prefix != private.prefix:
@@ -121,10 +121,8 @@ class EncryptionPair (CryptoKey):
 		else:
 			key = nacl.public.PrivateKey.generate()
 			self.enctype = 'CURVE25519'
-			self.public = CryptoString('CURVE25519:' + \
-					base64.b85encode(key.public_key.encode()).decode())
-			self.private = CryptoString('CURVE25519:' + \
-					base64.b85encode(key.encode()).decode())
+			self.public = CryptoString('CURVE25519', key.public_key.encode())
+			self.private = CryptoString('CURVE25519', key.encode())
 		self.pubhash = blake2hash(self.public.data.encode())
 		self.privhash = blake2hash(self.private.data.encode())
 
@@ -182,7 +180,7 @@ class EncryptionPair (CryptoKey):
 			return RetVal(ErrBadType, 'bytes expected')
 		
 		try:
-			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.raw_data()))
+			sealedbox = nacl.public.SealedBox(nacl.public.PublicKey(self.public.as_raw()))
 			encrypted_data = sealedbox.encrypt(data, Base85Encoder).decode()
 		except Exception as e:
 			return RetVal().wrap_exception(e)
@@ -196,7 +194,7 @@ class EncryptionPair (CryptoKey):
 			return RetVal(ErrBadType, 'string expected')
 		
 		try:
-			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.raw_data()))
+			sealedbox = nacl.public.SealedBox(nacl.public.PrivateKey(self.private.as_raw()))
 			decrypted_data = sealedbox.decrypt(data.encode(), Base85Encoder)
 		except Exception as e:
 			return RetVal().wrap_exception(e)
@@ -255,10 +253,10 @@ class VerificationKey (CryptoKey):
 		if not isinstance(data_signature, CryptoString):
 			return RetVal(ErrBadType, 'signature parameter must be a CryptoString')
 		
-		key = nacl.signing.VerifyKey(self.public.raw_data())
+		key = nacl.signing.VerifyKey(self.public.as_raw())
 
 		try:
-			key.verify(data, data_signature.raw_data())
+			key.verify(data, data_signature.as_raw())
 		except Exception as e:
 			return RetVal(VerificationError, e)
 		
@@ -284,10 +282,8 @@ class SigningPair:
 		else:
 			key = nacl.signing.SigningKey.generate()
 			self.enctype = 'ED25519'
-			self.public = CryptoString('ED25519:' + \
-					base64.b85encode(key.verify_key.encode()).decode())
-			self.private = CryptoString('ED25519:' + \
-					base64.b85encode(key.encode()).decode())		
+			self.public = CryptoString('ED25519', key.verify_key.encode())
+			self.private = CryptoString('ED25519', key.encode())
 		self.pubhash = blake2hash(self.public.data.encode())
 		self.privhash = blake2hash(self.private.data.encode())
 		
@@ -343,7 +339,7 @@ class SigningPair:
 		if not isinstance(data, bytes):
 			return RetVal(ErrBadType, 'bytes expected for data')
 		
-		key = nacl.signing.SigningKey(self.private.raw_data())
+		key = nacl.signing.SigningKey(self.private.as_raw())
 
 		try:
 			signed = key.sign(data, Base85Encoder)
@@ -360,10 +356,10 @@ class SigningPair:
 		if not isinstance(data_signature, CryptoString):
 			return RetVal(ErrBadType, 'signature parameter must be a CryptoString')
 		
-		key = nacl.signing.VerifyKey(self.public.raw_data())
+		key = nacl.signing.VerifyKey(self.public.as_raw())
 
 		try:
-			key.verify(data, data_signature.raw_data())
+			key.verify(data, data_signature.as_raw())
 		except Exception as e:
 			return RetVal(VerificationError, e)
 		
@@ -375,8 +371,8 @@ def signingpair_from_string(keystr : str) -> SigningPair:
 	
 	key = nacl.signing.SigningKey(base64.b85decode(keystr))
 	return SigningPair(
-		CryptoString('ED25519:' + base64.b85encode(key.verify_key.encode()).decode()),
-		CryptoString('ED25519:' + base64.b85encode(key.encode()).decode())	
+		CryptoString('ED25519', key.verify_key.encode()),
+		CryptoString('ED25519', key.encode())
 	)
 
 
@@ -424,8 +420,7 @@ class SecretKey (CryptoKey):
 			self.key = key
 		else:
 			self.enctype = 'XSALSA20'
-			self.key = CryptoString('XSALSA20:' + \
-					base64.b85encode(nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)).decode())
+			self.key = CryptoString('XSALSA20', nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
 		
 		self.hash = blake2hash(self.key.data.encode())
 
@@ -467,7 +462,7 @@ class SecretKey (CryptoKey):
 		if type(encdata).__name__ != 'str':
 			raise TypeError
 
-		secretbox = nacl.secret.SecretBox(self.key.raw_data())
+		secretbox = nacl.secret.SecretBox(self.key.as_raw())
 		return secretbox.decrypt(encdata, encoder=Base85Encoder)
 	
 	def encrypt(self, data : bytes) -> str:
@@ -479,7 +474,7 @@ class SecretKey (CryptoKey):
 		if type(data).__name__ != 'bytes':
 			raise TypeError
 		
-		secretbox = nacl.secret.SecretBox(self.key.raw_data())
+		secretbox = nacl.secret.SecretBox(self.key.as_raw())
 		mynonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
 		return secretbox.encrypt(data,nonce=mynonce, encoder=Base85Encoder).decode()
 		

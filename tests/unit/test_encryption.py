@@ -134,7 +134,7 @@ def test_signpair_sign_verify():
 	private_key = CryptoString(r"ED25519:{^A@`5N*T%5ybCU%be892x6%*Rb2rnYd=SGeO4jF")
 	sp = encryption.SigningPair(public_key, private_key)
 
-	key = nacl.signing.SigningKey(private_key.raw_data())
+	key = nacl.signing.SigningKey(private_key.as_raw())
 	signed = key.sign(b'1234567890', encryption.Base85Encoder)
 	
 	sstatus = sp.sign(b'1234567890')

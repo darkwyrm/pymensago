@@ -1,40 +1,65 @@
 '''This module contains CryptoString, a class for bundling cryptographic keys and hashes with 
-their algorithms in a text-friendly way. The algorithm name may be no longer than 15 characters 
+their algorithms in a text-friendly way. The algorithm name may be no longer than 24 characters 
 and use only capital ASCII letters, numbers, and dashes.'''
 
 import base64
 import re
 
-from retval import RetVal, ErrBadData, ErrBadValue
+def encode85(b: bytes, pad=False) -> str:
+	'''A string-oriented version of the b85encode function in the base64 module'''
+	return base64.b85encode(b, pad).decode()
+
+def decode85(b) -> bytes:
+	'''A string-oriented version of the b85decode function in the base64 module'''
+	return base64.b85decode(b)
 
 class CryptoString:
 	'''This class encapsulates code for working with strings associated with an algorithm. This 
 	includes hashes and encryption keys.'''
-	def __init__(self, data=''):
+
+	def __init__(self, string='', data=None):
 		self.prefix = ''
 		self.data = ''
-		if data:
-			self.set(data)
+		
+		if data and isinstance(data, bytes):
+			self.set_raw(string, data)
+		else:
+			self.set(string)
 	
-	def set(self, data: str) -> RetVal:
+	def set(self, data: str) -> bool:
 		'''Initializes the instance from data passed to it. The string is expected to follow the 
 		format ALGORITHM:DATA, where DATA is assumed to be base85-encoded raw byte data'''
-		status = validate(data)
-		if status.error():
-			return status
+
+		if not data:
+			self.prefix = ''
+			self.data = ''
+			return True
+
+		if not is_cryptostring(data):
+			return False
 
 		self.prefix, self.data = data.split(':', 1)
-		return RetVal()
+		return True
 
-	def set_bytes(self, data: bytes) -> RetVal:
-		'''Initializes the instance from a byte string'''
-		try:
-			return self.set(data.decode())
-		except Exception as e:
-			return RetVal(ErrBadData, e)
-	
+	def set_raw(self, prefix: str, data: bytes) -> str:
+		'''Initializes the instance to some raw data and a prefix. It returns the resulting string 
+		with the encoded data. If an error occurs, such as if the prefix is not formatted 
+		correctly, an empty string is returned.'''
+
+		if not (prefix and data):
+			return ''
+		
+		encoded = encode85(data)
+
+		if not is_cryptostring(f"{prefix}:{encoded}"):
+			return ''
+		
+		self.prefix = prefix
+		self.data = encoded
+		return f"{prefix}:{encoded}"
+
 	def __str__(self):
-		return '%s:%s' % (self.prefix, self.data)
+		return f"{self.prefix}:{self.data}"
 	
 	def __eq__(self, b):
 		return self.prefix == b.prefix and self.data == b.data
@@ -44,41 +69,46 @@ class CryptoString:
 
 	def as_string(self):
 		'''Returns the instance information as a string'''
-		return str(self)
+
+		return f"{self.prefix}:{self.data}"
 	
 	def as_bytes(self) -> bytes:
 		'''Returns the instance information as a byte string'''
+
 		return b'%s:%s' % (self.prefix, self.data)
 	
-	def raw_data(self) -> bytes:
+	def as_raw(self) -> bytes:
 		'''Decodes the internal data and returns it as a byte string.'''
+
 		return base64.b85decode(self.data)
 	
 	def is_valid(self) -> bool:
 		'''Returns false if the prefix and/or the data is missing'''
+
 		return self.prefix and self.data
 	
 	def make_empty(self):
 		'''Makes the entry empty'''
+
 		self.prefix = ''
 		self.data = ''
 
 
-def validate(string: str) -> RetVal:
+def is_cryptostring(string: str) -> bool:
 	'''Checks a string to see if it matches the CryptoString format'''
 	
-	m = re.match(r'^[A-Z0-9-]{1,15}:', string)
+	m = re.match(r'^[A-Z0-9-]{1,24}:', string)
 	if not m:
-		return RetVal(ErrBadValue, 'prefix is non-compliant')
+		return False
 
 	parts = string.split(':', 1)
 	if len(parts) != 2:
-		return RetVal(ErrBadValue, 'bad data string')
+		return False
 
 	try:
 		_ = base64.b85decode(parts[1])
-	except:
-		return RetVal(ErrBadValue, 'error decoding data')
+	except ValueError:
+		return False
 	
-	return RetVal()
-
+	return True
+	

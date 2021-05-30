@@ -669,8 +669,9 @@ def test_org_chaining():
 
 	# The signing key is replaced during chain()
 	new_pskeystring = CryptoString()
-	status = new_pskeystring.set(chaindata['sign.private'])
-	assert not status.error(), 'test_org_chain: new signing key has bad format'
+	
+	assert new_pskeystring.set(chaindata['sign.private']), \
+		'test_org_chain: new signing key has bad format'
 	
 	status = new_entry.sign(new_pskeystring, 'Organization')
 	assert not status.error(), f'new entry failed to org sign: {status}'
@@ -707,8 +708,8 @@ def test_user_chaining():
 
 	# The signing key is replaced during chain()
 	new_crskeystring = CryptoString()
-	status = new_crskeystring.set(chaindata['crsign.private'])
-	assert not status.error(), 'test_user_chain: new signing key has bad format'
+	assert new_crskeystring.set(chaindata['crsign.private']), \
+		'test_user_chain: new signing key has bad format'
 	
 	status = new_entry.sign(oskeystring, 'Organization')
 	assert not status.error(), f'new entry failed to org sign: {status}'

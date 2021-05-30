@@ -15,7 +15,7 @@ import nacl.public
 import nacl.signing
 from retval import RetVal, ErrBadData, ErrBadValue, ErrExists, ErrNotFound
 
-from pymensago.cryptostring import CryptoString
+from pymensago.cryptostring import CryptoString, is_cryptostring
 from pymensago.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pymensago.hash import blake2hash
 
@@ -160,7 +160,7 @@ class EntryBase:
 		# We can't verify the actual key data, but we can at least ensure that it's formatted
 		# correctly and we can b85decode the key itself
 		for keyfield in ['Primary-Verification-Key', 'Encryption-Key']:
-			if not CryptoString(self.fields[keyfield]).is_valid():
+			if not is_cryptostring(self.fields[keyfield]):
 				return RetVal(ErrBadData, f"bad key field {keyfield}")
 		
 		# Optional fields: Support and Abuse addresses
@@ -180,7 +180,7 @@ class EntryBase:
 
 		# Optional field: Secondary Verification Key
 		if 'Secondary-Verification-Key' in self.fields.keys():
-			if not CryptoString(self.fields['Secondary-Verification-Key']).is_valid():
+			if not is_cryptostring(self.fields['Secondary-Verification-Key']):
 				return RetVal(ErrBadData, 'bad secondary verification key')
 		
 		return RetVal()
@@ -211,7 +211,7 @@ class EntryBase:
 		for keyfield in ['Contact-Request-Verification-Key',
 						 'Contact-Request-Encryption-Key',
 						 'Public-Encryption-Key']:
-			if not CryptoString(self.fields[keyfield]).is_valid():
+			if not is_cryptostring(self.fields[keyfield]):
 				return RetVal(ErrBadData, f"bad key field {keyfield}")
 
 		# Optional field: User ID
@@ -221,7 +221,7 @@ class EntryBase:
 				return RetVal(ErrBadData, 'bad user id value')
 			
 		if 'Alternate-Encryption-Key' in self.fields.keys():
-			if not CryptoString(self.fields['Alternate-Encryption-Key']).is_valid():
+			if not is_cryptostring(self.fields['Alternate-Encryption-Key']):
 				return RetVal(ErrBadData, 'bad alternate encryption key')
 
 		return RetVal()
@@ -516,7 +516,7 @@ class EntryBase:
 		if sigtype not in sig_names:
 			return RetVal(ErrBadValue, 'sigtype')
 		
-		key = nacl.signing.SigningKey(signing_key.raw_data())
+		key = nacl.signing.SigningKey(signing_key.as_raw())
 
 		# Clear all signatures which follow the current one. This expects that the signature_info
 		# field lists the signatures in the order that they are required to appear.		
@@ -578,18 +578,17 @@ class EntryBase:
 			return RetVal(NotCompliant, 'empty signature ' + sigtype)
 		
 		sig = CryptoString()
-		status = sig.set(self.signatures[sigtype])
-		if status.error():
-			return status
+		if not sig.set(self.signatures[sigtype]):
+			return RetVal(ErrBadData, 'entry signature is bad')
 
 		try:
-			vkey = nacl.signing.VerifyKey(verify_key.raw_data())
+			vkey = nacl.signing.VerifyKey(verify_key.as_raw())
 		except Exception as e:
 			return RetVal.wrap_exception(e)
 
 		try:
 			data = self.make_bytestring(sig_names.index(sigtype))
-			vkey.verify(data, sig.raw_data())
+			vkey.verify(data, sig.as_raw())
 		except nacl.exceptions.BadSignatureError:
 			return RetVal(InvalidKeycard)
 		
@@ -893,9 +892,8 @@ class Keycard:
 		new_entry = chaindata['entry']
 
 		skeystring = CryptoString()
-		status = skeystring.set(chaindata['sign.private'])
-		if status.error():
-			return status
+		if not skeystring.set(chaindata['sign.private']):
+			return RetVal(ErrBadData, 'bad signing key')
 		
 		if new_entry.type == 'User':
 			status = new_entry.sign(skeystring, 'User')
