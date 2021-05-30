@@ -6,10 +6,10 @@ import shutil
 import time
 
 import nacl.signing
+from pycryptostring import CryptoString
 
 # pylint: disable=import-error
 import pymensago.keycard as keycard
-from pymensago.cryptostring import CryptoString
 from pymensago.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 
 # Keys used in the various tests

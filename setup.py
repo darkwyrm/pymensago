@@ -23,6 +23,7 @@ setup(
 		'PyNaCl>=1.3.0',
 		'jsonschema>=3.2.0',
 		'pillow>=8.2.0',
+		'pycryptostring>=1.0.0',
 		'retval>=1.0.0'
 	]
 )

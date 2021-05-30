@@ -4,9 +4,9 @@ import json
 import jsonschema
 import time
 
+import pycryptostring as cs
 from retval import RetVal, ErrBadData, ErrBadValue, ErrInternalError
 
-import pymensago.cryptostring as cs
 from pymensago.encryption import PublicKey, SecretKey
 from pymensago.utils import MAddress
 

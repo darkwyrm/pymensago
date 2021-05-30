@@ -6,6 +6,7 @@ import re
 import uuid
 
 import jsonschema
+from pycryptostring import CryptoString
 from retval import RetVal, ErrBadData, ErrBadValue, ErrBadType, ErrInternalError, ErrExists, \
 	ErrNotFound
 
@@ -14,7 +15,6 @@ import nacl.pwhash
 import nacl.secret
 import nacl.signing
 import nacl.utils
-from pymensago.cryptostring import CryptoString
 from pymensago.hash import blake2hash
 
 VerificationError = 'VerificationError'

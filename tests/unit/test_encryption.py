@@ -5,9 +5,9 @@ import shutil
 import time
 
 import nacl.signing
+from pycryptostring import CryptoString
 
 # pylint: disable=import-error
-from pymensago.cryptostring import CryptoString
 import pymensago.encryption as encryption
 
 def setup_test(name):

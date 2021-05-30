@@ -4,9 +4,9 @@ import secrets
 import time
 import uuid
 
+from pycryptostring import CryptoString
 from retval import RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemented
 
-from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
 from pymensago.keycard import EntryBase

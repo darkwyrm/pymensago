@@ -13,9 +13,9 @@ import time
 # import blake3
 import nacl.public
 import nacl.signing
+from pycryptostring import CryptoString, is_cryptostring
 from retval import RetVal, ErrBadData, ErrBadValue, ErrExists, ErrNotFound
 
-from pymensago.cryptostring import CryptoString, is_cryptostring
 from pymensago.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pymensago.hash import blake2hash
 

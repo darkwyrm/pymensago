@@ -1,6 +1,7 @@
+from pycryptostring import CryptoString
+
 from .integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
 	init_user
-from pymensago.cryptostring import CryptoString
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
