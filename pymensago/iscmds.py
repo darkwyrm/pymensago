@@ -4,7 +4,7 @@ import secrets
 import time
 import uuid
 
-from retval import RetVal, BadParameterValue, ResourceExists, ServerError, Unimplemented
+from retval import RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemented
 
 from pymensago.cryptostring import CryptoString
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
@@ -28,7 +28,7 @@ def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
 
 	for field in ['Organization-Signature', 'Hash', 'Previous-Hash']	:
 		if field not in response['Data']:
-			return RetVal(ServerError, f"Server did not return required field {field}")
+			return RetVal(ErrServerError, f"Server did not return required field {field}")
 
 	entry.signatures['Organization'] =  response['Data']['Organization-Signature']
 
@@ -105,7 +105,7 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 		return wrap_server_error(response)
 
 	if 'Challenge' not in response['Data']:
-		return RetVal(ServerError, 'server did not return a device challenge')
+		return RetVal(ErrServerError, 'server did not return a device challenge')
 	
 	status = devpair.decrypt(response['Data']['Challenge'])
 	if status.error():
@@ -154,7 +154,7 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 		return wrap_server_error(response)
 
 	if 'Challenge' not in response['Data'] or 'New-Challenge' not in response['Data']:
-		return RetVal(ServerError, 'server did not return both device challenges')
+		return RetVal(ErrServerError, 'server did not return both device challenges')
 	
 	status = oldpair.decrypt(response['Data']['Challenge'])
 	if status.error():
@@ -189,12 +189,12 @@ def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	'''Looks up a wid based on the specified user ID and optional domain'''
 
 	if re.findall(r'[\\\/\s"]', uid) or len(uid) >= 64:
-		return RetVal(BadParameterValue, 'user id')
+		return RetVal(ErrBadValue, 'user id')
 	
 	if domain:
 		m = re.match(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+', domain)
 		if not m or len(domain) >= 64:
-			return RetVal(BadParameterValue, 'bad domain value')
+			return RetVal(ErrBadValue, 'bad domain value')
 	
 	request = {
 		'Action' : 'GETWID',
@@ -243,7 +243,7 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 		return wrap_server_error(response)
 	
 	if 'Is-Current' not in response['Data']:
-		return RetVal(ServerError, 'server did not return an answer')
+		return RetVal(ErrServerError, 'server did not return an answer')
 	
 	return RetVal().set_value('iscurrent', bool(response['Data']['Is-Current'] == 'YES'))
 
@@ -251,7 +251,7 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	'''Starts the login process by sending the requested workspace ID.'''
 	if not utils.validate_uuid(wid):
-		return RetVal(BadParameterValue)
+		return RetVal(ErrBadValue)
 
 	challenge = b85encode(secrets.token_bytes(32))
 	ekey = PublicKey(serverkey)
@@ -276,7 +276,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 		return wrap_server_error(response)
 	
 	if response['Data']['Response'] != challenge.decode():
-		return RetVal(ServerError, 'server failed to decrypt challenge')
+		return RetVal(ErrServerError, 'server failed to decrypt challenge')
 	
 	return RetVal()
 
@@ -298,7 +298,7 @@ def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 	'''Obtains an organization's keycard'''
 
 	# TODO: implement orgcard()
-	return RetVal(Unimplemented)
+	return RetVal(ErrUnimplemented)
 
 
 def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
@@ -322,7 +322,7 @@ def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> 
 def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	'''Continues the login process sending a password hash to the server.'''
 	if not password or not utils.validate_uuid(wid):
-		return RetVal(BadParameterValue)
+		return RetVal(ErrBadValue)
 	
 	conn.send_message({
 		'Action' : "PASSWORD",
@@ -369,15 +369,15 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 			if isinstance(response['Data'][k], str):
 				out[v] = response['Data'][k]
 			else:
-				out.set_error(ServerError, 'server returned incorrect data')
+				out.set_error(ErrServerError, 'server returned incorrect data')
 		else:
-			out.set_error(ServerError, 'server did not return all required fields')
+			out.set_error(ErrServerError, 'server did not return all required fields')
 	
 	if 'User-ID' in response['Data']:
 		if isinstance(response['Data']['User-ID'], str):
 			out['uid'] = response['Data']['User-ID']
 		else:
-			out.set_error(ServerError, 'server returned incorrect data')
+			out.set_error(ErrServerError, 'server returned incorrect data')
 	
 	return out
 
@@ -422,7 +422,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 	'''Creates an account on the server.'''
 	
 	if uid and len(re.findall(r'[\/" \s]',uid)) > 0:
-		return RetVal(BadParameterValue, 'user id contains illegal characters')
+		return RetVal(ErrBadValue, 'user id contains illegal characters')
 		
 	# This construct is a little strange, but it is to work around the minute possibility that
 	# there is a WID collision, i.e. the WID generated by the client already exists on the server.
@@ -473,14 +473,14 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 		
 		if response['Code'] == 408:	# WID or UID exists
 			if 'Field' not in response['Data']:
-				return RetVal(ServerError, 'server sent 408 without telling what existed')
+				return RetVal(ErrServerError, 'server sent 408 without telling what existed')
 			
 			if response['Data']['Field'] not in ['User-ID', 'Workspace-ID']:
-				return RetVal(ServerError, 'server sent bad 408 response').set_value( \
+				return RetVal(ErrServerError, 'server sent bad 408 response').set_value( \
 					'Field', response['Data']['Field'])
 
 			if response['Data']['Field'] == 'User-ID':
-				return RetVal(ResourceExists, 'user id')
+				return RetVal(ErrExists, 'user id')
 			
 			tries = tries + 1
 			wid = ''
@@ -532,10 +532,10 @@ def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 def setstatus(conn: ServerConnection, wid: str, status: str):
 	'''Sets the activity status of the workspace specified. Requires admin privileges'''
 	if status not in ['active', 'disabled', 'approved']:
-		return RetVal(BadParameterValue, "status must be 'active','disabled', or 'approved'")
+		return RetVal(ErrBadValue, "status must be 'active','disabled', or 'approved'")
 	
 	if not utils.validate_uuid(wid):
-		return RetVal(BadParameterValue, 'bad wid')
+		return RetVal(ErrBadValue, 'bad wid')
 
 	conn.send_message({
 		'Action' : 'SETSTATUS',
@@ -555,7 +555,7 @@ def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 	'''Deletes the online account at the specified server.'''
 
 	if wid and not utils.validate_uuid(wid):
-		return RetVal(BadParameterValue, 'bad workspace id')
+		return RetVal(ErrBadValue, 'bad workspace id')
 	
 	request = {
 		'Action' : 'UNREGISTER',
@@ -584,6 +584,6 @@ def usercard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal
 	'''Obtains a user's keycard'''
 	
 	# TODO: implement usercard()
-	return RetVal(Unimplemented)
+	return RetVal(ErrUnimplemented)
 
 
