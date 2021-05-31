@@ -4,11 +4,11 @@ A Python module implementing various components and services to enable creation 
 
 ## Description
 
-pymensago originally started as a quickie test client to interact with server code and guide client-side spec development. As it developed, though, it has taken on a shape of its own. It has been written primarily in mind for development of the CLI Mensago client [Smilodon](https://github.com/darkwyrm/smilodon), but it is implemented in a generic way that it can be used for any Mensago client development.
+pymensago originally started as a quickie test client to interact with server code and guide client-side spec development. As it developed, though, it has taken on a shape of its own. It has been written primarily in mind for development of the CLI Mensago client [Smilodon](https://github.com/darkwyrm/smilodon) and some yet-to-be-released utilities, but it is implemented in a generic way that it can be used for any Mensago client development.
 
 ## Status
 
-The application is in early development. The code still has much of the original Smilodon code mixed in and is being removed.
+The library is in the early stages, but now that the reference server implementation, [mensagod](https://github.com/mensago/mensagod), has seen significant development, it is seeing much more progress. 
 
 ## Building
 
