@@ -185,15 +185,8 @@ class ServerConnection:
 
 def wrap_server_error(response) -> RetVal:
 	'''Wraps a server response into a RetVal object'''
-	out = RetVal(__errcode_map.get(response['Code'],ErrServerError), response['Status']).set_values({
-		'Code' : response['Code'],
-		'Status' : response['Status'],
-		'Info' : ''
-	})
-	
-	if 'Info' in response:
-		out['Info'] = response['Info']
-	
+	out = RetVal(__errcode_map.get(response['Code'],ErrServerError), response.info())
+	out['response'] = response
 	return out
 
 
