@@ -5,6 +5,7 @@ import socket
 from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
+import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.storage import ClientStorage
@@ -104,7 +105,7 @@ class MensagoClient:
 
 		return regdata
 
-	def register_account(self, server: str, userid: str, userpass: str) -> RetVal:
+	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
@@ -137,7 +138,12 @@ class MensagoClient:
 		# Save all encryption keys into an encrypted 7-zip archive which uses the hash of the 
 		# user's password has the archive encryption password and upload the archive to the server.
 		
-		if self.fs.pman.get_active_profile().domain:
+		status = self.fs.pman.get_active_profile()
+		if status.error():
+			return status
+		
+		profile = status['profile']
+		if profile.domain:
 			return RetVal(ErrExists, 'a user workspace already exists')
 
 		# Parse server string. Should be in the form of (ip/domain):portnum
@@ -169,35 +175,24 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		regdata = serverconn.register(self.conn, userid, pw.hashstring, devpair.public)
+		regdata = iscmds.register(self.conn, userid, pw.hashstring, devpair.public)
+		self.conn.disconnect()
 		if regdata.error():
 			return regdata
-		self.conn.disconnect()
 
-		# Possible status codes from register()
-		# 304 - Registration closed
-		# 406 - Payment required
-		# 101 - Pending
-		# 201 - Registered
-		# 300 - Internal server error
-		# 408 - Resource exists
-		if regdata['status'] in [304, 406, 300, 408]:
-			return regdata
-		
 		# Just a basic sanity check
 		if 'wid' not in regdata:
 			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
-		w = Workspace(self.fs.pman.get_active_profile().db, self.fs.pman.get_active_profile().path)
-		status = w.generate(self.fs.pman.get_active_profile(), server, regdata['wid'], pw)
+		w = Workspace(profile.db, profile.path)
+		status = w.generate(profile, server, regdata['wid'], pw)
 		if status.error():
 			return status
 		
-		address = '/'.join([regdata['wid'], serverstring])
-		status = auth.add_device_session(self.fs.pman.get_active_profile().db, address, 
-				regdata['devid'], devpair.enctype, devpair.public, devpair.private,
-				socket.gethostname())
+		address = '/'.join([regdata['wid'], host])
+		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
+				devpair.public, devpair.private, socket.gethostname())
 		if status.error():
 			return status
 
