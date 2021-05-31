@@ -9,7 +9,6 @@ _uuid_pattern = re.compile(
 _domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
 _illegal_pattern = re.compile(r'[\s\\/\"]')
 
-
 class MAddress:
 	'''Represents a Mensago or workspace address'''
 	
@@ -60,6 +59,17 @@ def validate_uuid(indata: str) -> bool:
 	'''Validates a UUID's basic format. Does not check version information.'''
 
 	return _uuid_pattern.match(indata)
+
+def validate_userid(uid: str) -> bool:
+	'''Checks to make sure a user ID is valid'''
+
+	if not uid:
+		return False
+	
+	if re.findall(r'[\\\/\s"]', uid) or len(uid) >= 64:
+		return False
+	
+	return True
 
 
 def validate_domain(indata: str) -> bool:
