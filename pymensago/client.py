@@ -8,8 +8,7 @@ import pymensago.auth as auth
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
 from pymensago.encryption import Password, EncryptionPair
-from pymensago.storage import ClientStorage
-from pymensago.userprofile import Profile
+from pymensago.userprofile import Profile, ProfileManager
 from pymensago.workspace import Workspace
 
 class MensagoClient:
@@ -19,14 +18,15 @@ class MensagoClient:
 	interaction where needed. In short, the user's commands map pretty much one-to-one to this class.
 	'''
 	def __init__(self, profile_folder=''):
-		self.fs = ClientStorage(profile_folder)
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
+		self.pman = ProfileManager(profile_folder)
+		self.db = None
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
 
-		status = self.fs.pman.activate_profile(name)
+		status = self.pman.activate_profile(name)
 		if status.error():
 			return status
 		
@@ -37,23 +37,23 @@ class MensagoClient:
 	
 	def get_active_profile(self) -> RetVal:
 		'''Returns a copy of the active profile'''
-		return self.fs.pman.get_active_profile()
+		return self.pman.get_active_profile()
 
 	def get_profiles(self) -> list:
 		'''Gets the list of available profiles'''
-		return self.fs.pman.get_profiles()
+		return self.pman.get_profiles()
 
 	def create_profile(self, name: str) -> Profile:
 		'''Creates a new profile'''
-		return self.fs.pman.create_profile(name)
+		return self.pman.create_profile(name)
 
 	def delete_profile(self, name: str) -> RetVal:
 		'''Deletes the specified profile'''
-		return self.fs.pman.delete_profile(name)
+		return self.pman.delete_profile(name)
 	
 	def rename_profile(self, oldname: str, newname: str) -> RetVal:
 		'''Renames the specified profile'''
-		status = self.fs.pman.rename_profile(oldname, newname)
+		status = self.pman.rename_profile(oldname, newname)
 		if status.error() != '':
 			return status
 		
@@ -63,11 +63,11 @@ class MensagoClient:
 	
 	def get_default_profile(self) -> str:
 		'''Gets the default profile'''
-		return self.fs.pman.get_default_profile()
+		return self.pman.get_default_profile()
 		
 	def set_default_profile(self, name: str) -> RetVal:
 		'''Sets the profile loaded on startup'''
-		return self.fs.pman.set_default_profile(name)
+		return self.pman.set_default_profile(name)
 
 	def preregister_account(self, port_str: str, uid: str) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
@@ -138,7 +138,7 @@ class MensagoClient:
 		# Save all encryption keys into an encrypted 7-zip archive which uses the hash of the 
 		# user's password has the archive encryption password and upload the archive to the server.
 		
-		status = self.fs.pman.get_active_profile()
+		status = self.pman.get_active_profile()
 		if status.error():
 			return status
 		
