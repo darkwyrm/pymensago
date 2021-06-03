@@ -5,6 +5,7 @@ from .integration_setup import setup_test, init_server, load_server_config_file,
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
+from pymensago.utils import MAddress
 
 def test_addentry():
 	'''Tests the addentry() command'''
@@ -107,8 +108,8 @@ def test_preregister_regcode():
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	status = iscmds.regcode(conn, 'admin', dbdata['admin_regcode'], password.hashstring, 
-		devid, keypair, '')
+	status = iscmds.regcode(conn, MAddress('admin/example.com'), dbdata['admin_regcode'],
+		password.hashstring, keypair)
 	assert not status.error(), f"test_preregister_regcode(): regcode failed: {status.info()}"
 
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
@@ -121,16 +122,16 @@ def test_preregister_regcode():
 	assert not status.error(), "test_preregister_regcode(): device phase failed: " \
 		f"{status.info()}"
 
-	status = iscmds.preregister(conn, '', 'csimons', 'example.net')
+	status = iscmds.preregister(conn, '', 'csimons', 'example.com')
 	assert not status.error(), "test_preregister_regcode(): uid preregistration failed"
-	assert status['domain'] == 'example.net' and 'wid' in status and 'regcode' in status and \
+	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status and \
 		status['uid'] == 'csimons', "test_preregister_regcode(): failed to return expected data"
 
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	status = iscmds.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
-		'11111111-1111-1111-1111-111111111111', devpair, 'example.net')
+	status = iscmds.regcode(conn, MAddress('csimons/example.com'), regdata['regcode'], 
+		password.hashstring, devpair)
 	assert not status.error(), "test_preregister_regcode(): uid regcode failed"
 
 	conn.disconnect()
@@ -169,14 +170,14 @@ def test_reset_password():
 	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
 
 	password = Password('Linguini2Pegboard*Album')
-	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
 	keypair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	status = iscmds.regcode(conn, 'admin', dbdata['admin_regcode'], password.hashstring, 
-		devid, keypair, '')
+	status = iscmds.regcode(conn, MAddress('admin/example.com'), dbdata['admin_regcode'], 
+		password.hashstring, keypair)
 	assert not status.error(), f"test_reset_password(): regcode failed: {status.info()}"
+	devid = status['devid']
 
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_reset_password(): login phase failed: {status.info()}"

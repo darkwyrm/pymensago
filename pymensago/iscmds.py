@@ -382,27 +382,30 @@ def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetV
 	return out
 
 
-def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: str, 
-	devpair: EncryptionPair, domain: str) -> RetVal:
+def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: str, 
+	devpair: EncryptionPair) -> RetVal:
 	'''Finishes registration of a workspace'''
 	
+	if not address.is_valid():
+		return RetVal(ErrBadValue, 'bad address')
+	
+	devid = str(uuid.uuid4())
+
 	request = {
 		'Action':'REGCODE',
 		'Data':{
 			'Reg-Code': code,
-			'Password-Hash':pwhash,
-			'Device-ID':devid,
-			'Device-Key':devpair.public.as_string()
+			'Password-Hash': pwhash,
+			'Device-ID': devid,
+			'Device-Key': devpair.public.as_string(),
+			'Domain': address.domain
 		}
 	}
 
-	if domain:
-		request['Data']['Domain'] = domain
-
-	if utils.validate_uuid(regid):
-		request['Data']['Workspace-ID'] = regid
+	if address.id_type == 1:
+		request['Data']['Workspace-ID'] = address.id
 	else:
-		request['Data']['User-ID'] = regid
+		request['Data']['User-ID'] = address.id
 	
 	status = conn.send_message(request)
 	if status.error():
@@ -415,7 +418,7 @@ def regcode(conn: ServerConnection, regid: str, code: str, pwhash: str, devid: s
 	if response['Code'] != 201:
 		return wrap_server_error(response)
 	
-	return RetVal()
+	return RetVal().set_value('devid', devid)
 	
 
 def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoString) -> RetVal:

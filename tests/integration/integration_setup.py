@@ -16,6 +16,7 @@ from pymensago.encryption import Password, EncryptionPair, SigningPair
 import pymensago.keycard as keycard
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
+from pymensago.utils import MAddress
 
 # Keys used in the various tests. 
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
@@ -334,12 +335,10 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	password = Password('Linguini2Pegboard*Album')
 	config['admin_password'] = password
 	
-	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
 	devpair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	config['admin_devid'] = devid
 	config['admin_devpair'] = devpair
 
 	crepair = EncryptionPair(
@@ -360,9 +359,12 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	)
 	config['admin_epair'] = devpair
 
-	status = iscmds.regcode(conn, 'admin', config['admin_regcode'], password.hashstring, 
-		devid, devpair, '')
+	
+	status = iscmds.regcode(conn, MAddress('admin/example.com'), config['admin_regcode'], 
+		password.hashstring, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
+	devid = status['devid']
+	config['admin_devid'] = status['devid']
 
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
@@ -411,10 +413,10 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	devid = '11111111-1111-1111-1111-111111111111'
-	status = iscmds.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
-		devid, devpair, 'example.com')
+	status = iscmds.regcode(conn, MAddress('csimons/example.com'), regdata['regcode'], 
+		password.hashstring, devpair)
 	assert not status.error(), "init_user(): uid regcode failed"
+	devid = status['devid']
 
 	config['user_wid'] = userwid
 	config['user_uid'] = regdata['uid']
