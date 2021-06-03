@@ -1,8 +1,10 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
+from pymensago.utils import MAddress
 import socket
+import uuid
 
-from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
+from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
 import pymensago.iscmds as iscmds
@@ -13,9 +15,7 @@ from pymensago.workspace import Workspace
 
 class MensagoClient:
 	'''
-	The role of this class is to provide an interface to the client as a whole, not just the 
-	storage aspects. It does duplicate the ClientStorage interface,	but it also handles network 
-	interaction where needed. In short, the user's commands map pretty much one-to-one to this class.
+	This is the primary interface to the entire library from an application perspective.
 	'''
 	def __init__(self, profile_folder=''):
 		self.active_profile = ''
@@ -35,39 +35,12 @@ class MensagoClient:
 		status = self.conn.connect(status['host'],status['port'])
 		return status
 	
-	def get_active_profile(self) -> RetVal:
-		'''Returns a copy of the active profile'''
-		return self.pman.get_active_profile()
-
-	def get_profiles(self) -> list:
-		'''Gets the list of available profiles'''
-		return self.pman.get_profiles()
-
-	def create_profile(self, name: str) -> Profile:
-		'''Creates a new profile'''
-		return self.pman.create_profile(name)
-
-	def delete_profile(self, name: str) -> RetVal:
-		'''Deletes the specified profile'''
-		return self.pman.delete_profile(name)
+	def get_profile_manager(self) -> ProfileManager:
+		return self.pman
 	
-	def rename_profile(self, oldname: str, newname: str) -> RetVal:
-		'''Renames the specified profile'''
-		status = self.pman.rename_profile(oldname, newname)
-		if status.error() != '':
-			return status
-		
-		if self.active_profile == oldname:
-			self.active_profile = newname
-		return RetVal()
-	
-	def get_default_profile(self) -> str:
-		'''Gets the default profile'''
-		return self.pman.get_default_profile()
-		
-	def set_default_profile(self, name: str) -> RetVal:
-		'''Sets the profile loaded on startup'''
-		return self.pman.set_default_profile(name)
+	def logout(self) -> RetVal:
+		'''Disconnects from a server'''
+		return iscmds.logout(self.conn)
 
 	def preregister_account(self, port_str: str, uid: str) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
@@ -105,6 +78,63 @@ class MensagoClient:
 
 		return regdata
 
+	def redeem_regcode(self, address: MAddress, regcode: str, userpass: str) -> RetVal:
+		'''Completes setup of a preregistered account'''
+		
+		# status = self.pman.get_active_profile()
+		# if status.error():
+		# 	return status
+		
+		# profile = status['profile']
+		# if profile.domain:
+		# 	return RetVal(ErrExists, 'a user workspace already exists')
+
+		# # Password requirements aren't really set here, but we do have to draw the 
+		# # line *somewhere*.
+		# pw = Password()
+		# status = pw.Set(userpass)
+		# if status.error():
+		# 	return status
+		
+		# devpair = EncryptionPair()
+
+		# # For now, we will just use the default port (2001) and convert example.com to localhost
+		# if address.domain in ['localhost', 'example.com']:
+		# 	host = 'localhost'
+		# else:
+		# 	# TODO: Eventually look up the IP/port from the DNS management record.
+		# 	return RetVal(ErrUnimplemented, 'DNS support not yet implemented. Sorry!')
+		
+		# status = self.conn.connect(host, 2001)
+		# if status.error():
+		# 	return status
+		
+		# regdata = iscmds.regcode(self.conn, str(address), regcode, pw.hashstring, )
+		# self.conn.disconnect()
+		# if regdata.error():
+		# 	return regdata
+		# devid = regdata['devid']
+
+		# # Just a basic sanity check
+		# if 'wid' not in regdata:
+		# 	return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
+		# 			.set_value('status', 300)
+
+		# w = Workspace(profile.db, profile.path)
+		# status = w.generate(profile, server, regdata['wid'], pw)
+		# if status.error():
+		# 	return status
+		
+		# address = '/'.join([regdata['wid'], host])
+		# status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
+		# 		devpair.public, devpair.private, socket.gethostname())
+		# if status.error():
+		# 	return status
+
+		# return regdata
+		return RetVal(ErrUnimplemented, 'Not yet implemented. Sorry!')
+
+	
 	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
 		'''Create a new account on the specified server.'''
 		
