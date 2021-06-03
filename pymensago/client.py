@@ -81,58 +81,56 @@ class MensagoClient:
 	def redeem_regcode(self, address: MAddress, regcode: str, userpass: str) -> RetVal:
 		'''Completes setup of a preregistered account'''
 		
-		# status = self.pman.get_active_profile()
-		# if status.error():
-		# 	return status
+		status = self.pman.get_active_profile()
+		if status.error():
+			return status
 		
-		# profile = status['profile']
-		# if profile.domain:
-		# 	return RetVal(ErrExists, 'a user workspace already exists')
+		profile = status['profile']
+		if profile.domain:
+			return RetVal(ErrExists, 'a user workspace already exists')
 
-		# # Password requirements aren't really set here, but we do have to draw the 
-		# # line *somewhere*.
-		# pw = Password()
-		# status = pw.Set(userpass)
-		# if status.error():
-		# 	return status
+		# Password requirements aren't really set here, but we do have to draw the 
+		# line *somewhere*.
+		pw = Password()
+		status = pw.Set(userpass)
+		if status.error():
+			return status
 		
-		# devpair = EncryptionPair()
+		devpair = EncryptionPair()
 
-		# # For now, we will just use the default port (2001) and convert example.com to localhost
-		# if address.domain in ['localhost', 'example.com']:
-		# 	host = 'localhost'
-		# else:
-		# 	# TODO: Eventually look up the IP/port from the DNS management record.
-		# 	return RetVal(ErrUnimplemented, 'DNS support not yet implemented. Sorry!')
+		# For now, we will just use the default port (2001) and convert example.com to localhost
+		if address.domain in ['localhost', 'example.com']:
+			host = 'localhost'
+		else:
+			# TODO: Eventually look up the IP/port from the DNS management record.
+			return RetVal(ErrUnimplemented, 'DNS support not yet implemented. Sorry!')
 		
-		# status = self.conn.connect(host, 2001)
-		# if status.error():
-		# 	return status
+		status = self.conn.connect(host, 2001)
+		if status.error():
+			return status
 		
-		# regdata = iscmds.regcode(self.conn, str(address), regcode, pw.hashstring, )
-		# self.conn.disconnect()
-		# if regdata.error():
-		# 	return regdata
-		# devid = regdata['devid']
+		regdata = iscmds.regcode(self.conn, str(address), regcode, pw.hashstring, )
+		self.conn.disconnect()
+		if regdata.error():
+			return regdata
 
-		# # Just a basic sanity check
-		# if 'wid' not in regdata:
-		# 	return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
-		# 			.set_value('status', 300)
+		# Just a basic sanity check
+		if 'wid' not in regdata or 'devid' not in regdata:
+			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
+					.set_value('status', 300)
 
-		# w = Workspace(profile.db, profile.path)
-		# status = w.generate(profile, server, regdata['wid'], pw)
-		# if status.error():
-		# 	return status
+		w = Workspace(profile.db, profile.path)
+		status = w.generate(profile, address.domain, regdata['wid'], pw)
+		if status.error():
+			return status
 		
-		# address = '/'.join([regdata['wid'], host])
-		# status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
-		# 		devpair.public, devpair.private, socket.gethostname())
-		# if status.error():
-		# 	return status
+		address = '/'.join([regdata['wid'], address.domain])
+		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
+				devpair.public, devpair.private, socket.gethostname())
+		if status.error():
+			return status
 
-		# return regdata
-		return RetVal(ErrUnimplemented, 'Not yet implemented. Sorry!')
+		return regdata
 
 	
 	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
