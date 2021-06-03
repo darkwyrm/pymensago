@@ -418,7 +418,10 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 	if response['Code'] != 201:
 		return wrap_server_error(response)
 	
-	return RetVal().set_value('devid', devid)
+	return RetVal().set_values({
+		'devid': devid,
+		'wid': response['Data']['Workspace-ID']
+	})
 	
 
 def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoString) -> RetVal:
