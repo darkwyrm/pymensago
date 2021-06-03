@@ -16,6 +16,8 @@ class MAddress:
 		self.id = ''
 		self.id_type = 0
 		self.domain = ''
+		if addr:
+			self.set(addr)
 
 	def __str__(self) -> str:
 		return self.as_string()
