@@ -403,9 +403,9 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Creates a test user for command testing'''
 	
 	userwid = '33333333-3333-3333-3333-333333333333'
-	status = iscmds.preregister(conn, userwid, 'csimons', 'example.net')
+	status = iscmds.preregister(conn, userwid, 'csimons', 'example.com')
 	assert not status.error(), "init_user(): uid preregistration failed"
-	assert status['domain'] == 'example.net' and 'wid' in status and 'regcode' in status and \
+	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status and \
 		status['uid'] == 'csimons', "init_user(): failed to return expected data"
 
 	regdata = status
@@ -413,7 +413,7 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	devpair = EncryptionPair()
 	devid = '11111111-1111-1111-1111-111111111111'
 	status = iscmds.regcode(conn, 'csimons', regdata['regcode'], password.hashstring,
-		devid, devpair, 'example.net')
+		devid, devpair, 'example.com')
 	assert not status.error(), "init_user(): uid regcode failed"
 
 	config['user_wid'] = userwid
