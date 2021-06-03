@@ -3,10 +3,11 @@
 import base64
 import sqlite3
 
-from retval import RetVal, ErrNotFound, ErrExists, ErrBadValue
+from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
-import pymensago.encryption as encryption
-import pymensago.utils as utils
+from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password, \
+	ErrUnsupportedAlgorithm
+from pymensago.utils import MAddress
 
 def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
@@ -17,13 +18,13 @@ def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
 	
-	out = encryption.Password()
+	out = Password()
 	status = out.Assign(results[0])
 	status['password'] = out
 	return status
 
 
-def set_credentials(db, wid: str, domain: str, pw: encryption.Password) -> RetVal:
+def set_credentials(db, wid: str, domain: str, pw: Password) -> RetVal:
 	'''Sets the password and hash type for the specified workspace. A boolean success 
 	value is returned.'''
 	cursor = db.cursor()
@@ -38,32 +39,30 @@ def set_credentials(db, wid: str, domain: str, pw: encryption.Password) -> RetVa
 	db.commit()
 	return RetVal()
 
-def add_device_session(db, address: str, devid: str, enctype: str, public_key: str, 
-		private_key: str, devname='') -> RetVal:
+def add_device_session(db, address: MAddress, devid: str, devpair: EncryptionPair, 
+	devname='') -> RetVal:
 	'''Adds a device to a workspace'''
 
-	if not address or not devid or not enctype or not public_key or not private_key:
-		return RetVal(ErrBadValue, "Empty parameter")
+	if not address.is_valid():
+		return RetVal(ErrBadValue, 'bad address')
+	if address.id_type == 2:
+		return RetVal(ErrBadValue, 'workspace address is required')
 	
-	if enctype != 'curve25519':
-		return RetVal(ErrBadValue, "enctype must be 'curve25519'")
+	if not devid:
+		return RetVal(ErrEmptyData)
+	
+	if devpair.enctype != 'CURVE25519':
+		return RetVal(ErrUnsupportedAlgorithm, "enctype must be 'CURVE25519'")
 
-	# Normally we don't validate the input, relying on the caller to ensure valid data because
-	# in most cases, bad data just corrupts the database integrity, not crash the program.
-	# We have to do some here to ensure there isn't a crash when the address is split.
-	parts = utils.split_address(address)
-	if parts.error():
-		return parts
-	
 	# address has to be valid and existing already
 	cursor = db.cursor()
-	cursor.execute("SELECT wid FROM workspaces WHERE wid=?", (parts['wid'],))
+	cursor.execute("SELECT wid FROM workspaces WHERE wid=?",(address.id,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
 
 	# Can't have a session on the server already
-	cursor.execute("SELECT address FROM sessions WHERE address=?", (address,))
+	cursor.execute("SELECT address FROM sessions WHERE address=?", (address.as_string(),))
 	results = cursor.fetchone()
 	if results:
 		return RetVal(ErrExists)
@@ -73,12 +72,14 @@ def add_device_session(db, address: str, devid: str, enctype: str, public_key: s
 		cursor.execute('''INSERT INTO sessions(
 				address, devid, enctype, public_key, private_key, devname) 
 				VALUES(?,?,?,?,?,?)''',
-				(address, devid, enctype, public_key, private_key, devname))
+				(address.as_string(), devid, devpair.enctype, devpair.public_key, 
+				devpair.private_key, devname))
 	else:
 		cursor.execute('''INSERT INTO sessions(
 				address, devid, enctype, public_key, private_key) 
 				VALUES(?,?,?,?,?)''',
-				(address, devid, enctype, public_key, private_key))
+				(address.as_string(), devid, devpair.enctype, devpair.public_key, 
+				devpair.private_key))
 	db.commit()
 	return RetVal()
 
@@ -118,7 +119,7 @@ def get_session_private_key(db: sqlite3.Connection, address: str) -> RetVal:
 	return RetVal().set_value('key', results[0])
 
 
-def add_key(db: sqlite3.Connection, key: encryption.CryptoKey, address: str) -> RetVal:
+def add_key(db: sqlite3.Connection, key: CryptoKey, address: str) -> RetVal:
 	'''Adds an encryption key to a workspace.
 	Parameters:
 	key: CryptoKey from encryption module
@@ -191,12 +192,12 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	if results[1] == 'asymmetric':
 		public = base64.b85decode(results[4])
 		private = base64.b85decode(results[3])
-		key = encryption.EncryptionPair(public,	private)
+		key = EncryptionPair(public,	private)
 		return RetVal().set_value('key', key)
 	
 	if results[1] == 'symmetric':
 		private = base64.b85decode(results[3])
-		key = encryption.SecretKey(private)
+		key = SecretKey(private)
 		return RetVal().set_value('key', key)
 	
 	return RetVal(ErrBadValue, "Key must be 'asymmetric' or 'symmetric'")

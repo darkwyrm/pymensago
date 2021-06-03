@@ -124,9 +124,10 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		address = '/'.join([regdata['wid'], address.domain])
-		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
-				devpair.public, devpair.private, socket.gethostname())
+
+		
+		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{host}"),
+										regdata['devid'], devpair, socket.gethostname())
 		if status.error():
 			return status
 
@@ -218,9 +219,9 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		address = '/'.join([regdata['wid'], host])
-		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair.enctype, 
-				devpair.public, devpair.private, socket.gethostname())
+		
+		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{host}"),
+				regdata['devid'], devpair, socket.gethostname())
 		if status.error():
 			return status
 
