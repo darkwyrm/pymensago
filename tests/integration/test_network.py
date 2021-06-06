@@ -1,7 +1,7 @@
 from pycryptostring import CryptoString
 
-from .integration_setup import setup_test, init_server, load_server_config_file, init_admin, \
-	init_user
+from .integration_setup import setup_test, init_server, init_admin, init_user
+from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
@@ -141,7 +141,7 @@ def test_register():
 	'''Test worskpace registration'''
 	
 	# Registration testing only works when the server uses either network or public mode
-	serverdbdata = load_server_config_file()
+	serverdbdata = load_server_config()
 	if serverdbdata['global']['registration'] not in ['network', 'public']:
 		return
 
