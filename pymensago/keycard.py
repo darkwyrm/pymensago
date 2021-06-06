@@ -207,10 +207,11 @@ class EntryBase:
 			return RetVal(ErrBadData, 'bad domain value')
 
 		# Required fields: Contact Request Verification Key, Contact Request Encryption Key,
-		#	Public-Encryption-Key
+		#	Encryption-Key, Verification-Key
 		for keyfield in ['Contact-Request-Verification-Key',
 						 'Contact-Request-Encryption-Key',
-						 'Public-Encryption-Key']:
+						 'Encryption-Key',
+						 'Verification-Key']:
 			if not is_cryptostring(self.fields[keyfield]):
 				return RetVal(ErrBadData, f"bad key field {keyfield}")
 
@@ -220,10 +221,6 @@ class EntryBase:
 				len(self.fields['User-ID']) >= 64:
 				return RetVal(ErrBadData, 'bad user id value')
 			
-		if 'Alternate-Encryption-Key' in self.fields.keys():
-			if not is_cryptostring(self.fields['Alternate-Encryption-Key']):
-				return RetVal(ErrBadData, 'bad alternate encryption key')
-
 		return RetVal()
 
 	def get_hash(self, algorithm: str) -> RetVal:
@@ -690,8 +687,7 @@ class OrgEntry(EntryBase):
 			out['altsign.privhash'] = altskey.get_private_hash()
 		else:
 			out['altsign.public'] = self.fields['Primary-Verification-Key']
-			out['altsign.pubhash'] = blake2hash(
-				self.fields['Primary-Verification-Key'].as_string().encode())
+			out['altsign.pubhash'] = blake2hash(self.fields['Primary-Verification-Key'].encode())
 			out['altsign.private'] = ''
 
 		status = new_entry.sign(key, 'Custody')
@@ -745,8 +741,8 @@ class UserEntry(EntryBase):
 			'Domain',
 			'Contact-Request-Verification-Key',
 			'Contact-Request-Encryption-Key',
-			'Public-Encryption-Key',
-			'Alternate-Encryption-Key',
+			'Encryption-Key',
+			'Verification-Key',
 			'Time-To-Live',
 			'Expires',
 			'Timestamp'
@@ -757,7 +753,8 @@ class UserEntry(EntryBase):
 			'Domain',
 			'Contact-Request-Verification-Key',
 			'Contact-Request-Encryption-Key',
-			'Public-Encryption-Key',
+			'Encryption-Key',
+			'Verification-Key',
 			'Time-To-Live',
 			'Expires',
 			'Timestamp'
@@ -783,15 +780,10 @@ class UserEntry(EntryBase):
 		previous contact request signing key passed as an CryptoString. The new keys are returned in 
 		CryptoString format using the following fields:
 		entry
-		sign.public / sign.private -- primary signing keypair
 		crsign.public / crsign.private -- contact request signing keypair
 		crencrypt.public / crencrypt.private -- contact request encryption keypair
 		encrypt.public / encrypt.private -- general-purpose public encryption keypair
-		altencrypt.public / altencrypt.private -- alternate public encryption keypair
-
-		Note that the last two keys are not required to be updated during entry rotation so that 
-		they can be rotated on a different schedule from the other keys. These fields are only 
-		returned if there are no errors.
+		sign.public / sign.private -- general-purpose primary signing keypair
 		'''
 
 		if key.prefix != 'ED25519':
@@ -811,36 +803,24 @@ class UserEntry(EntryBase):
 
 		out = RetVal()
 
-		skey = SigningPair()
 		crskey = SigningPair()
 		crekey = EncryptionPair()
+		ekey = EncryptionPair()
+		skey = SigningPair()
 
-		out['sign.public'] = skey.get_public_key()
-		out['sign.private'] = skey.get_private_key()
 		out['crsign.public'] = crskey.get_public_key()
 		out['crsign.private'] = crskey.get_private_key()
 		out['crencrypt.public'] = crekey.get_public_key()
 		out['crencrypt.private'] = crekey.get_private_key()
+		out['encrypt.public'] = ekey.get_public_key()
+		out['encrypt.private'] = ekey.get_private_key()
+		out['sign.public'] = skey.get_public_key()
+		out['sign.private'] = skey.get_private_key()
 		
 		new_entry.fields['Contact-Request-Verification-Key'] = out['crsign.public']
 		new_entry.fields['Contact-Request-Encryption-Key'] = out['crencrypt.public']
-
-		if rotate_optional:
-			ekey = EncryptionPair()
-			out['encrypt.public'] = ekey.get_public_key()
-			out['encrypt.private'] = ekey.get_private_key()
-
-			aekey = EncryptionPair()
-			out['altencrypt.public'] = aekey.get_public_key()
-			out['altencrypt.private'] = aekey.get_private_key()
-			
-			new_entry.fields['Public-Encryption-Key'] = out['encrypt.public']
-			new_entry.fields['Alternate-Encryption-Key'] = out['altencrypt.public']
-		else:
-			out['encrypt.public'] = ''
-			out['encrypt.private'] = ''
-			out['altencrypt.public'] = ''
-			out['altencrypt.private'] = ''
+		new_entry.fields['Encryption-Key'] = out['encrypt.public']
+		new_entry.fields['Verification-Key'] = out['sign.public']
 
 		status = new_entry.sign(key, 'Custody')
 		if status.error():
@@ -874,9 +854,8 @@ class Keycard:
 		self.entries = list()
 	
 	def chain(self, key: CryptoString, rotate_optional: bool) -> RetVal:
-		'''Appends a new entry to the chain, optionally rotating keys which aren't required to be 
-		changed. This method requires that the root entry already exist. Note that user cards will 
-		not have all the required signatures when the call returns'''
+		'''Appends a new entry to the chain. This method requires that the root entry already 
+		exist. Note that user cards will not have all the required signatures when the call returns'''
 		if len(self.entries) < 1:
 			return RetVal(ErrNotFound, 'missing root entry')
 

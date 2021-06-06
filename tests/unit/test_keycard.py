@@ -15,8 +15,8 @@ from pymensago.keycard import Base85Encoder, SIGINFO_HASH, SIGINFO_SIGNATURE
 # Keys used in the various tests
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
 
-# User Signing Key: p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+
 # User Verification Key: 6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p
+# User Signing Key: p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+
 
 # User Contact Request Signing Key: ip52{ps^jH)t$k-9bc_RzkegpIW?}FFe~BX&<V}9
 # User Contact Request Verification Key: d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D
@@ -72,7 +72,8 @@ def make_test_userentry() -> keycard.UserEntry:
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':'ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D',
 		'Contact-Request-Encryption-Key':'CURVE25519:yBZ0{1fE9{2<b~#i^R+JT-yh-y5M(Wyw_)}_SZOn',
-		'Public-Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE'
+		'Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE',
+		'Verification-Key':'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p'
 	})
 
 	# Organization sign and verify
@@ -263,14 +264,15 @@ def test_sign():
 	basecard = keycard.EntryBase()
 	basecard.type = "Test"
 	basecard.field_names = [ 'Name', 'Workspace-ID', 'Domain', 'Contact-Request-Verification-Key',
-			'Contact-Request-Encryption-Key', 'Public-Encryption-Key', 'Expires']
+			'Contact-Request-Encryption-Key', 'Encryption-Key', 'Verification-Key', 'Expires']
 	basecard.set_fields({
 		'Name':'Corbin Simons',
 		'Workspace-ID':'4418bf6c-000b-4bb3-8111-316e72030468',
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':'ED25519:7dfD==!Jmt4cDtQDBxYa7(dV|N$}8mYwe$=RZuW|',
 		'Contact-Request-Encryption-Key':'CURVE25519:yBZ0{1fE9{2<b~#i^R+JT-yh-y5M(Wyw_)}_SZOn',
-		'Public-Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE',
+		'Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE',
+		'Verification-Key':'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p',
 		'Expires':'20201002',
 
 		# These junk signatures will end up being cleared when sign('User') is called
@@ -295,7 +297,7 @@ def test_sign():
 	assert not rv.error(), 'Unexpected RetVal error %s' % rv.error()
 	
 	expected_sig = \
-		'ED25519:N~nZ1#wE%i`sO?wZ%b4;zrEk4D-rd{!oY=C26w0GepfvnArTHlw*HeIZB|oHZke`T*eGbw>GvYD8YQR)'
+		'ED25519:B5`+EZ~}FewWBiP#j#KjKq%ZWraz8Qrp877eW$vmjQFeJ_lxlITyCZQocz9ie@J>E9ivsAz!~e1t9bDV'
 	assert basecard.signatures['Organization'] == expected_sig, \
 			"entry did not yield the expected signature"
 
@@ -318,14 +320,15 @@ def test_verify_signature():
 	basecard = keycard.EntryBase()
 	basecard.type = "Test"
 	basecard.field_names = [ 'Name', 'Workspace-ID', 'Domain', 'Contact-Request-Verification-Key',
-			'Contact-Request-Encryption-Key', 'Public-Encryption-Key', 'Expires']
+			'Contact-Request-Encryption-Key', 'Encryption-Key', 'Verification-Key', 'Expires']
 	basecard.set_fields({
 		'Name':'Corbin Simons',
 		'Workspace-ID':'4418bf6c-000b-4bb3-8111-316e72030468',
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':'ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D',
 		'Contact-Request-Encryption-Key':'CURVE25519:yBZ0{1fE9{2<b~#i^R+JT-yh-y5M(Wyw_)}_SZOn',
-		'Public-Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE',
+		'Encryption-Key':'CURVE25519:_`UC|vltn_%P5}~vwV^)oY){#uvQSSy(dOD_l(yE',
+		'Verification-Key':'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p',
 		'Expires':'20201002',
 
 		# These junk signatures will end up being cleared when sign('User') is called
@@ -349,7 +352,7 @@ def test_verify_signature():
 	assert basecard.signatures['Organization'], 'entry failed to user sign'
 
 	expected_sig = \
-		'ED25519:>>6(c|MBt?66%ywF=2yw4k}%;-8J)218?T=4XtV**m9S4Wzo@%E0Xme7@op7Vky?>VnCb?h(%WGO9(g!'
+		'ED25519:o$bv1a!xcVkYcQnZ-RAD)BD5v)+N1`W9N2S6C^pUW(QFqL69G9EtG$X8O$}RSY_^CJfoHw26KG~-OC#S'
 	assert basecard.signatures['Organization'] == expected_sig, \
 			"entry did not yield the expected org signature"
 	
@@ -367,7 +370,7 @@ def test_verify_signature():
 	rv = basecard.generate_hash('BLAKE2B-256')
 	assert not rv.error(), 'entry failed to BLAKE3 hash'
 
-	expected_hash = r'BLAKE2B-256:kBO4*3!t3M2PONHy>*Ew)Hw8!v)rZcvpo;azDJvx'
+	expected_hash = r'BLAKE2B-256:*q184I}fll9Q3yUk2e?rYO|;+?t+>dl1X^$w-=E^'
 	assert basecard.hash == expected_hash, "entry did not yield the expected hash"
 	
 	# User sign and verify
@@ -379,7 +382,7 @@ def test_verify_signature():
 	assert basecard.signatures['User'], 'entry failed to user sign'
 	
 	expected_sig = \
-		'ED25519:@R53O{bS93YmZq5qs2`f0Uj)Ks^_cl{3Tl;lce#{hF-LsexWsbWqH_5erOQ+VY^pBkADo)@zxG)YZVU#'
+		'ED25519:y>Jq$##kpWj%SVR6)9)On@TG}%wt4K14yr>P;j`+P$9m(XHUDq_ErEGQDEtng2jJ=pdrjB67WnI7oi9Z'
 	assert basecard.signatures['User'] == expected_sig, \
 			"entry did not yield the expected user signature"
 
@@ -409,7 +412,8 @@ def test_is_data_compliant_user():
 		"Domain":							"example.com",
 		"Contact-Request-Verification-Key":	"ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D",
 		"Contact-Request-Encryption-Key":	"CURVE25519:j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph",
-		"Public-Encryption-Key":			"CURVE25519:nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN",
+		"Encryption-Key":					"CURVE25519:nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN",
+		'Verification-Key':					'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p',
 		"Time-To-Live":						"30",
 		"Expires":							"20201002",
 		"Timestamp":						"20200901T121212Z"
@@ -446,8 +450,8 @@ def test_is_data_compliant_user():
 
 	for keyfield in ['Contact-Request-Verification-Key',
 						'Contact-Request-Encryption-Key',
-						'Public-Encryption-Key',
-						'Alternate-Encryption-Key']:
+						'Encryption-Key',
+						'Verification-Key']:
 		entry.set_field(keyfield, 'd0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D')
 		assert entry.is_data_compliant().error(), \
 			f"is_data_compliant_user: passed an entry with bad field {keyfield}"
@@ -798,8 +802,8 @@ def bench_hashers():
 		print(f'{hasher}:\t{stop-start}')
 
 if __name__ == '__main__':
-	# test_sign()
-	# test_verify_signature()
-	# test_keycard_chain_verify_load_save()
-	# bench_hashers()
+	test_sign()
+	test_verify_signature()
+	test_keycard_chain_verify_load_save()
 	test_is_data_compliant_user()
+	# bench_hashers()

@@ -46,8 +46,12 @@ from pymensago.utils import MAddress
 # Initial Admin CR Verification Key: ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|
 # Initial Admin CR Signing Key: ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;
 
-# Initial Admin General Encryption Key: CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F
-# Initial Admin General Decryption Key: CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$
+# Initial Admin Encryption Key: CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F
+# Initial Admin Decryption Key: CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$
+
+# Initial Admin Verification Key: 6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p
+# Initial Admin Signing Key: p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+
+
 
 # Test User Information
 
@@ -55,17 +59,17 @@ from pymensago.utils import MAddress
 # Workspace-ID: 4418bf6c-000b-4bb3-8111-316e72030468
 # Domain: example.com
 
-# Initial User Signing Key: p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+
-# Initial User Verification Key: 6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p
-
-# Initial User Contact Request Signing Key: ip52{ps^jH)t$k-9bc_RzkegpIW?}FFe~BX&<V}9
 # Initial User Contact Request Verification Key: d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D
+# Initial User Contact Request Signing Key: ip52{ps^jH)t$k-9bc_RzkegpIW?}FFe~BX&<V}9
 
 # Initial User Contact Request Encryption Key: j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph
 # Initial User Contact Request Decryption Key: 55t6A0y%S?{7c47p(R@C*X#at9Y`q5(Rc#YBS;r}
 
-# Initial User Primary Encryption Key: nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN
-# Initial User Primary Decryption Key: 4A!nTPZSVD#tm78d=-?1OIQ43{ipSpE;@il{lYkg
+# Initial User Encryption Key: nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN
+# Initial User Decryption Key: 4A!nTPZSVD#tm78d=-?1OIQ43{ipSpE;@il{lYkg
+
+# Initial User Verification Key: ED25519:k^GNIJbl3p@N=j8diO-wkNLuLcNF6#JF=@|a}wFE
+# Initial User Signing Key: ED25519:;NEoR>t9n3v%RbLJC#*%n4g%oxqzs)&~k+fH4uqi
 
 def load_server_config_file() -> dict:
 	'''Loads the Mensago server configuration from the config file'''
@@ -359,7 +363,12 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	)
 	config['admin_epair'] = devpair
 
-	
+	spair = SigningPair(
+		CryptoString(r'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p'),
+		CryptoString(r'ED25519:p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+')
+	)
+	config['admin_spair'] = devpair
+
 	status = iscmds.regcode(conn, MAddress('admin/example.com'), config['admin_regcode'], 
 		password.hashstring, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
@@ -384,7 +393,8 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':crspair.get_public_key(),
 		'Contact-Request-Encryption-Key':crepair.get_public_key(),
-		'Public-Encryption-Key':epair.get_public_key()
+		'Encryption-Key':epair.get_public_key(),
+		'Verification-Key':spair.get_public_key()
 	})
 
 	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), crspair)	
