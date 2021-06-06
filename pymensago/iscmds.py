@@ -17,10 +17,12 @@ def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
 	spair: SigningPair) -> RetVal:
 	'''Handles the process to upload an entry to the server.'''
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "ADDENTRY",
 		'Data' : { 'Base-Entry' : entry.make_bytestring(0).decode() }
 	})
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response['Code'] != 100:
@@ -58,10 +60,12 @@ def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
 	if status.error():
 		return status
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "ADDENTRY",
 		'Data' : { 'User-Signature' : entry.signatures['User'] }
 	})
+	if status.error():
+		return status
 	
 	response = conn.read_response(server_response)
 	if response['Code'] != 200:
@@ -72,7 +76,9 @@ def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
 
 def cancel(conn: ServerConnection):
 	'''Returns the session to a state where it is ready for the next command'''
-	conn.send_message({ 'Action' : "CANCEL", 'Data' : {}})
+	status = conn.send_message({ 'Action' : "CANCEL", 'Data' : {}})
+	if status.error():
+		return status
 	
 	response = conn.read_response(None)
 	if response.error():
@@ -88,13 +94,15 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 	if not utils.validate_uuid(devid):
 		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "DEVICE",
 		'Data' : { 
 			'Device-ID' : devid,
 			'Device-Key' : devpair.public.as_string()
 		}
 	})
+	if status.error():
+		return status
 
 	# Receive, decrypt, and return the server challenge
 	response = conn.read_response(server_response)
@@ -112,7 +120,7 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 		cancel(conn)
 		return RetVal(DecryptionFailure, 'failed to decrypt device challenge')
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "DEVICE",
 		'Data' : { 
 			'Device-ID' : devid,
@@ -120,6 +128,8 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 			'Response' : status['data']
 		}
 	})
+	if status.error():
+		return status
 
 	response = conn.read_response(None)
 	if response.error():
@@ -136,7 +146,7 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 	if not utils.validate_uuid(devid):
 		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "DEVKEY",
 		'Data' : { 
 			'Device-ID': devid,
@@ -144,6 +154,8 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 			'New-Key': newpair.public.as_string()
 		}
 	})
+	if status.error():
+		return status
 
 	# Receive, decrypt, and return the server challenge
 	response = conn.read_response(server_response)
@@ -173,7 +185,9 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 		cancel(conn)
 		return RetVal(DecryptionFailure, 'failed to decrypt device challenge for new key')
 	request['Data']['New-Response'] = status['data']
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(None)
 	if response.error():
@@ -233,7 +247,9 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 	}
 	if wid:
 		request['Data']['Workspace-ID'] = wid
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -259,7 +275,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	if status.error():
 		return status
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "LOGIN",
 		'Data' : {
 			'Workspace-ID' : wid,
@@ -267,6 +283,8 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 			'Challenge' : status['data']
 		}
 	})
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -304,7 +322,7 @@ def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
 	'''Resets a workspace's password'''
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action': 'PASSCODE',
 		'Data': {
 			'Workspace-ID': wid,
@@ -312,6 +330,9 @@ def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> 
 			'Password-Hash': pwhash
 		}
 	})
+	if status.error():
+		return status
+	
 	response = conn.read_response(server_response)
 	if response['Code'] != 200:
 		return wrap_server_error(response)
@@ -324,10 +345,12 @@ def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	if not password or not utils.validate_uuid(wid):
 		return RetVal(ErrBadValue)
 	
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : "PASSWORD",
 		'Data' : { 'Password-Hash' : pwhash }
 	})
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -500,7 +523,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') -> RetVal:
 	'''Resets a workspace's password'''
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action': 'RESETPASSWORD',
 		'Data': {
 			'Workspace-ID': wid,
@@ -508,6 +531,9 @@ def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') 
 			'Expires': expires
 		}
 	})
+	if status.error():
+		return status
+	
 	response = conn.read_response(server_response)
 	if response['Code'] != 200:
 		return wrap_server_error(response)
@@ -521,13 +547,16 @@ def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') 
 def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 	'''Changes the password for the workspace'''
 	
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : 'SETPASSWORD',
 		'Data' : {
 			'Password-Hash': pwhash,
 			'NewPassword-Hash': newpwhash
 		}
 	})
+	if status.error():
+		return status
+	
 	response = conn.read_response(server_response)
 	if response['Code'] != 200:
 		return wrap_server_error(response)
@@ -543,13 +572,16 @@ def setstatus(conn: ServerConnection, wid: str, status: str):
 	if not utils.validate_uuid(wid):
 		return RetVal(ErrBadValue, 'bad wid')
 
-	conn.send_message({
+	status = conn.send_message({
 		'Action' : 'SETSTATUS',
 		'Data' : {
 			'Workspace-ID': wid,
 			'Status': status
 		}
 	})
+	if status.error():
+		return status
+	
 	response = conn.read_response(server_response)
 	if response['Code'] != 200:
 		return wrap_server_error(response)

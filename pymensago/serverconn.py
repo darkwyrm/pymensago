@@ -204,7 +204,9 @@ def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 			'DestDir' : destdir
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -227,7 +229,9 @@ def delete(conn: ServerConnection, path: str) -> RetVal:
 			'Path' : path
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -343,7 +347,9 @@ def getquotainfo(conn: ServerConnection, wid='') -> RetVal:
 	}
 	if wid:
 		request['Data']['Workspace-ID'] = wid
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -368,7 +374,9 @@ def listfiles(conn: ServerConnection, path='', epochTime=0) -> RetVal:
 		request['Data']['Path'] = path
 	if epochTime > 0:
 		request['Data']['Time'] = str(epochTime)
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -389,7 +397,10 @@ def listdirs(conn: ServerConnection, path='') -> RetVal:
 	}
 	if path:
 		request['Data']['Path'] = path
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
+
 	response = conn.read_response(server_response)
 	if response.error():
 		return response
@@ -410,7 +421,9 @@ def mkdir(conn: ServerConnection, path: str) -> RetVal:
 			'Path': path
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -432,7 +445,9 @@ def move(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 			'DestDir': destdir
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -455,7 +470,9 @@ def rmdir(conn: ServerConnection, path: str, recursive: bool) -> RetVal:
 	}
 	if recursive:
 		request['Data']['Recursive'] = 'True'
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -476,7 +493,9 @@ def select(conn: ServerConnection, path: str) -> RetVal:
 			'Path': path
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -498,7 +517,9 @@ def setquota(conn: ServerConnection, wid: str, size: int) -> RetVal:
 			'Size': str(size)
 		}
 	}
-	conn.send_message(request)
+	status = conn.send_message(request)
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response.error():
@@ -538,7 +559,7 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 			return status
 		hashstr = status['hash']
 	
-	conn.send_message({
+	status = conn.send_message({
 		'Action': 'UPLOAD',
 		'Data': {
 			'Size': str(filesize),
@@ -546,6 +567,8 @@ def upload(conn: ServerConnection, localpath: str, serverpath: str, tempname='',
 			'Path': serverpath
 		}
 	})
+	if status.error():
+		return status
 
 	response = conn.read_response(server_response)
 	if response['Code'] != 100:
