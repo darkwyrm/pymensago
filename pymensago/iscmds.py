@@ -9,7 +9,7 @@ from retval import RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemen
 
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
-from pymensago.keycard import EntryBase
+from pymensago.keycard import EntryBase, Keycard, OrgEntry
 from pymensago.serverconn import ServerConnection, server_response, wrap_server_error
 import pymensago.utils as utils
 
@@ -315,8 +315,49 @@ def logout(conn: ServerConnection) -> RetVal:
 def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 	'''Obtains an organization's keycard'''
 
-	# TODO: implement orgcard()
-	return RetVal(ErrUnimplemented)
+	status = conn.send_message({
+		'Action': 'ORGCARD',
+		'Data': {
+			'Start-Index': str(start_index),
+			'End-Index': str(end_index)
+		}
+	})
+	if status.error():
+		return status
+
+	response = conn.read_response(server_response)
+	data_size = int(response['Data']['Total-Size'])
+	status = conn.send_message({'Action':'TRANSFER'})
+	if status.error():
+		return status
+
+	chunks = list()
+	tempstr = conn.read()
+	data_read = len(tempstr)
+	chunks.append(tempstr)
+	while data_read < data_size:
+		tempstr = conn.read()
+		data_read = data_read + len(tempstr)
+		chunks.append(tempstr)
+
+	if data_read != data_size:
+		return RetVal(ErrServerError, 'Mismatch in size of data returned from server')
+	
+	# Now that the data has been downloaded, we put it together and split it properly. 
+	entry_strings = ''.join(chunks).split('----- END ORG ENTRY -----\r\n')
+	if entry_strings[-1] == '':
+		entry_strings.pop()
+	
+	card = Keycard()
+	for entrystr in entry_strings:
+		if entrystr.startswith('----- BEGIN ORG ENTRY -----\r\n'):
+			entry = OrgEntry()
+			status = entry.set(entrystr[29:].encode())
+			if status.error():
+				return status
+			card.entries.append(entry)
+	
+	return RetVal().set_value('card', card)
 
 
 def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
