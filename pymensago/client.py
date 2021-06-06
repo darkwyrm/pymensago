@@ -22,7 +22,7 @@ class MensagoClient:
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
 		self.pman = ProfileManager(profile_folder)
-		self.kcr = kcresolver.KCResolver(profile_folder)
+		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
@@ -51,7 +51,11 @@ class MensagoClient:
 		return self.pman
 	
 	def login(self, address: MAddress) -> RetVal:
-		'''Logs into a server. NOTE: not the same as connecting to one.'''
+		'''Logs into a server. NOTE: not the same as connecting to one. At the same time, if no 
+		connection is established, login() will also create the connection.'''
+		if not self.conn.is_connected():
+			self.connect(address.domain)
+		
 		record = kcresolver.get_mgmt_record(address.domain)
 		if record.error():
 			return record
