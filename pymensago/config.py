@@ -21,7 +21,7 @@ def load_server_config() -> dict:
 	
 	serverconfig.setdefault('network', dict())
 	serverconfig['network'].setdefault('listen_ip','127.0.0.1')
-	serverconfig['network'].setdefault('port','2001')
+	serverconfig['network'].setdefault('port', 2001)
 
 	serverconfig.setdefault('database', dict())
 	serverconfig['database'].setdefault('engine','postgresql')
