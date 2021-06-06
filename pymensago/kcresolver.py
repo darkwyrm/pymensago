@@ -3,8 +3,9 @@
 import socket
 import sqlite3
 
-from retval import RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
+from retval import ErrOK, RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 
+from pymensago.config import load_server_config
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
 from pymensago.serverconn import ServerConnection
@@ -78,6 +79,43 @@ class KCResolver:
 			return status
 
 		return out
+
+	def resolve_address(addr: MAddress) -> RetVal:
+		'''obtains the workspace ID for a Mensago address'''
+
+		# TODO: NOTE: HALP: I need to make sure that the PVK/SVK obtained from DNS matches that
+		# of the card obtained from the server
+		
+		if not addr.is_valid():
+			return RetVal(ErrBadValue)
+		
+		if addr.id_type == 1:
+			return RetVal().set_value('Workspace-ID', addr.id)
+		
+		# Step 1: Get the server to connect to
+
+		# We have to have a domain for testing. test.example.com is considered to always resolve to
+		# localhost
+		ip = ''
+		if addr.domain == 'test.example.com':
+			ip = '127.0.0.1'
+		else:
+			# TODO: Implement Mensago server lookup in resolve_address()
+			# This requires getting the management record from DNS and finding out the IP of the server
+			# from that record.
+			status = get_mgmt_record(addr.domain)
+			if status.error():
+				return status
+		
+		# Step 2: Connect and request the address
+		conn = ServerConnection()
+		status = conn.connect(ip, 2001)
+		if status.error():
+			return status
+		
+		status = iscmds.getwid(conn, addr.id, addr.domain)
+		conn.disconnect()
+		return status
 
 	def _get_card_from_db(self, owner: str, isorg: bool) -> RetVal:
 		'''gets a keycard from the db cache if it exists'''
@@ -158,34 +196,61 @@ class KCResolver:
 		return RetVal()
 
 
-def resolve_address(addr: MAddress) -> RetVal:
-	'''obtains the workspace ID for a Mensago address'''
-	if not addr.is_valid():
-		return RetVal(ErrBadValue)
-	
-	if addr.id_type == 1:
-		return RetVal().set_value('Workspace-ID', addr.id)
-	
-	# Step 1: Get the server to connect to
+def get_server_config(domain: str) -> RetVal:
+	'''Given a domain, obtains the configuration information for the Mensago server for that 
+	domain. The server's FQDN will be in the `server` field and the port in `port`.'''
 
-	# We have to have a domain for testing. test.example.com is considered to always resolve to
-	# localhost
-	ip = ''
-	if addr.domain == 'test.example.com':
-		ip = '127.0.0.1'
-	else:
-		# TODO: Implement Mensago server lookup in resolve_address()
-		# This requires getting the management record from DNS and finding out the IP of the server
-		# from that record.
-		return RetVal(ErrUnimplemented)
+	# TODO: POSTDEMO: Implement get_server_config for non-localhost domains
+
+	if domain.endswith('example.com'):
+		config = load_server_config()
+
+		return RetVal().set_values({
+			'server': 'localhost',
+			'port': config['network']['port']
+		})
 	
-	# Step 2: Connect and request the address
-	conn = ServerConnection()
-	status = conn.connect(ip, 2001)
-	if status.error():
-		return status
+	return RetVal(ErrUnimplemented, 'external lookup for non-local domains unimplemented')
+
+
+def get_mgmt_record(domain: str) -> RetVal:
+	'''Obtains the DNS management record for a domain and returns the following fields:
+
+	pvk - a CryptoString object containing the organization's Primary Verification Key
+
+	svk - a CryptoString object containing the organization's Secondary Verification Key. This field 
+	will not exist if the management record has no secondary key.
+
+	hash - a CryptoString hash of the server's TLS certificate public key 
+	'''
+	out = RetVal(ErrUnimplemented, 'get_mgmt_record unimplemented')
+
+	if domain.endswith('example.com'):
+		# Example domains are pointed to localhost, so we will query the local server to get the
+		# necessary information.
+		config = load_server_config()
+		conn = ServerConnection()
+		status = conn.connect('localhost', config['network']['port'])
+		if status.error():
+			return status
+		
+		# We just need the current keys, so just get the current org card entry
+		status = iscmds.orgcard(conn, 0, -1)
+		if status.error():
+			return status
+		conn.disconnect()
+		card = status['card']
+
+		out['pvk'] = card.entries[0].fields['Primary-Verification-Key']
+		if 'Secondary-Verification-Key' in card.entries[0].fields:
+			out['svk'] = card.entries[0].fields['Secondary-Verification-Key']
+		
+		# Because TLS isn't implemented yet, we won't worry about the TLS cert key hash
+		# TODO: POSTDEMO: get hash field for localhost TLS cert in get_mgmt_record()
+		out.set_error(ErrOK)
+		out.set_info('')
+		
+	# TODO: POSTDEMO: Finish implementing get_mgmt_record()
 	
-	status = iscmds.getwid(conn, addr.id, addr.domain)
-	conn.disconnect()
-	return status
+	return out
 
