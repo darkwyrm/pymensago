@@ -86,7 +86,7 @@ class KCResolver:
 
 		return out
 
-	def resolve_address(addr: MAddress) -> RetVal:
+	def resolve_address(self, addr: MAddress) -> RetVal:
 		'''obtains the workspace ID for a Mensago address'''
 
 		if not addr.is_valid():
