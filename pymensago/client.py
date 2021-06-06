@@ -8,6 +8,7 @@ from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrE
 
 import pymensago.auth as auth
 import pymensago.iscmds as iscmds
+import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.userprofile import Profile, ProfileManager
@@ -21,7 +22,7 @@ class MensagoClient:
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
 		self.pman = ProfileManager(profile_folder)
-		self.db = None
+		self.kcr = kcresolver.KCResolver(profile_folder)
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
@@ -35,11 +36,30 @@ class MensagoClient:
 		status = self.conn.connect(status['host'],status['port'])
 		return status
 	
+	def connect(self, domain: str) -> RetVal:
+		'''Establishes a network connection to a Mensago server. No logging in is performed.'''
+		serverconfig = kcresolver.get_server_config(domain)
+		if serverconfig.error():
+			return serverconfig
+		return self.conn.connect(serverconfig['server'], serverconfig['port'])
+	
+	def disconnect(self):
+		'''Ends a network session with a Mensago server.'''
+		self.conn.disconnect()
+
 	def get_profile_manager(self) -> ProfileManager:
 		return self.pman
 	
+	def login(self, address: MAddress) -> RetVal:
+		'''Logs into a server. NOTE: not the same as connecting to one.'''
+		record = kcresolver.get_mgmt_record(address.domain)
+		if record.error():
+			return record
+		
+		return iscmds.login(self.conn, address.id, record['pvk'])
+
 	def logout(self) -> RetVal:
-		'''Disconnects from a server'''
+		'''Logs out of a server'''
 		return iscmds.logout(self.conn)
 
 	def preregister_account(self, port_str: str, uid: str) -> RetVal:
@@ -132,7 +152,6 @@ class MensagoClient:
 			return status
 
 		return regdata
-
 	
 	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
 		'''Create a new account on the specified server.'''
