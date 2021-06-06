@@ -1,7 +1,6 @@
 '''This module implements a Mensago keycard resolver with caching'''
 
-import socket
-import sqlite3
+import os
 
 from retval import ErrOK, RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 
@@ -14,8 +13,15 @@ from pymensago.utils import validate_domain, MAddress
 class KCResolver:
 	'''A caching keycard resolver class'''
 
-	def __init__(self, conn: sqlite3.Connection) -> None:
-		self.db = conn
+	def __init__(self, profile_path: str) -> None:
+		if not profile_path:
+			raise ValueError('profile path may not be empty')
+		
+		self.path = profile_path
+		if not os.path.exists(self.path):
+			os.mkdir(self.path)
+		
+		self.db = None
 
 	def get_card(self, owner: str) -> RetVal:
 		'''returns a Keycard object in the 'keycard' field if successful'''
