@@ -83,33 +83,25 @@ class KCResolver:
 	def resolve_address(addr: MAddress) -> RetVal:
 		'''obtains the workspace ID for a Mensago address'''
 
-		# TODO: NOTE: HALP: I need to make sure that the PVK/SVK obtained from DNS matches that
-		# of the card obtained from the server
-		
 		if not addr.is_valid():
 			return RetVal(ErrBadValue)
 		
 		if addr.id_type == 1:
 			return RetVal().set_value('Workspace-ID', addr.id)
-		
+
+		# TODO: POSTDEMO: Add caching to kcresolver.resolve_address
+
 		# Step 1: Get the server to connect to
 
-		# We have to have a domain for testing. test.example.com is considered to always resolve to
-		# localhost
-		ip = ''
-		if addr.domain == 'test.example.com':
-			ip = '127.0.0.1'
-		else:
-			# TODO: Implement Mensago server lookup in resolve_address()
-			# This requires getting the management record from DNS and finding out the IP of the server
-			# from that record.
-			status = get_mgmt_record(addr.domain)
-			if status.error():
-				return status
+		# We have to have a domain for testing. Anything in the example.com domain is considered to 
+		# always resolve to localhost
+		serverconfig = get_server_config(addr.domain)
+		if serverconfig.error():
+			return serverconfig
 		
 		# Step 2: Connect and request the address
 		conn = ServerConnection()
-		status = conn.connect(ip, 2001)
+		status = conn.connect(serverconfig['server'], serverconfig['port'])
 		if status.error():
 			return status
 		
