@@ -23,6 +23,7 @@ class MensagoClient:
 		self.conn = serverconn.ServerConnection()
 		self.pman = ProfileManager(profile_folder)
 		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
+		self.login_active = False
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
@@ -43,8 +44,14 @@ class MensagoClient:
 			return serverconfig
 		return self.conn.connect(serverconfig['server'], serverconfig['port'])
 	
+	def is_connected(self) -> bool:
+		'''Returns true if the client has an active connection with a server. Note that this does 
+		not imply that the client has an active login session on that connection.'''
+		return self.conn.is_connected()
+
 	def disconnect(self):
 		'''Ends a network session with a Mensago server.'''
+		self.login_active = False
 		self.conn.disconnect()
 
 	def get_profile_manager(self) -> ProfileManager:
@@ -59,11 +66,22 @@ class MensagoClient:
 		record = kcresolver.get_mgmt_record(address.domain)
 		if record.error():
 			return record
-		
-		return iscmds.login(self.conn, address.id, record['pvk'])
+
+		status = iscmds.login(self.conn, address.id, record['pvk'])
+		if not status.error():
+			self.login_active = True
+		return status
+
+	def is_logged_in(self) -> bool:
+		'''Returns true if an active login session has been completed'''
+		if self.conn.is_connected():
+			return self.login_active
+		self.login_active = False
+		return False
 
 	def logout(self) -> RetVal:
 		'''Logs out of a server'''
+		self.login_active = False
 		return iscmds.logout(self.conn)
 
 	def preregister_account(self, port_str: str, uid: str) -> RetVal:
