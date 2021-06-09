@@ -61,6 +61,8 @@ def add_device_session(db, address: MAddress, devid: str, devpair: EncryptionPai
 	if devpair.enctype != 'CURVE25519':
 		return RetVal(ErrUnsupportedAlgorithm, "enctype must be 'CURVE25519'")
 
+	devid = devid.casefold()
+	
 	# address has to be valid and existing already
 	cursor = db.cursor()
 	cursor.execute("SELECT wid FROM workspaces WHERE wid=?",(address.id,))
@@ -79,7 +81,7 @@ def add_device_session(db, address: MAddress, devid: str, devpair: EncryptionPai
 		cursor.execute('''INSERT INTO sessions(
 				address, devid, enctype, public_key, private_key, devname) 
 				VALUES(?,?,?,?,?,?)''',
-				(address.as_string(), devid, devpair.enctype, devpair.public_key, 
+				(address.as_string(), devid.casefold, devpair.enctype, devpair.public_key, 
 				devpair.private_key, devname))
 	else:
 		cursor.execute('''INSERT INTO sessions(
@@ -95,6 +97,8 @@ def remove_device_session(db, devid: str) -> RetVal:
 	'''
 	Removes an authorized device from the workspace. Returns a boolean success code.
 	'''
+	devid = devid.casefold()
+
 	cursor = db.cursor()
 	cursor.execute("SELECT devid FROM sessions WHERE devid=?", (devid,))
 	results = cursor.fetchone()
@@ -106,20 +110,20 @@ def remove_device_session(db, devid: str) -> RetVal:
 	return RetVal()
 
 
-def get_session_public_key(db: sqlite3.Connection, address: str) -> RetVal:
+def get_session_public_key(db: sqlite3.Connection, addr: MAddress) -> RetVal:
 	'''Returns the public key for the device for a session'''
 	cursor = db.cursor()
-	cursor.execute("SELECT public_key FROM sessions WHERE address=?", (address,))
+	cursor.execute("SELECT public_key FROM sessions WHERE address=?", (addr.as_string(),))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
 	return RetVal().set_value('key', results[0])
 
 
-def get_session_private_key(db: sqlite3.Connection, address: str) -> RetVal:
+def get_session_private_key(db: sqlite3.Connection, addr: MAddress) -> RetVal:
 	'''Returns the private key for the device for a session'''
 	cursor = db.cursor()
-	cursor.execute("SELECT private_key FROM sessions WHERE address=?", (address,))
+	cursor.execute("SELECT private_key FROM sessions WHERE address=?", (addr.as_string(),))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
