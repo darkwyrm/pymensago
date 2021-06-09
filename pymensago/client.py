@@ -173,6 +173,7 @@ class MensagoClient:
 		if status.error():
 			return status
 
+		regdata['password'] = pw
 		return regdata
 	
 	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
