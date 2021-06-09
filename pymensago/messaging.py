@@ -8,7 +8,7 @@ import pycryptostring as cs
 from retval import RetVal, ErrBadData, ErrBadValue, ErrInternalError
 
 from pymensago.encryption import PublicKey, SecretKey
-from pymensago.utils import MAddress
+from pymensago.utils import WAddress
 
 RequiredDataMissing = 'required data missing'
 
@@ -85,7 +85,7 @@ class Envelope:
 		return RetVal()
 
 
-	def set_sender(self, sender: MAddress, recipient: MAddress, orgkey: cs.CryptoString) -> RetVal:
+	def set_sender(self, sender: WAddress, recipient: WAddress, orgkey: cs.CryptoString) -> RetVal:
 		'''Sets the encrypted sender tag'''
 		
 		if not (sender.is_valid() and recipient.is_valid() and orgkey.is_valid()):
@@ -105,7 +105,7 @@ class Envelope:
 		return RetVal()
 		
 
-	def set_receiver(self, sender: MAddress, recipient: MAddress, orgkey: cs.CryptoString) -> RetVal:
+	def set_receiver(self, sender: WAddress, recipient: WAddress, orgkey: cs.CryptoString) -> RetVal:
 		'''Sets the encrypted reciver tag'''
 
 		if not (sender.is_valid() and recipient.is_valid() and orgkey.is_valid()):
