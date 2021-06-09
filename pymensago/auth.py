@@ -9,11 +9,14 @@ from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password,
 	ErrUnsupportedAlgorithm
 from pymensago.utils import MAddress
 
-def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
+def get_credentials(db: sqlite3.Connection, addr: MAddress) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
+	if addr.id_type != 1:
+		return RetVal(ErrBadValue, 'a workspace address is required')
+	
 	cursor = db.cursor()
 	cursor.execute('''SELECT password,pwhashtype FROM workspaces WHERE wid=? AND domain=?''',
-		(wid,domain))
+		(addr.id,addr.domain))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
@@ -24,20 +27,24 @@ def get_credentials(db: sqlite3.Connection, wid: str, domain: str) -> RetVal:
 	return status
 
 
-def set_credentials(db, wid: str, domain: str, pw: Password) -> RetVal:
+def set_credentials(db, addr: MAddress, pw: Password) -> RetVal:
 	'''Sets the password and hash type for the specified workspace. A boolean success 
 	value is returned.'''
+	if addr.id_type != 1:
+		return RetVal(ErrBadValue, 'a workspace address is required')
+	
 	cursor = db.cursor()
-	cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
+	cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (addr.id, addr.domain))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
 
 	cursor = db.cursor()
 	cursor.execute("UPDATE workspaces SET password=?,pwhashtype=? WHERE wid=? AND domain=?",
-		(pw.hashstring, pw.hashtype, wid, domain))
+		(pw.hashstring, pw.hashtype, addr.wid, addr.domain))
 	db.commit()
 	return RetVal()
+
 
 def add_device_session(db, address: MAddress, devid: str, devpair: EncryptionPair, 
 	devname='') -> RetVal:
