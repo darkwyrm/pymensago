@@ -35,9 +35,11 @@ class Workspace:
 
 		# Generate user's encryption keys
 		keys = {
-			'identity' : encryption.EncryptionPair(),
-			'conrequest' : encryption.EncryptionPair(),
-			'broadcast' : encryption.SecretKey(),
+			'crencryption' : encryption.EncryptionPair(),
+			'crsigning' : encryption.SigningPair(),
+			'encryption' : encryption.EncryptionPair(),
+			'signing' : encryption.SigningPair(),
+			'storage' : encryption.SecretKey(),
 			'folder' : encryption.SecretKey()
 		}
 		
