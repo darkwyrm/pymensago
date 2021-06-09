@@ -7,13 +7,10 @@ from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
 from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password, \
 	ErrUnsupportedAlgorithm
-from pymensago.utils import MAddress
+from pymensago.utils import MAddress, WAddress
 
-def get_credentials(db: sqlite3.Connection, addr: MAddress) -> RetVal:
+def get_credentials(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
-	if addr.id_type != 1:
-		return RetVal(ErrBadValue, 'a workspace address is required')
-	
 	cursor = db.cursor()
 	cursor.execute('''SELECT password,pwhashtype FROM workspaces WHERE wid=? AND domain=?''',
 		(addr.id,addr.domain))
@@ -27,12 +24,9 @@ def get_credentials(db: sqlite3.Connection, addr: MAddress) -> RetVal:
 	return status
 
 
-def set_credentials(db, addr: MAddress, pw: Password) -> RetVal:
+def set_credentials(db, addr: WAddress, pw: Password) -> RetVal:
 	'''Sets the password and hash type for the specified workspace. A boolean success 
 	value is returned.'''
-	if addr.id_type != 1:
-		return RetVal(ErrBadValue, 'a workspace address is required')
-	
 	cursor = db.cursor()
 	cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (addr.id, addr.domain))
 	results = cursor.fetchone()
@@ -46,7 +40,7 @@ def set_credentials(db, addr: MAddress, pw: Password) -> RetVal:
 	return RetVal()
 
 
-def add_device_session(db, address: MAddress, devid: str, devpair: EncryptionPair, 
+def add_device_session(db, address: WAddress, devid: str, devpair: EncryptionPair, 
 	devname='') -> RetVal:
 	'''Adds a device to a workspace'''
 
@@ -110,7 +104,7 @@ def remove_device_session(db, devid: str) -> RetVal:
 	return RetVal()
 
 
-def get_session_public_key(db: sqlite3.Connection, addr: MAddress) -> RetVal:
+def get_session_public_key(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the public key for the device for a session'''
 	cursor = db.cursor()
 	cursor.execute("SELECT public_key FROM sessions WHERE address=?", (addr.as_string(),))
@@ -120,7 +114,7 @@ def get_session_public_key(db: sqlite3.Connection, addr: MAddress) -> RetVal:
 	return RetVal().set_value('key', results[0])
 
 
-def get_session_private_key(db: sqlite3.Connection, addr: MAddress) -> RetVal:
+def get_session_private_key(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the private key for the device for a session'''
 	cursor = db.cursor()
 	cursor.execute("SELECT private_key FROM sessions WHERE address=?", (addr.as_string(),))
