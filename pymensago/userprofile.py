@@ -3,11 +3,12 @@ import json
 import os
 import pathlib
 import platform
+from pymensago.workspace import Workspace
 import shutil
 import sqlite3
 import uuid
 
-from retval import RetVal, ErrExists, ErrBadValue, ErrNotFound
+from retval import ErrUnimplemented, RetVal, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
 
 BadProfileList = 'BadProfileList'
@@ -81,6 +82,12 @@ class Profile:
 			return True
 		
 		return False
+
+	def set_identity(self, w: Workspace) -> RetVal:
+		'''Assigns an identity workspace to the profile'''
+
+		# TODO: Implement Profile.set_identity()
+		return RetVal(ErrUnimplemented, 'Workspace.set_identity() not implemented')
 
 	def reset_db(self) -> sqlite3.Connection:
 		'''This function reinitializes the database to empty, taking a path to the file used by the 
