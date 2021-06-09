@@ -7,7 +7,7 @@ from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
 from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password, \
 	ErrUnsupportedAlgorithm
-from pymensago.utils import MAddress, WAddress
+from pymensago.utils import WAddress
 
 def get_credentials(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
