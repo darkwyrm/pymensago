@@ -9,8 +9,50 @@ _uuid_pattern = re.compile(
 _domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
 _illegal_pattern = re.compile(r'[\s\\/\"]')
 
-class MAddress:
-	'''Represents a Mensago or workspace address'''
+class AddressBase:
+	def __init__(self):
+		self.id = ''
+		self.id_type = 0
+		self.domain = ''
+
+	def __str__(self) -> str:
+		return self.as_string()
+	
+	def as_string(self) -> str:
+		return self.id + '/' + self.domain
+
+	def is_valid(self) -> bool:
+		return self.id_type in [1,2] and self.id and self.domain
+
+class WAddress(AddressBase):
+	'''Represents a workspace address'''
+
+	def __init__(self, addr='') -> None:
+		super.__init__()
+		if addr:
+			self.set(addr)
+		
+	def set(self, addr: str) -> RetVal:
+		'''Validates input and assigns the address. If the given address is invalid, no change is 
+		made to the object'''
+		
+		parts = addr.split('/')
+		if len(parts) != 2 or not parts[0] or not parts[1]:
+			return RetVal(ErrBadValue, 'bad address given')
+		
+		id_type = 0
+		if not _uuid_pattern.match(parts[0]):
+			return RetVal(ErrBadValue, 'bad workspace ID')
+
+		self.id_type = 1
+		self.id = parts[0].casefold()
+		self.domain = parts[1].casefold()
+
+		return RetVal()
+	
+
+class MAddress(AddressBase):
+	'''Represents a Mensago address'''
 	
 	def __init__(self, addr = ''):
 		self.id = ''
@@ -18,12 +60,6 @@ class MAddress:
 		self.domain = ''
 		if addr:
 			self.set(addr)
-
-	def __str__(self) -> str:
-		return self.as_string()
-	
-	def as_string(self) -> str:
-		return self.id + '/' + self.domain
 
 	def set(self, addr: str) -> RetVal:
 		'''Validates input and assigns the address. If the given address is invalid, no change is 
@@ -52,9 +88,6 @@ class MAddress:
 		self.domain = parts[1].casefold()
 
 		return RetVal()
-	
-	def is_valid(self) -> bool:
-		return self.id_type in [1,2] and self.id and self.domain
 	
 
 def validate_uuid(indata: str) -> bool:
