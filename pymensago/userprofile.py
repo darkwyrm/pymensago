@@ -1,14 +1,12 @@
 '''The userprofile module handles user profile management'''
-import json
 import os
 import pathlib
 import platform
 from pymensago.workspace import Workspace
 import shutil
 import sqlite3
-import uuid
 
-from retval import ErrUnimplemented, RetVal, ErrExists, ErrBadValue, ErrNotFound
+from retval import ErrBadType, ErrEmptyData, ErrUnimplemented, RetVal, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
 
 BadProfileList = 'BadProfileList'
@@ -22,7 +20,7 @@ class Profile:
 		
 		self.name = os.path.basename(path)
 		self.path = path
-		self.isdefault = False
+		self.default = False
 		self.id = ''
 		self.wid = ''
 		self.domain = ''
@@ -31,10 +29,6 @@ class Profile:
 
 	def __str__(self):
 		return str(self.as_dict())
-
-	def make_id(self):
-		'''Generates a new profile ID for the object'''
-		self.id = str(uuid.uuid4())
 
 	def serverstring(self) -> str:
 		'''Returns the identity workspace address for the profile including port'''
@@ -53,7 +47,33 @@ class Profile:
 		if self.db:
 			self.db.close()
 			self.db = None
-	
+
+	def set_default(self, is_default: bool) -> RetVal:
+		'''Makes a profile the default'''
+
+		filepath = os.path.join(self.path, 'default.txt')
+		if is_default:
+			if not os.path.exists(filepath):
+				try:
+					handle = open(filepath, 'w')
+					handle.close()
+				except Exception as e:
+					return RetVal.wrap_exception()
+				
+		else:
+			if os.path.exists(filepath):
+				try:
+					os.unlink(filepath)
+				except Exception as e:
+					return RetVal().wrap_exception(e)
+		
+		self.default = is_default
+		return RetVal()
+
+	def is_default(self) -> bool:
+		''''Returns true if the profile is the default one'''
+		return self.default
+		
 	def as_dict(self) -> dict:
 		'''Returns the state of the profile as a dictionary'''
 		return {
@@ -208,7 +228,15 @@ class Profile:
 class ProfileManager:
 	'''Handles user profile management'''
 	
-	def __init__(self, profile_path=''):
+	def __init__(self, ):
+		self.profiles = list()
+		self.default_profile = ''
+		self.active_index = -1
+
+	def load_profiles(self, profile_path='') -> RetVal:
+		'''Loads profile information from the specified JSON file stored in the top level of the 
+		profile folder.'''
+
 		if profile_path:
 			self.profile_folder = profile_path
 		else:
@@ -221,14 +249,24 @@ class ProfileManager:
 		if not os.path.exists(self.profile_folder):
 			os.mkdir(self.profile_folder)
 		
+		items = os.listdir(self.profile_folder)
+
 		self.profiles = list()
 		self.default_profile = ''
-		self.active_index = -1
-		self.profile_id = ''
-		
-		# Activate the default profile. If one doesn't exist, create one
-		self.error_state = self.load_profiles()
-		
+		for item in items:
+			if not os.path.isdir(item):
+				continue
+			
+			profile = Profile(item)
+			self.profiles.append(profile)
+			if profile.is_default():
+				if self.default_profile:
+					self.default_profile = profile.name
+				else:
+					# If we have more than profile marked as default, the first one encountered
+					# retains that status
+					profile.set_default(False)
+
 		if not self.get_profiles():
 			self.error_state = self.create_profile('primary')
 			if not self.error_state.error():
@@ -237,35 +275,6 @@ class ProfileManager:
 		if not self.error_state.error():
 			self.error_state = self.activate_profile(self.get_default_profile())
 
-	def load_profiles(self) -> RetVal:
-		'''
-		Loads profile information from the specified JSON file stored in the top level of the 
-		profile folder.
-
-		Returns:
-		"error" : string
-		"profiles" : list
-		'''
-		profile_list_path = os.path.join(self.profile_folder, 'profiles.json')
-		
-		if os.path.exists(profile_list_path):
-			profile_data = list()
-			try:
-				with open(profile_list_path, 'r') as fhandle:
-					profile_data = json.load(fhandle)
-				
-			except Exception:
-				return RetVal(BadProfileList)
-
-			profiles = list()
-			for item in profile_data:
-				profile = Profile(os.path.join(self.profile_folder, item['name']))
-				profile.set_from_dict(item)
-				profiles.append(profile)
-				if profile.isdefault:
-					self.default_profile = profile.name
-
-			self.profiles = profiles
 		return RetVal()
 	
 	def __index_for_profile(self, name: str) -> int:
@@ -279,39 +288,42 @@ class ProfileManager:
 				return i
 		return -1
 
-	def create_profile(self, name) -> RetVal:
-		'''
-		Creates a profile with the specified name. Profile names are not case-sensitive.
+	def create_profile(self, name: str) -> RetVal:
+		'''Creates a profile with the specified name. Profile names are expected to be all.
 
-		Returns: 
-		RetVal error state also contains a copy of the created profile as "profile"
-		'''
+		Attached Values: 
+		'profile': a copy of the created profile as "profile"'''
+
 		if not name:
-			return RetVal(ErrBadValue, "BUG: name may not be empty")
+			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
 		if self.__index_for_profile(name_squashed) >= 0:
-			return RetVal(ErrExists, name)
+			return RetVal(ErrExists, f"profile {name} already exists")
 
-		profile = Profile(os.path.join(self.profile_folder, name_squashed))
-		profile.make_id()
+		new_profile_path = os.path.join(self.profile_folder, name_squashed)
+		try:
+			os.mkdir(new_profile_path)
+		except Exception as e:
+			return RetVal().wrap_exception(e)
+
+		profile = Profile(new_profile_path)
 		self.profiles.append(profile)
 
 		if len(self.profiles) == 1:
-			profile.isdefault = True
+			profile.set_default(True)
 			self.default_profile = name
 		
 		return RetVal().set_value("profile", profile)
 
-	def delete_profile(self, name) -> RetVal:
-		'''
-		Deletes the named profile and all files on disk contained in it.
-		'''
+	def delete_profile(self, name: str) -> RetVal:
+		'''Deletes the named profile and all files on disk contained in it.'''
+
 		if name == 'default':
 			return RetVal(ErrBadValue, "'default' is reserved")
 		
 		if not name:
-			return RetVal(ErrBadValue, "BUG: name may not be empty")
+			return RetVal(ErrEmptyData, "BUG: profile name may not be empty")
 		
 		name_squashed = name.casefold()
 		itemindex = self.__index_for_profile(name_squashed)
@@ -325,19 +337,16 @@ class ProfileManager:
 			except Exception as e:
 				return RetVal.wrap_exception(e)
 		
-		if profile.isdefault:
-			if self.profiles:
-				self.profiles[0].isdefault = True
+		if profile.is_default() and self.profiles:
+			self.profiles[0].set_default(True)
 		
 		return RetVal()
 
 	def rename_profile(self, oldname, newname) -> RetVal:
-		'''
-		Renames a profile, leaving the profile ID unchanged.
-		'''
+		'''Renames a profile, leaving the profile ID unchanged.'''
 		
 		if not oldname or not newname:
-			return RetVal(ErrBadValue, "BUG: name may not be empty")
+			return RetVal(ErrEmptyData, "BUG: profile names may not be empty")
 		
 		old_squashed = oldname.casefold()
 		new_squashed = newname.casefold()
@@ -347,10 +356,10 @@ class ProfileManager:
 		
 		index = self.__index_for_profile(old_squashed)
 		if index < 0:
-			return RetVal(ErrNotFound, "%s doesn't exist" % oldname)
+			return RetVal(ErrNotFound, f"{oldname} doesn't exist")
 
 		if self.__index_for_profile(new_squashed) >= 0:
-			return RetVal(ErrExists, "%s already exists" % newname)
+			return RetVal(ErrExists, f"{newname} already exists")
 
 		if index == self.active_index:
 			self.profiles[index].deactivate()
@@ -381,7 +390,7 @@ class ProfileManager:
 		Returns the name of the default profile. If one has not been set, it returns an empty string.
 		'''
 		for item in self.profiles:
-			if item.isdefault:
+			if item.is_default():
 				return item.name
 		return ''
 
@@ -391,36 +400,35 @@ class ProfileManager:
 		no effect.
 		'''
 		if not name:
-			return RetVal(ErrBadValue, "BUG: name may not be empty")
+			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
 		if len(self.profiles) == 1:
-			if self.profiles[0].isdefault:
+			if self.profiles[0].is_default():
 				return RetVal()
-			self.profiles[0].isdefault = True
+			self.profiles[0].set_default(True)
 			return RetVal()
 		
 		oldindex = -1
 		for i in range(0, len(self.profiles)):
-			if self.profiles[i].isdefault:
+			if self.profiles[i].is_default():
 				oldindex = i
 		
 		name_squashed = name.casefold()
 		newindex = self.__index_for_profile(name_squashed)
 		
 		if newindex < 0:
-			return RetVal(ErrNotFound, "New profile %s not found" % name_squashed)
+			return RetVal(ErrNotFound, f"New profile {name_squashed} not found")
 		
 		if oldindex >= 0:
 			if name_squashed == self.profiles[oldindex].name:
 				return RetVal()
-			self.profiles[oldindex].isdefault = False
+			self.profiles[oldindex].set_default(False)
 
-		self.profiles[newindex].isdefault = True		
+		self.profiles[newindex].set_default(True)
 		return RetVal()
 
 	def activate_profile(self, name: str) -> RetVal:
-		'''
-		Activates the specified profile.
+		'''Activates the specified profile.
 
 		Returns:
 		"error" : string
@@ -433,28 +441,27 @@ class ProfileManager:
 			self.active_index = -1
 		
 		if not name:
-			return RetVal(ErrBadValue, "BUG: name may not be empty")
+			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
 		active_index = self.__index_for_profile(name_squashed)
 		if active_index < 0:
-			return RetVal(ErrNotFound, "%s doesn't exist" % name_squashed)
+			return RetVal(ErrNotFound, f"{name_squashed} doesn't exist")
 		
 		self.profile_id = name_squashed
 
 		self.active_index = active_index
 		self.profiles[self.active_index].activate()
 		
-		out = RetVal()
-		out.set_values({
+		return RetVal().set_values({
 			'wid' : self.profiles[active_index].wid,
 			'host' : self.profiles[active_index].domain,
 			'port' : self.profiles[active_index].port 
 		})
-		return out
 
 	def get_active_profile(self) -> RetVal:
 		'''Returns the active profile'''
+
 		if self.active_index >= 0:
 			return RetVal().set_value("profile", self.profiles[self.active_index])
 		return RetVal(InvalidProfile,'No active profile')
