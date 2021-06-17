@@ -6,7 +6,7 @@ from retval import RetVal, ErrBadValue
 
 _uuid_pattern = re.compile(
 			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
-_domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
+_domain_pattern = re.compile(r'([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9\-]+')
 _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 
 
@@ -24,6 +24,26 @@ class UserID(str):
 	
 	def set(self, obj) -> str:
 		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
+		removed, and the value is validated. set() returns the object's final internal value or 
+		an empty string if an error occurred.'''
+		
+		self = str(obj).strip().casefold()
+		if self.is_valid():
+			return self
+		return ''
+
+
+class Domain(str):
+	def __init__(self, obj) -> None:
+		super().__init__(obj)
+	
+	def is_valid(self) -> bool:
+		'''Returns true if the instance is a valid Internet domain'''
+		global _domain_pattern
+		return _domain_pattern.match(self)
+	
+	def set(self, obj) -> str:
+		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
