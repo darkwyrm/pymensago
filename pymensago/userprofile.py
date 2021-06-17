@@ -36,10 +36,6 @@ class Profile:
 		'''Generates a new profile ID for the object'''
 		self.id = str(uuid.uuid4())
 
-	def address(self) -> str:
-		'''Returns the identity workspace address for the profile'''
-		return '/'.join([self.wid, self.domain])
-	
 	def serverstring(self) -> str:
 		'''Returns the identity workspace address for the profile including port'''
 		return ':'.join([self.address(),self.port])
@@ -83,6 +79,10 @@ class Profile:
 		
 		return False
 
+	def get_identity(self) -> utils.WAddress:
+		'''Returns the identity workspace address for the profile'''
+		return utils.WAddress('/'.join([self.wid, self.domain]))
+	
 	def set_identity(self, w: Workspace) -> RetVal:
 		'''Assigns an identity workspace to the profile'''
 
