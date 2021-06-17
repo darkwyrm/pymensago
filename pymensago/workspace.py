@@ -17,7 +17,7 @@ class Workspace:
 		self.uid = ''
 		self.wid = ''
 		self.domain = ''
-		self.type = 'single'
+		self.type = 'identity'
 
 	def generate(self, userid: str, server: str, wid: str, pw: encryption.Password) -> RetVal:
 		'''Creates all the data needed for an individual workspace account'''
