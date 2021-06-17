@@ -1,11 +1,12 @@
 '''Houses just some different utility functions'''
 
 import re
+import uuid
 
 from retval import RetVal, ErrBadValue
 
 _uuid_pattern = re.compile(
-			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
+			r"[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
 _domain_pattern = re.compile(r'([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9\-]+')
 _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 
@@ -44,6 +45,33 @@ class Domain(str):
 	
 	def set(self, obj) -> str:
 		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
+		removed, and the value is validated. set() returns the object's final internal value or 
+		an empty string if an error occurred.'''
+		
+		self = str(obj).strip().casefold()
+		if self.is_valid():
+			return self
+		return ''
+
+
+class UUID(str):
+	'''Although there already is a uuid module, this class makes interaction easier by keeping it 
+	as a string and ensuring that the formatting is always lowercase and has dashes, two Mensago 
+	requirements to ensure consistency and fewer bugs.'''
+	def __init__(self, obj) -> None:
+		super().__init__(obj)
+	
+	def is_valid(self) -> bool:
+		'''Returns true if the instance is a valid UUID'''
+		global _uuid_pattern
+		return _uuid_pattern.match(self)
+	
+	def generate(self) -> None:
+		'''Generates a random (v4) UUID and assigns it to the instance'''
+		self = str(uuid.uuid4())
+
+	def set(self, obj) -> str:
+		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
