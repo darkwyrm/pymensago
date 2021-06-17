@@ -237,42 +237,6 @@ class ProfileManager:
 		if not self.error_state.error():
 			self.error_state = self.activate_profile(self.get_default_profile())
 
-	def save_profiles(self) -> RetVal:
-		'''
-		Saves the current list of profiles to the profile list file.
-
-		Returns:
-		"error" : error state - string
-		'''
-		if self.error_state.error():
-			return self.error_state
-		
-		profile_list_path = os.path.join(self.profile_folder, 'profiles.json')
-		
-		if not os.path.exists(self.profile_folder):
-			os.mkdir(self.profile_folder)
-
-		try:
-			with open(profile_list_path, 'w') as fhandle:
-				profile_data = list()
-				for profile in self.profiles:
-
-					if not profile.is_valid():
-						return RetVal(InvalidProfile, profile.name)
-					
-					profile_data.append(profile.as_dict())
-
-					item_folder = os.path.join(self.profile_folder, profile.name)
-					if not os.path.exists(item_folder):
-						os.mkdir(item_folder)
-
-				json.dump(profile_data, fhandle, ensure_ascii=False, indent=1)
-			
-		except Exception as e:
-			return RetVal.wrap_exception(e)
-
-		return RetVal()
-
 	def load_profiles(self) -> RetVal:
 		'''
 		Loads profile information from the specified JSON file stored in the top level of the 
@@ -337,12 +301,7 @@ class ProfileManager:
 			profile.isdefault = True
 			self.default_profile = name
 		
-		status = self.save_profiles()
-		if status.error():
-			return status
-		
-		status.set_value("profile", profile)
-		return status
+		return RetVal().set_value("profile", profile)
 
 	def delete_profile(self, name) -> RetVal:
 		'''
@@ -370,7 +329,7 @@ class ProfileManager:
 			if self.profiles:
 				self.profiles[0].isdefault = True
 		
-		return self.save_profiles()
+		return RetVal()
 
 	def rename_profile(self, oldname, newname) -> RetVal:
 		'''
@@ -411,7 +370,7 @@ class ProfileManager:
 		if index == self.active_index:
 			self.profiles[index].activate()
 		
-		return self.save_profiles()
+		return RetVal()
 	
 	def get_profiles(self) -> dict:
 		'''Returns a list of loaded profiles'''
@@ -438,7 +397,7 @@ class ProfileManager:
 			if self.profiles[0].isdefault:
 				return RetVal()
 			self.profiles[0].isdefault = True
-			return self.save_profiles()
+			return RetVal()
 		
 		oldindex = -1
 		for i in range(0, len(self.profiles)):
@@ -457,7 +416,7 @@ class ProfileManager:
 			self.profiles[oldindex].isdefault = False
 
 		self.profiles[newindex].isdefault = True		
-		return self.save_profiles()
+		return RetVal()
 
 	def activate_profile(self, name: str) -> RetVal:
 		'''

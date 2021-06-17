@@ -74,7 +74,6 @@ def test_pman_init():
 	tests a lot of parts of the class'''
 
 	# Because so much is done in the constructor, this unit performs basic tests on the following:
-	# save_profiles()
 	# load_profiles()
 	# __index_for_profile()
 	# create_profile()
