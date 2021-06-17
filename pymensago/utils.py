@@ -7,7 +7,31 @@ from retval import RetVal, ErrBadValue
 _uuid_pattern = re.compile(
 			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
 _domain_pattern = re.compile(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+')
-_illegal_pattern = re.compile(r'[\s\\/\"]')
+_illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
+
+
+class UserID(str):
+	def __init__(self, obj) -> None:
+		super().__init__(obj)
+	
+	def is_valid(self) -> bool:
+		'''Returns true if the instance is a valid Mensago user ID'''
+		global _illegal_pattern
+		if not self or _illegal_pattern.search(self):
+			return False
+
+		return len(self) <= 64
+	
+	def set(self, obj) -> str:
+		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
+		removed, and the value is validated. set() returns the object's final internal value or 
+		an empty string if an error occurred.'''
+		
+		self = str(obj).strip().casefold()
+		if self.is_valid():
+			return self
+		return ''
+
 
 class AddressBase:
 	def __init__(self):
@@ -23,6 +47,7 @@ class AddressBase:
 
 	def is_valid(self) -> bool:
 		return self.id_type in [1,2] and self.id and self.domain
+
 
 class WAddress(AddressBase):
 	'''Represents a workspace address'''
