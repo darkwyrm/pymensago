@@ -12,8 +12,7 @@ class Workspace:
 	'''Workspace provides high-level operations for managing workspace data.'''
 	def __init__(self, db: sqlite3.Connection, path: str):
 		self.db = db
-		p = pathlib.Path(path)
-		self.path = p.absolute()
+		self.path = pathlib.Path(path).absolute()
 		self.uid = ''
 		self.wid = ''
 		self.domain = ''
