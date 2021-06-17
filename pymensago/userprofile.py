@@ -13,6 +13,93 @@ import pymensago.utils as utils
 BadProfileList = 'BadProfileList'
 InvalidProfile = 'InvalidProfile'
 
+_db_setup_cmds = [ '''
+	CREATE TABLE workspaces (
+		"wid" TEXT NOT NULL UNIQUE,
+		"userid" TEXT,
+		"domain" TEXT,
+		"password" TEXT,
+		"pwhashtype" TEXT,
+		"type" TEXT
+	);''', '''
+	CREATE table "folders"(
+		"fid" TEXT NOT NULL UNIQUE,
+		"address" TEXT NOT NULL,
+		"keyid" TEXT NOT NULL,
+		"path" TEXT NOT NULL,
+		"permissions" TEXT NOT NULL
+	);''', '''
+	CREATE table "sessions"(
+		"address" TEXT NOT NULL,
+		"devid" TEXT NOT NULL,
+		"devname" TEXT,
+		"enctype" TEXT NOT NULL,
+		"public_key" TEXT NOT NULL,
+		"private_key" TEXT NOT NULL
+	);''', '''
+	CREATE table "keys"(
+		"keyid" TEXT NOT NULL UNIQUE,
+		"address" TEXT NOT NULL,
+		"type" TEXT NOT NULL,
+		"category" TEXT NOT NULL,
+		"private" TEXT NOT NULL,
+		"public" TEXT,
+		"algorithm" TEXT NOT NULL
+	);''', '''
+	CREATE table "keycards"(
+		"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,
+		"owner" TEXT NOT NULL,
+		"index" INTEGER,
+		"entry" TEXT NOT NULL,
+		"fingerprint" TEXT NOT NULL,
+		"expires" TEXT NOT NULL
+	);''', '''
+	CREATE table "messages"(
+		"id" TEXT NOT NULL UNIQUE,
+		"from"  TEXT NOT NULL,
+		"address" TEXT NOT NULL,
+		"cc"  TEXT,
+		"bcc" TEXT,
+		"date" TEXT NOT NULL,
+		"thread_id" TEXT NOT NULL,
+		"subject" TEXT,
+		"body" TEXT,
+		"attachments" TEXT
+	);''', '''
+	CREATE TABLE "contacts" (
+		"id" TEXT NOT NULL,
+		"sensitivity" TEXT NOT NULL,
+		"source" TEXT NOT NULL,
+		"fieldname"	TEXT NOT NULL,
+		"fieldvalue" TEXT
+	);''', '''
+	CREATE TABLE "personalinfo" (
+		"id" TEXT NOT NULL,
+		"sensitivity" TEXT NOT NULL,
+		"source" TEXT NOT NULL,
+		"fieldname" TEXT NOT NULL,
+		"fieldvalue" TEXT,
+		"pips" TEXT
+	);''', '''
+	CREATE TABLE "notes" (
+		"id"	TEXT NOT NULL UNIQUE,
+		"address" TEXT,
+		"title"	TEXT,
+		"body"	TEXT,
+		"notebook"	TEXT,
+		"tags"	TEXT,
+		"created"	TEXT NOT NULL,
+		"updated"	TEXT,
+		"attachments"	TEXT
+	);''', '''
+	CREATE TABLE "files" (
+		"id"	TEXT NOT NULL UNIQUE,
+		"name"	TEXT NOT NULL,
+		"type"	TEXT NOT NULL,
+		"path"	TEXT NOT NULL
+	);'''
+]
+
 
 class Profile:
 	'''Encapsulates data for user profiles'''
@@ -27,16 +114,21 @@ class Profile:
 		self.domain = ''
 		self.db = None
 
-	def __str__(self):
-		return str(self.as_dict())
-
-	def activate(self):
+	def activate(self) -> RetVal:
 		'''Connects the profile to its associated database'''
+
+		if not os.path.exists(self.path):
+			try:
+				os.mkdir(self.path)
+			except Exception as e:
+				return RetVal().wrap_exception(e)
+		
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
 			self.db = sqlite3.connect(dbpath)
-		else:
-			self._reset_db()
+			return RetVal().set_value('connection', self.db)
+		
+		return self.reset_db()
 	
 	def deactivate(self):
 		'''Disconnects the profile from its associated database'''
@@ -70,32 +162,16 @@ class Profile:
 		''''Returns true if the profile is the default one'''
 		return self.default
 		
-	def as_dict(self) -> dict:
-		'''Returns the state of the profile as a dictionary'''
-		return {
-			'name' : self.name,
-			'isdefault' : self.isdefault,
-			'wid' : self.wid,
-			'domain' : self.domain,
-			'port' : self.port
-		}
-	
-	def set_from_dict(self, data: dict):
-		'''Assigns profile data from a dictionary'''
-		
-		for k,v in data.items():
-			if k in [ 'name', 'isdefault', 'id', 'wid', 'domain', 'port' ]:
-				setattr(self, k, v)
-	
-	def is_valid(self) -> bool:
-		'''Returns true if data stored in the profile object is valid'''
-		
-		# TODO: Perform additional validation
-		return self.name
-
 	def get_identity(self) -> utils.WAddress:
 		'''Returns the identity workspace address for the profile'''
-		return utils.WAddress('/'.join([self.wid, self.domain]))
+		
+		if self.wid and self.domain:
+			return utils.WAddress('/'.join([self.wid, self.domain]))
+		
+		# We got this far, which means we need to get the info from the profile database
+
+		# TODO: load identity from database
+		return None
 	
 	def set_identity(self, w: Workspace) -> RetVal:
 		'''Assigns an identity workspace to the profile'''
@@ -108,12 +184,10 @@ class Profile:
 		# TODO: Implement
 		return list()
 
-	def _reset_db(self) -> RetVal:
+	def reset_db(self) -> RetVal:
 		'''This function reinitializes the database to empty, taking a path to the file used by the 
 		SQLite database. The status includes the field 'connection' which contains a 
 		sqlite3.Connection object.'''
-		if not os.path.exists(self.path):
-			os.mkdir(self.path)
 		
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
@@ -125,94 +199,8 @@ class Profile:
 		self.db = sqlite3.connect(dbpath)
 		cursor = self.db.cursor()
 
-		sqlcmds = [ '''
-			CREATE TABLE workspaces (
-				"wid" TEXT NOT NULL UNIQUE,
-				"userid" TEXT,
-				"domain" TEXT,
-				"password" TEXT,
-				"pwhashtype" TEXT,
-				"type" TEXT
-			);''', '''
-			CREATE table "folders"(
-				"fid" TEXT NOT NULL UNIQUE,
-				"address" TEXT NOT NULL,
-				"keyid" TEXT NOT NULL,
-				"path" TEXT NOT NULL,
-				"permissions" TEXT NOT NULL
-			);''', '''
-			CREATE table "sessions"(
-				"address" TEXT NOT NULL,
-				"devid" TEXT NOT NULL,
-				"devname" TEXT,
-				"enctype" TEXT NOT NULL,
-				"public_key" TEXT NOT NULL,
-				"private_key" TEXT NOT NULL
-			);''', '''
-			CREATE table "keys"(
-				"keyid" TEXT NOT NULL UNIQUE,
-				"address" TEXT NOT NULL,
-				"type" TEXT NOT NULL,
-				"category" TEXT NOT NULL,
-				"private" TEXT NOT NULL,
-				"public" TEXT,
-				"algorithm" TEXT NOT NULL
-			);''', '''
-			CREATE table "keycards"(
-				"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,
-				"owner" TEXT NOT NULL,
-				"index" INTEGER,
-				"entry" TEXT NOT NULL,
-				"fingerprint" TEXT NOT NULL,
-				"expires" TEXT NOT NULL
-			);''', '''
-			CREATE table "messages"(
-				"id" TEXT NOT NULL UNIQUE,
-				"from"  TEXT NOT NULL,
-				"address" TEXT NOT NULL,
-				"cc"  TEXT,
-				"bcc" TEXT,
-				"date" TEXT NOT NULL,
-				"thread_id" TEXT NOT NULL,
-				"subject" TEXT,
-				"body" TEXT,
-				"attachments" TEXT
-			);''', '''
-			CREATE TABLE "contacts" (
-				"id" TEXT NOT NULL,
-				"sensitivity" TEXT NOT NULL,
-				"source" TEXT NOT NULL,
-				"fieldname"	TEXT NOT NULL,
-				"fieldvalue" TEXT
-			);''', '''
-			CREATE TABLE "personalinfo" (
-				"id" TEXT NOT NULL,
-				"sensitivity" TEXT NOT NULL,
-				"source" TEXT NOT NULL,
-				"fieldname" TEXT NOT NULL,
-				"fieldvalue" TEXT,
-				"pips" TEXT
-			);''', '''
-			CREATE TABLE "notes" (
-				"id"	TEXT NOT NULL UNIQUE,
-				"address" TEXT,
-				"title"	TEXT,
-				"body"	TEXT,
-				"notebook"	TEXT,
-				"tags"	TEXT,
-				"created"	TEXT NOT NULL,
-				"updated"	TEXT,
-				"attachments"	TEXT
-			);''', '''
-			CREATE TABLE "files" (
-				"id"	TEXT NOT NULL UNIQUE,
-				"name"	TEXT NOT NULL,
-				"type"	TEXT NOT NULL,
-				"path"	TEXT NOT NULL
-			);'''
-		]
-
-		for sqlcmd in sqlcmds:
+		global _db_setup_cmds
+		for sqlcmd in _db_setup_cmds:
 			cursor = self.db.cursor()
 			cursor.execute(sqlcmd)
 		self.db.commit()
