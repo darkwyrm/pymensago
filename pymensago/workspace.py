@@ -7,18 +7,19 @@ from retval import RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
+from pymensago.utils import UserID, UUID, Domain
 
 class Workspace:
 	'''Workspace provides high-level operations for managing workspace data.'''
 	def __init__(self, db: sqlite3.Connection, path: str):
 		self.db = db
 		self.path = pathlib.Path(path).absolute()
-		self.uid = ''
-		self.wid = ''
-		self.domain = ''
+		self.uid = UserID()
+		self.wid = UUID()
+		self.domain = Domain()
 		self.type = 'identity'
 
-	def generate(self, userid: str, server: str, wid: str, pw: encryption.Password) -> RetVal:
+	def generate(self, userid: UserID, server: Domain, wid: UUID, pw: encryption.Password) -> RetVal:
 		'''Creates all the data needed for an individual workspace account'''
 		
 		self.uid = userid
@@ -191,7 +192,7 @@ class Workspace:
 		
 		return RetVal().set_value('folder', folder)
 
-	def set_userid(self, userid: str) -> RetVal:
+	def set_userid(self, userid: UserID) -> RetVal:
 		'''set_userid() sets the human-friendly name for the workspace'''
 		
 		if ' ' or '"' in userid:
