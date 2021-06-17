@@ -259,7 +259,7 @@ class ProfileManager:
 
 		return RetVal()
 	
-	def __index_for_profile(self, name: str) -> int:
+	def _index_for_profile(self, name: str) -> int:
 		'''Returns the numeric index of the named profile. Returns -1 on error'''
 		if not name:
 			return -1
@@ -280,7 +280,7 @@ class ProfileManager:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
-		if self.__index_for_profile(name_squashed) >= 0:
+		if self._index_for_profile(name_squashed) >= 0:
 			return RetVal(ErrExists, f"profile {name} already exists")
 
 		new_profile_path = os.path.join(self.profile_folder, name_squashed)
@@ -308,7 +308,7 @@ class ProfileManager:
 			return RetVal(ErrEmptyData, "BUG: profile name may not be empty")
 		
 		name_squashed = name.casefold()
-		itemindex = self.__index_for_profile(name_squashed)
+		itemindex = self._index_for_profile(name_squashed)
 		if itemindex < 0:
 			return RetVal(ErrNotFound, "%s doesn't exist" % name)
 
@@ -336,11 +336,11 @@ class ProfileManager:
 		if old_squashed == new_squashed:
 			return RetVal()
 		
-		index = self.__index_for_profile(old_squashed)
+		index = self._index_for_profile(old_squashed)
 		if index < 0:
 			return RetVal(ErrNotFound, f"{oldname} doesn't exist")
 
-		if self.__index_for_profile(new_squashed) >= 0:
+		if self._index_for_profile(new_squashed) >= 0:
 			return RetVal(ErrExists, f"{newname} already exists")
 
 		if index == self.active_index:
@@ -396,7 +396,7 @@ class ProfileManager:
 				oldindex = i
 		
 		name_squashed = name.casefold()
-		newindex = self.__index_for_profile(name_squashed)
+		newindex = self._index_for_profile(name_squashed)
 		
 		if newindex < 0:
 			return RetVal(ErrNotFound, f"New profile {name_squashed} not found")
@@ -426,7 +426,7 @@ class ProfileManager:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
 		name_squashed = name.casefold()
-		active_index = self.__index_for_profile(name_squashed)
+		active_index = self._index_for_profile(name_squashed)
 		if active_index < 0:
 			return RetVal(ErrNotFound, f"{name_squashed} doesn't exist")
 		
