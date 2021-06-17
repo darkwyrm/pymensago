@@ -218,20 +218,9 @@ class MensagoClient:
 		if profile.domain:
 			return RetVal(ErrExists, 'a user workspace already exists')
 
-		# Parse server string. Should be in the form of (ip/domain):portnum
-		host = ''
-		port = -1
-		if ':' in server:
-			addressparts = server.split(':')
-			host = addressparts[0]
-			try:
-				port = int(addressparts[1])
-			except ValueError:
-				return RetVal(ErrBadValue, 'bad server string')
-			serverstring = server
-		else:
-			host = server
-			port = 2001
+		# TODO: Look up the server connection info from the management record
+		host = server
+		port = 2001
 		
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.

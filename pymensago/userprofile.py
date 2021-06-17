@@ -23,26 +23,20 @@ class Profile:
 		self.name = os.path.basename(path)
 		self.path = path
 		self.default = False
-		self.id = ''
 		self.wid = ''
 		self.domain = ''
-		self.port = 2001
 		self.db = None
 
 	def __str__(self):
 		return str(self.as_dict())
 
-	def serverstring(self) -> str:
-		'''Returns the identity workspace address for the profile including port'''
-		return ':'.join([self.address(),self.port])
-	
 	def activate(self):
 		'''Connects the profile to its associated database'''
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
 			self.db = sqlite3.connect(dbpath)
 		else:
-			self.reset_db()
+			self._reset_db()
 	
 	def deactivate(self):
 		'''Disconnects the profile from its associated database'''
@@ -81,7 +75,6 @@ class Profile:
 		return {
 			'name' : self.name,
 			'isdefault' : self.isdefault,
-			'id' : self.id,
 			'wid' : self.wid,
 			'domain' : self.domain,
 			'port' : self.port
@@ -96,10 +89,9 @@ class Profile:
 	
 	def is_valid(self) -> bool:
 		'''Returns true if data stored in the profile object is valid'''
-		if self.name and utils.validate_uuid(self.id):
-			return True
 		
-		return False
+		# TODO: Perform additional validation
+		return self.name
 
 	def get_identity(self) -> utils.WAddress:
 		'''Returns the identity workspace address for the profile'''
@@ -111,10 +103,15 @@ class Profile:
 		# TODO: Implement Profile.set_identity()
 		return RetVal(ErrUnimplemented, 'Workspace.set_identity() not implemented')
 
-	def reset_db(self) -> sqlite3.Connection:
+	def get_workspaces(self) -> list:
+		'''Returns a list containing all subscribed workspaces in the profile'''
+		# TODO: Implement
+		return list()
+
+	def _reset_db(self) -> RetVal:
 		'''This function reinitializes the database to empty, taking a path to the file used by the 
-		SQLite database. Returns a handle to an open SQLite3 connection.
-		'''
+		SQLite database. The status includes the field 'connection' which contains a 
+		sqlite3.Connection object.'''
 		if not os.path.exists(self.path):
 			os.mkdir(self.path)
 		
@@ -123,7 +120,7 @@ class Profile:
 			try:
 				os.remove(dbpath)
 			except Exception as e:
-				print('Unable to delete old database %s: %s' % (dbpath, e))
+				RetVal().wrap_exception(e)
 		
 		self.db = sqlite3.connect(dbpath)
 		cursor = self.db.cursor()
@@ -219,12 +216,7 @@ class Profile:
 			cursor = self.db.cursor()
 			cursor.execute(sqlcmd)
 		self.db.commit()
-		return self.db
-
-	def get_workspaces(self) -> list:
-		'''Returns a list containing all subscribed workspaces in the profile'''
-		# TODO: Implement
-		return list()
+		return RetVal().set_value('connection', self.db)
 
 
 class ProfileManager:
