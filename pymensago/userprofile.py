@@ -6,11 +6,13 @@ from pymensago.workspace import Workspace
 import shutil
 import sqlite3
 
-from retval import ErrBadType, ErrEmptyData, ErrUnimplemented, RetVal, ErrExists, ErrBadValue, ErrNotFound
+from retval import RetVal, ErrEmptyData, ErrUnimplemented, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
+
 
 BadProfileList = 'BadProfileList'
 InvalidProfile = 'InvalidProfile'
+
 
 class Profile:
 	'''Encapsulates data for user profiles'''
@@ -228,7 +230,7 @@ class Profile:
 class ProfileManager:
 	'''Handles user profile management'''
 	
-	def __init__(self, ):
+	def __init__(self):
 		self.profiles = list()
 		self.default_profile = ''
 		self.active_index = -1
@@ -465,3 +467,7 @@ class ProfileManager:
 		if self.active_index >= 0:
 			return RetVal().set_value("profile", self.profiles[self.active_index])
 		return RetVal(InvalidProfile,'No active profile')
+
+
+profman = ProfileManager()
+
