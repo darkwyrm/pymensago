@@ -129,7 +129,7 @@ class MensagoClient:
 		
 		profile = status['profile']
 		if profile.domain:
-			return RetVal(ErrExists, 'a user workspace already exists')
+			return RetVal(ErrExists, 'an identity workspace already exists on this profile')
 
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.
@@ -165,15 +165,16 @@ class MensagoClient:
 		status = w.generate(profile, address.domain, regdata['wid'], pw)
 		if status.error():
 			return status
-		
 
+		status = profile.set_identity(w)
+		if status.error():
+			return status
 		
 		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{host}"),
 										regdata['devid'], devpair, socket.gethostname())
 		if status.error():
 			return status
 
-		regdata['password'] = pw
 		return regdata
 	
 	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
