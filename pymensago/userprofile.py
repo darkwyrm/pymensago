@@ -6,7 +6,7 @@ from pymensago.workspace import Workspace
 import shutil
 import sqlite3
 
-from retval import RetVal, ErrEmptyData, ErrUnimplemented, ErrExists, ErrBadValue, ErrNotFound
+from retval import ErrBusy, RetVal, ErrEmptyData, ErrUnimplemented, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
 
 
@@ -174,10 +174,18 @@ class Profile:
 		return None
 	
 	def set_identity(self, w: Workspace) -> RetVal:
-		'''Assigns an identity workspace to the profile'''
+		'''Assigns an identity workspace to the profile. Because so much is tied to an identity 
+		workspace, once this is set, it cannot be changed.'''
 
-		# TODO: Implement Profile.set_identity()
-		return RetVal(ErrUnimplemented, 'Workspace.set_identity() not implemented')
+		if w.db and w.db != self.db:
+			return RetVal(ErrBusy, f"Workspace {w.wid} already belongs to another profile")
+		
+		saved_db = w.db
+		w.db = self.db
+		status = w.add_to_db()
+		if status.error():
+			w.db = saved_db
+		return status
 
 	def get_workspaces(self) -> list:
 		'''Returns a list containing all subscribed workspaces in the profile'''
