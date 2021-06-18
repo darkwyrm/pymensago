@@ -28,6 +28,9 @@ class UserID:
 		'''Returns true if the UserID is actually a workspace ID'''
 		
 		return self.is_wid
+	
+	def is_empty(self) -> bool:
+		return self.value == ''
 
 	def set(self, obj) -> str:
 		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
@@ -60,6 +63,9 @@ class Domain:
 		global _domain_pattern
 		return _domain_pattern.match(self.value)
 	
+	def is_empty(self) -> bool:
+		return self.value == ''
+	
 	def set(self, obj) -> str:
 		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
@@ -88,6 +94,9 @@ class UUID:
 		'''Returns true if the instance is a valid UUID'''
 		global _uuid_pattern
 		return _uuid_pattern.match(self.value)
+	
+	def is_empty(self) -> bool:
+		return self.value == ''
 	
 	def generate(self) -> None:
 		'''Generates a random (v4) UUID and assigns it to the instance'''
@@ -118,6 +127,9 @@ class WAddress:
 		self.domain = Domain()
 		if addr:
 			self.set(addr)
+	
+	def is_empty(self) -> bool:
+		return self.id.is_empty() and self.domain.is_empty()
 		
 	def set(self, addr: str) -> RetVal:
 		'''Validates input and assigns the address. If the given address is invalid, no change is 
@@ -181,6 +193,9 @@ class MAddress:
 	
 	def is_valid(self) -> bool:
 		return self.id_type in [1,2] and self.id.is_valid() and self.domain.is_valid()
+	
+	def is_empty(self) -> bool:
+		return self.id.is_empty() and self.domain.is_empty()
 
 	def as_string(self) -> str:
 		return self.id.as_string() + '/' + self.domain.as_string
