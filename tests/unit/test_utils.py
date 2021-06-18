@@ -64,18 +64,32 @@ def test_userid():
 def test_domain():
 	'''Tests Domain.set() and is_valid()'''
 
-	uid = utils.Domain()
+	dom = utils.Domain()
 	for testdom in [ "foo-bar.baz.com", "FOO.bar.com " ]:
-		assert uid.set(testdom) == testdom.strip().casefold(), \
+		assert dom.set(testdom) == testdom.strip().casefold(), \
 			f"test_domain_set failed good domain '{testdom}'"
-		assert uid.is_valid(), f"test_domain_is_valid failed good domain '{testdom}'"
+		assert dom.is_valid(), f"test_domain_is_valid failed good domain '{testdom}'"
 
 	for testdom in [ "a bad-id.com", "also_bad.org" ]:
-		assert not uid.set(testdom), f"test_domain_set passed bad domain'{testdom}'"
-		assert not uid.is_valid(), f"test_domain_is_valid passed bad domain '{testdom}'"
+		assert not dom.set(testdom), f"test_domain_set passed bad domain'{testdom}'"
+		assert not dom.is_valid(), f"test_domain_is_valid passed bad domain '{testdom}'"
 
+def test_uuid():
+	'''Tests UUID.set() and is_valid()'''
+
+	wid = utils.UUID()
+	for testwid in [ "11111111-1111-1111-1111-111111111111", 
+					" aaaaaaaa-BBBB-1111-1111-111111111111" ]:
+		assert wid.set(testwid) == testwid.strip().casefold(), \
+			f"test_uuid_set failed good workspace ID '{testwid}'"
+		assert wid.is_valid(), f"test_uuid_set failed good workspace ID '{testwid}'"
+
+	for testwid in [ "11111111111111111111111111111111", "also_bad" ]:
+		assert not wid.set(testwid), f"test_uuid_is_valid passed bad workspace ID'{testwid}'"
+		assert not wid.is_valid(), f"test_uuid_is_valid passed bad workspace ID '{testwid}'"
 
 if __name__ == '__main__':
 	test_maddress_set()
 	test_userid()
 	test_domain()
+	test_uuid()
