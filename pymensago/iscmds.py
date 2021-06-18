@@ -89,9 +89,9 @@ def cancel(conn: ServerConnection):
 	return wrap_server_error(response)
 
 
-def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVal:
+def device(conn: ServerConnection, devid: utils.UUID, devpair: EncryptionPair) -> RetVal:
 	'''Completes the login process by submitting device ID and its session string.'''
-	if not utils.validate_uuid(devid):
+	if not devid.is_valid():
 		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
 	status = conn.send_message({
@@ -123,7 +123,7 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 	status = conn.send_message({
 		'Action' : "DEVICE",
 		'Data' : { 
-			'Device-ID' : devid,
+			'Device-ID' : devid.as_string(),
 			'Device-Key' : devpair.public.as_string(),
 			'Response' : status['data']
 		}
@@ -141,15 +141,15 @@ def device(conn: ServerConnection, devid: str, devpair: EncryptionPair) -> RetVa
 	return wrap_server_error(response)
 
 
-def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair: EncryptionPair):
+def devkey(conn: ServerConnection, devid: utils.UUID, oldpair: EncryptionPair, newpair: EncryptionPair):
 	'''Replaces the specified device's key stored on the server'''
-	if not utils.validate_uuid(devid):
+	if not devid.is_valid():
 		return RetVal(MsgBadRequest, 'Invalid device ID').set_value('status', 400)
 
 	status = conn.send_message({
 		'Action' : "DEVKEY",
 		'Data' : { 
-			'Device-ID': devid,
+			'Device-ID': devid.as_string(),
 			'Old-Key': oldpair.public.as_string(),
 			'New-Key': newpair.public.as_string()
 		}
@@ -199,25 +199,23 @@ def devkey(conn: ServerConnection, devid: str, oldpair: EncryptionPair, newpair:
 	return wrap_server_error(response)
 
 
-def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
+def getwid(conn: ServerConnection, uid: utils.UserID, domain: utils.Domain) -> RetVal:
 	'''Looks up a wid based on the specified user ID and optional domain'''
 
-	if re.findall(r'[\\\/\s"]', uid) or len(uid) >= 64:
-		return RetVal(ErrBadValue, 'user id')
+	if not uid.is_valid():
+		return RetVal(ErrBadValue, 'bad user id')
 	
-	if domain:
-		m = re.match(r'([a-zA-Z0-9]+\.)+[a-zA-Z0-9]+', domain)
-		if not m or len(domain) >= 64:
-			return RetVal(ErrBadValue, 'bad domain value')
+	if domain.value and not domain.is_valid():
+		return RetVal(ErrBadValue, 'bad domain')
 	
 	request = {
 		'Action' : 'GETWID',
 		'Data' : {
-			'User-ID': uid
+			'User-ID': uid.as_string()
 		}
 	}
-	if domain:
-		request['Data']['Domain'] = domain
+	if domain.value:
+		request['Data']['Domain'] = domain.as_string()
 	
 	status = conn.send_message(request)
 	if status.error():
@@ -233,10 +231,10 @@ def getwid(conn: ServerConnection, uid: str, domain: str) -> RetVal:
 	return RetVal().set_value('Workspace-ID', response['Data']['Workspace-ID'])
 
 
-def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
+def iscurrent(conn: ServerConnection, index: int, wid: utils.UUID) -> RetVal:
 	'''Finds out if an entry index is current. If wid is empty, the index is checked for the 
 	organization.'''
-	if wid and not utils.validate_uuid(wid):
+	if wid.is_empty() or not wid.is_valid():
 		return RetVal(MsgBadRequest).set_value('status', 400)
 	
 	request = {
@@ -246,7 +244,7 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 		}
 	}
 	if wid:
-		request['Data']['Workspace-ID'] = wid
+		request['Data']['Workspace-ID'] = wid.as_string()
 	status = conn.send_message(request)
 	if status.error():
 		return status
@@ -264,9 +262,9 @@ def iscurrent(conn: ServerConnection, index: int, wid='') -> RetVal:
 	return RetVal().set_value('iscurrent', bool(response['Data']['Is-Current'] == 'YES'))
 
 
-def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
+def login(conn: ServerConnection, wid: utils.UUID, serverkey: CryptoString) -> RetVal:
 	'''Starts the login process by sending the requested workspace ID.'''
-	if not utils.validate_uuid(wid):
+	if not wid.is_valid():
 		return RetVal(ErrBadValue)
 
 	challenge = b85encode(secrets.token_bytes(32))
@@ -278,7 +276,7 @@ def login(conn: ServerConnection, wid: str, serverkey: CryptoString) -> RetVal:
 	status = conn.send_message({
 		'Action' : "LOGIN",
 		'Data' : {
-			'Workspace-ID' : wid,
+			'Workspace-ID' : wid.as_string(),
 			'Login-Type' : 'PLAIN',
 			'Challenge' : status['data']
 		}
@@ -360,13 +358,13 @@ def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 	return RetVal().set_value('card', card)
 
 
-def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> RetVal:
+def passcode(conn: ServerConnection, wid: utils.UUID, reset_code: str, pwhash: str) -> RetVal:
 	'''Resets a workspace's password'''
 
 	status = conn.send_message({
 		'Action': 'PASSCODE',
 		'Data': {
-			'Workspace-ID': wid,
+			'Workspace-ID': wid.as_string(),
 			'Reset-Code': reset_code,
 			'Password-Hash': pwhash
 		}
@@ -381,10 +379,8 @@ def passcode(conn: ServerConnection, wid: str, reset_code: str, pwhash: str) -> 
 	return RetVal()
 
 
-def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
+def password(conn: ServerConnection, pwhash: str) -> RetVal:
 	'''Continues the login process sending a password hash to the server.'''
-	if not password or not utils.validate_uuid(wid):
-		return RetVal(ErrBadValue)
 	
 	status = conn.send_message({
 		'Action' : "PASSWORD",
@@ -403,14 +399,17 @@ def password(conn: ServerConnection, wid: str, pwhash: str) -> RetVal:
 	return RetVal()
 
 
-def preregister(conn: ServerConnection, wid: str, uid: str, domain: str) -> RetVal:
+def preregister(conn: ServerConnection, id: utils.UserID, domain: utils.Domain) -> RetVal:
 	'''Provisions a preregistered account on the server.'''
 	request = { 'Action':'PREREG', 'Data':{} }
-	if wid:
-		request['Data']['Workspace-ID'] = wid
-	if uid:
-		request['Data']['User-ID'] = uid
-	if domain:
+
+	if not id.is_empty():
+		if id.is_wid():
+			request['Data']['Workspace-ID'] = id.as_string()
+		else:
+			request['Data']['User-ID'] = id.as_string()
+	
+	if domain.value:
 		request['Data']['Domain'] = domain
 
 	status = conn.send_message(request)
@@ -488,7 +487,8 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 	})
 	
 
-def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoString) -> RetVal:
+def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
+			devicekey: CryptoString) -> RetVal:
 	'''Creates an account on the server.'''
 	
 	if uid and len(re.findall(r'[\/" \s]',uid)) > 0:
@@ -500,18 +500,19 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 	# client keeps generating collisions, it should wait 3 seconds after 10 collisions to reduce 
 	# server load.
 	out = RetVal()
-	devid = str(uuid.uuid4())
-	wid = ''
+	devid = utils.UUID()
+	devid.generate()
+	wid = utils.UUID()
 	response = dict()
 	tries = 1
-	while not wid:
+	while not wid.is_empty():
 		if not tries % 10:
 			time.sleep(3.0)
 		
 		# Technically, the active profile already has a WID, but it is not attached to a domain and
 		# doesn't matter as a result. Rather than adding complexity, we just generate a new UUID
 		# and always return the replacement value
-		wid = str(uuid.uuid4())
+		wid.generate()
 		request = {
 			'Action' : 'REGISTER',
 			'Data' : {
@@ -553,7 +554,7 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 				return RetVal(ErrExists, 'user id')
 			
 			tries = tries + 1
-			wid = ''
+			wid.set('')
 		else:
 			# Something we didn't expect -- reg closed, payment req'd, etc.
 			return wrap_server_error(response)
@@ -561,13 +562,13 @@ def register(conn: ServerConnection, uid: str, pwhash: str, devicekey: CryptoStr
 	return out
 
 
-def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') -> RetVal:
+def reset_password(conn: ServerConnection, wid: utils.UUID, reset_code='', expires='') -> RetVal:
 	'''Resets a workspace's password'''
 
 	status = conn.send_message({
 		'Action': 'RESETPASSWORD',
 		'Data': {
-			'Workspace-ID': wid,
+			'Workspace-ID': wid.as_string(),
 			'Reset-Code': reset_code,
 			'Expires': expires
 		}
@@ -579,10 +580,8 @@ def reset_password(conn: ServerConnection, wid: str, reset_code='', expires='') 
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
-	out = RetVal()
-	out['resetcode'] = response['Data']['Reset-Code']
-	out['expires'] = response['Data']['Expires']
-	return out
+	return RetVal().set_values({ 'resetcode': response['Data']['Reset-Code'],
+								'expires': response['Data']['Expires'] })
 
 
 def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
@@ -605,12 +604,12 @@ def setpassword(conn: ServerConnection, pwhash: str, newpwhash: str) -> RetVal:
 	return RetVal()
 
 
-def setstatus(conn: ServerConnection, wid: str, status: str):
+def setstatus(conn: ServerConnection, wid: utils.UUID, status: str):
 	'''Sets the activity status of the workspace specified. Requires admin privileges'''
 	if status not in ['active', 'disabled', 'approved']:
 		return RetVal(ErrBadValue, "status must be 'active','disabled', or 'approved'")
 	
-	if not utils.validate_uuid(wid):
+	if not wid.is_valid():
 		return RetVal(ErrBadValue, 'bad wid')
 
 	status = conn.send_message({
@@ -630,10 +629,10 @@ def setstatus(conn: ServerConnection, wid: str, status: str):
 	return RetVal()
 
 
-def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
+def unregister(conn: ServerConnection, pwhash: str, wid: utils.UUID) -> RetVal:
 	'''Deletes the online account at the specified server.'''
 
-	if wid and not utils.validate_uuid(wid):
+	if not wid.is_empty() and not wid.is_valid():
 		return RetVal(ErrBadValue, 'bad workspace id')
 	
 	request = {
@@ -642,8 +641,8 @@ def unregister(conn: ServerConnection, pwhash: str, wid: str) -> RetVal:
 			'Password-Hash' : pwhash
 		}
 	}
-	if wid:
-		request['Data']['Workspace-ID'] = wid
+	if not wid.is_empty():
+		request['Data']['Workspace-ID'] = wid.as_string()
 	
 	status = conn.send_message(request)
 	if status.error():
