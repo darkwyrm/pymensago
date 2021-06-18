@@ -187,17 +187,3 @@ def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
 
 	return _domain_pattern.match(indata)
-
-
-def split_address(address):
-	'''Splits an Mensago numeric address into its two parts.'''
-	parts = address.split('/')
-	if len(parts) != 2 or \
-		not parts[0] or \
-		not parts[1] or \
-		not validate_uuid(parts[0]):
-		return RetVal(ErrBadValue, 'Bad workspace address')
-	out = RetVal()
-	out.set_value('wid', parts[0])
-	out.set_value('domain', parts[1])
-	return out
