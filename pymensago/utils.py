@@ -14,7 +14,7 @@ _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 class UserID:
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
-		self.is_wid = False
+		self.widflag = False
 
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid Mensago user ID'''
@@ -27,7 +27,7 @@ class UserID:
 	def is_wid(self) -> bool:
 		'''Returns true if the UserID is actually a workspace ID'''
 		
-		return self.is_wid
+		return self.widflag
 	
 	def is_empty(self) -> bool:
 		return self.value == ''
@@ -41,7 +41,7 @@ class UserID:
 		if self.is_valid():
 			global _uuid_pattern
 		
-			self.is_wid = bool(_uuid_pattern.match(self.value))
+			self.widflag = bool(_uuid_pattern.match(self.value))
 			return self.value
 		
 		self.is_wid = False
