@@ -201,23 +201,6 @@ class MAddress:
 		return self.id.as_string() + '/' + self.domain.as_string
 	
 
-def validate_uuid(indata: str) -> bool:
-	'''Validates a UUID's basic format. Does not check version information.'''
-
-	return _uuid_pattern.match(indata)
-
-def validate_userid(uid: str) -> bool:
-	'''Checks to make sure a user ID is valid'''
-
-	if not uid:
-		return False
-	
-	if re.findall(r'[\\\/\s"]', uid) or len(uid) >= 64:
-		return False
-	
-	return True
-
-
 def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
 

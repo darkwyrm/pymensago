@@ -335,10 +335,10 @@ def exists(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal().set_value('exists', True)
 
 
-def getquotainfo(conn: ServerConnection, wid='') -> RetVal:
+def getquotainfo(conn: ServerConnection, wid: utils.UUID) -> RetVal:
 	'''Gets the disk usage and limit for the current workspace. If in an administrator session, 
 	another workspace may be specified.'''
-	if wid and not utils.validate_uuid(wid):
+	if not wid.is_empty() and not wid.is_valid():
 		return RetVal(MsgBadRequest).set_value('Status', 400)
 	
 	request = {
@@ -346,7 +346,7 @@ def getquotainfo(conn: ServerConnection, wid='') -> RetVal:
 		'Data' : {}
 	}
 	if wid:
-		request['Data']['Workspace-ID'] = wid
+		request['Data']['Workspace-ID'] = wid.as_string()
 	status = conn.send_message(request)
 	if status.error():
 		return status

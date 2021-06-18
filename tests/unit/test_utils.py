@@ -3,12 +3,6 @@
 # pylint: disable=import-error
 import pymensago.utils as utils
 
-def test_validate_uuid():
-	'''Tests utils.validate_uuid'''
-	assert utils.validate_uuid('5a56260b-aa5c-4013-9217-a78f094432c3'), 'Failed to validate good ID'
-	assert not utils.validate_uuid('5a56260b-c-4013-9217-a78f094432c3'), 'Failed to reject bad ID'
-
-
 def test_maddress_set():
 	'''Tests MAddress.Set'''
 	addr = utils.MAddress()
