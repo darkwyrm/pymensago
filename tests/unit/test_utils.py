@@ -29,6 +29,23 @@ def test_maddress_set():
 			f"MAddress.Set() passed invalid Mensago address {testaddr}"
 
 
+def test_waddress_set():
+	'''Tests WAddress.Set'''
+
+	addr = utils.WAddress()
+	assert not addr.set('5a56260b-aa5c-4013-9217-a78f094432c3/example.com').error(), \
+		f"WAddress.Set() failed to pass valid workspace address"
+
+	bad_addresses = [
+		'/example.com',
+		'5a56260b-aa5c-4013-9217-a78f094432c3/example.com/example.com',
+		'5a56260b-aa5c-4013-9217-a78f094432c3',
+	]
+	for testaddr in bad_addresses:
+		assert addr.set(testaddr).error(), \
+			f"WAddress.Set() passed invalid Mensago address {testaddr}"
+
+
 def test_userid():
 	'''Tests UserID.set() and is_valid()'''
 
