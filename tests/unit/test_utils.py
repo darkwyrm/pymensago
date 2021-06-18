@@ -22,6 +22,7 @@ def test_split_address():
 	
 	assert utils.split_address('example.com'), 'Failed to error on bad address #2'
 
+
 def test_maddress_set():
 	'''Tests MAddress.Set'''
 	addr = utils.MAddress()
@@ -45,5 +46,36 @@ def test_maddress_set():
 	assert addr.set(('a'*65) + '/example.com').error(), \
 		'MAddress.Set() passed an address that was too long'
 
+
+def test_userid():
+	'''Tests UserID.set() and is_valid()'''
+
+	uid = utils.UserID()
+	for testid in [ "GoodID", "alsogoooood", "🐧", "ಅಎಇ" ]:
+		assert uid.set(testid) == testid.strip().casefold(), \
+			f"test_userid_set failed good user ID '{testid}'"
+		assert uid.is_valid(), f"test_userid_is_valid failed good user ID '{testid}'"
+
+	for testid in [ "a bad id", "also/bad" ]:
+		assert not uid.set(testid), f"test_userid_set passed bad user ID '{testid}'"
+		assert not uid.is_valid(), f"test_userid_is_valid passed bad user ID '{testid}'"
+
+
+def test_domain():
+	'''Tests Domain.set() and is_valid()'''
+
+	uid = utils.Domain()
+	for testdom in [ "foo-bar.baz.com", "FOO.bar.com " ]:
+		assert uid.set(testdom) == testdom.strip().casefold(), \
+			f"test_domain_set failed good domain '{testdom}'"
+		assert uid.is_valid(), f"test_domain_is_valid failed good domain '{testdom}'"
+
+	for testdom in [ "a bad-id.com", "also_bad.org" ]:
+		assert not uid.set(testdom), f"test_domain_set passed bad domain'{testdom}'"
+		assert not uid.is_valid(), f"test_domain_is_valid passed bad domain '{testdom}'"
+
+
 if __name__ == '__main__':
 	test_maddress_set()
+	test_userid()
+	test_domain()

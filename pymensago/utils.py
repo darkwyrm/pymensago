@@ -11,73 +11,73 @@ _domain_pattern = re.compile(r'([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9\-]+')
 _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 
 
-class UserID(str):
-	def __init__(self, obj) -> None:
-		super().__init__(obj)
-	
+class UserID:
+	def __init__(self, obj='') -> None:
+		self.value = str(obj)
+
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid Mensago user ID'''
 		global _illegal_pattern
-		if not self or _illegal_pattern.search(self):
+		if not self.value or _illegal_pattern.search(self.value):
 			return False
 
-		return len(self) <= 64
+		return len(self.value) <= 64
 	
 	def set(self, obj) -> str:
 		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
-		self = str(obj).strip().casefold()
+		self.value = str(obj).strip().casefold()
 		if self.is_valid():
-			return self
+			return self.value
 		return ''
 
 
-class Domain(str):
-	def __init__(self, obj) -> None:
-		super().__init__(obj)
-	
+class Domain:
+	def __init__(self, obj='') -> None:
+		self.value = str(obj)
+
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid Internet domain'''
 		global _domain_pattern
-		return _domain_pattern.match(self)
+		return _domain_pattern.match(self.value)
 	
 	def set(self, obj) -> str:
 		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
-		self = str(obj).strip().casefold()
+		self.value = str(obj).strip().casefold()
 		if self.is_valid():
-			return self
+			return self.value
 		return ''
 
 
-class UUID(str):
+class UUID:
 	'''Although there already is a uuid module, this class makes interaction easier by keeping it 
 	as a string and ensuring that the formatting is always lowercase and has dashes, two Mensago 
 	requirements to ensure consistency and fewer bugs.'''
-	def __init__(self, obj) -> None:
-		super().__init__(obj)
-	
+	def __init__(self, obj='') -> None:
+		self.value = str(obj)
+
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid UUID'''
 		global _uuid_pattern
-		return _uuid_pattern.match(self)
+		return _uuid_pattern.match(self.value)
 	
 	def generate(self) -> None:
 		'''Generates a random (v4) UUID and assigns it to the instance'''
-		self = str(uuid.uuid4())
+		self.value = str(uuid.uuid4())
 
 	def set(self, obj) -> str:
 		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
-		self = str(obj).strip().casefold()
+		self.value = str(obj).strip().casefold()
 		if self.is_valid():
-			return self
+			return self.value
 		return ''
 
 
