@@ -18,13 +18,24 @@ class Workspace:
 		self.wid = UUID()
 		self.domain = Domain()
 		self.type = 'identity'
+		self.pw = encryption.Password()
 
 	def generate(self, userid: UserID, server: Domain, wid: UUID, pw: encryption.Password) -> RetVal:
 		'''Creates all the data needed for an individual workspace account'''
-		
+
+		if not userid.is_valid() and userid:
+			return RetVal(ErrBadValue, 'userid not valid')
+		if not server.is_valid():
+			return RetVal(ErrBadValue, 'domain not valid')
+		if not wid.is_valid():
+			return RetVal(ErrBadValue, 'workspace id not valid')
+		if not pw.is_valid():
+			return RetVal(ErrBadValue, 'password not valid')
+
 		self.uid = userid
 		self.wid = wid
 		self.domain = server
+		self.pw = pw
 
 		# Add workspace
 		status = self.add_to_db(pw)
@@ -86,7 +97,7 @@ class Workspace:
 		'''Adds a workspace to the storage database'''
 
 		cursor = self.db.cursor()
-		cursor.execute("SELECT wid FROM workspaces WHERE wid=?", (self.wid,))
+		cursor.execute("SELECT wid FROM workspaces WHERE wid=? OR wtype = 'identity'", (self.wid,))
 		results = cursor.fetchone()
 		if results:
 			return RetVal(ErrExists, self.wid)
