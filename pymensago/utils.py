@@ -14,6 +14,7 @@ _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 class UserID:
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
+		self.is_wid = False
 
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid Mensago user ID'''
@@ -26,8 +27,7 @@ class UserID:
 	def is_wid(self) -> bool:
 		'''Returns true if the UserID is actually a workspace ID'''
 		
-		global _uuid_pattern
-		return _uuid_pattern.match(self.value)
+		return self.is_wid
 
 	def set(self, obj) -> str:
 		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
@@ -36,7 +36,12 @@ class UserID:
 		
 		self.value = str(obj).strip().casefold()
 		if self.is_valid():
+			global _uuid_pattern
+		
+			self.is_wid = bool(_uuid_pattern.match(self.value))
 			return self.value
+		
+		self.is_wid = False
 		return ''
 
 	def __str__(self) -> str:
