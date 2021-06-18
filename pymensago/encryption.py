@@ -580,9 +580,9 @@ class Password:
 		self.strength = ''
 		self.hashstring = ''
 		if text:
-			self.Set(text)
+			self.set(text)
 
-	def Set(self, text) -> RetVal:
+	def set(self, text) -> RetVal:
 		'''
 		Takes the given password text, checks strength, and generates a hash
 		Returns: RetVal
@@ -596,7 +596,7 @@ class Password:
 		
 		return status
 	
-	def Assign(self, pwhash) -> RetVal:
+	def assign(self, pwhash) -> RetVal:
 		'''
 		Takes a PHC hash format string and assigns the password object to it.
 		Returns: [dict]
@@ -610,6 +610,11 @@ class Password:
 		Checks the supplied password against the stored hash.
 		'''
 		return nacl.pwhash.verify(self.hashstring.encode(), text.encode())
+	
+	def is_valid(self) -> bool:
+		'''Returns true if the internal data is valid. Note that a password may be weak and still 
+		valid.'''
+		return self.strength and self.hashstring
 
 
 class Base85Encoder:

@@ -134,7 +134,7 @@ class MensagoClient:
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.
 		pw = Password()
-		status = pw.Set(userpass)
+		status = pw.set(userpass)
 		if status.error():
 			return status
 		
@@ -225,7 +225,7 @@ class MensagoClient:
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.
 		pw = Password()
-		status = pw.Set(userpass)
+		status = pw.set(userpass)
 		if status.error():
 			return status
 		

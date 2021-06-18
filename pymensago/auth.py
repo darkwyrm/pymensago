@@ -19,7 +19,7 @@ def get_credentials(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 		return RetVal(ErrNotFound)
 	
 	out = Password()
-	status = out.Assign(results[0])
+	status = out.assign(results[0])
 	status['password'] = out
 	return status
 

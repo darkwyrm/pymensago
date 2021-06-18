@@ -40,7 +40,7 @@ def test_workspace_generate():
 	profile.domain = 'example.com'
 	profile.activate()
 	pw = Password()
-	status = pw.Set('CheeseCustomerSmugnessDelegatorGenericUnaudited')
+	status = pw.set('CheeseCustomerSmugnessDelegatorGenericUnaudited')
 	assert not status.error()
 
 	w = Workspace(profile.db, unit_test_folder)
