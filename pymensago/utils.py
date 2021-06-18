@@ -41,6 +41,9 @@ class UserID:
 
 	def __str__(self) -> str:
 		return self.value
+	
+	def as_string(self) -> str:
+		return self.value
 
 
 class Domain:
@@ -63,6 +66,9 @@ class Domain:
 		return ''
 
 	def __str__(self) -> str:
+		return self.value
+	
+	def as_string(self) -> str:
 		return self.value
 
 
@@ -94,6 +100,9 @@ class UUID:
 
 	def __str__(self) -> str:
 		return self.value
+	
+	def as_string(self) -> str:
+		return self.value
 
 
 class WAddress:
@@ -122,10 +131,13 @@ class WAddress:
 		return RetVal()
 
 	def __str__(self) -> str:
-		return self.value
+		return self.id.as_string() + '/' + self.domain.as_string
 	
 	def is_valid(self) -> bool:
 		return self.id and self.domain
+	
+	def as_string(self) -> str:
+		return self.id.as_string() + '/' + self.domain.as_string
 
 
 class MAddress:
@@ -158,12 +170,15 @@ class MAddress:
 			self.id_type = 2
 		
 		return RetVal()
-	
+
 	def __str__(self) -> str:
-		return self.as_string()
+		return self.id.as_string() + '/' + self.domain.as_string
 	
 	def is_valid(self) -> bool:
 		return self.id_type in [1,2] and self.id.is_valid() and self.domain.is_valid()
+
+	def as_string(self) -> str:
+		return self.id.as_string() + '/' + self.domain.as_string
 	
 
 def validate_uuid(indata: str) -> bool:
