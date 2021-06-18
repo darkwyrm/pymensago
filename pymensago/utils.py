@@ -23,6 +23,12 @@ class UserID:
 
 		return len(self.value) <= 64
 	
+	def is_wid(self) -> bool:
+		'''Returns true if the UserID is actually a workspace ID'''
+		
+		global _uuid_pattern
+		return _uuid_pattern.match(self.value)
+
 	def set(self, obj) -> str:
 		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
@@ -32,6 +38,9 @@ class UserID:
 		if self.is_valid():
 			return self.value
 		return ''
+
+	def __str__(self) -> str:
+		return self.value
 
 
 class Domain:
@@ -52,6 +61,9 @@ class Domain:
 		if self.is_valid():
 			return self.value
 		return ''
+
+	def __str__(self) -> str:
+		return self.value
 
 
 class UUID:
@@ -80,28 +92,16 @@ class UUID:
 			return self.value
 		return ''
 
-
-class AddressBase:
-	def __init__(self):
-		self.id = ''
-		self.id_type = 0
-		self.domain = ''
-
 	def __str__(self) -> str:
-		return self.as_string()
-	
-	def as_string(self) -> str:
-		return self.id + '/' + self.domain
-
-	def is_valid(self) -> bool:
-		return self.id_type in [1,2] and self.id and self.domain
+		return self.value
 
 
-class WAddress(AddressBase):
+class WAddress:
 	'''Represents a workspace address'''
 
 	def __init__(self, addr='') -> None:
-		super.__init__()
+		self.id = UUID()
+		self.domain = Domain()
 		if addr:
 			self.set(addr)
 		
@@ -113,24 +113,28 @@ class WAddress(AddressBase):
 		if len(parts) != 2 or not parts[0] or not parts[1]:
 			return RetVal(ErrBadValue, 'bad address given')
 		
-		id_type = 0
-		if not _uuid_pattern.match(parts[0]):
+		if not self.id.set(parts[0]):
 			return RetVal(ErrBadValue, 'bad workspace ID')
-
-		self.id_type = 1
-		self.id = parts[0].casefold()
-		self.domain = parts[1].casefold()
+		
+		if not self.domain.set(parts[1]):
+			return RetVal(ErrBadValue, 'bad domain')
 
 		return RetVal()
-	
 
-class MAddress(AddressBase):
+	def __str__(self) -> str:
+		return self.value
+	
+	def is_valid(self) -> bool:
+		return self.id and self.domain
+
+
+class MAddress:
 	'''Represents a Mensago address'''
 	
 	def __init__(self, addr = ''):
-		self.id = ''
+		self.id = UserID()
 		self.id_type = 0
-		self.domain = ''
+		self.domain = Domain()
 		if addr:
 			self.set(addr)
 
@@ -142,25 +146,24 @@ class MAddress(AddressBase):
 		if len(parts) != 2 or not parts[0] or not parts[1]:
 			return RetVal(ErrBadValue, 'bad address given')
 		
-		if len(parts[0]) > 64:
-			return RetVal(ErrBadValue, 'user id too long')
+		if not self.id.set(parts[0]):
+			return RetVal(ErrBadValue, 'bad workspace ID')
 		
-		id_type = 0
-		if _uuid_pattern.match(parts[0]):
-			id_type = 1
-		else:
-			if _illegal_pattern.search(parts[0]):
-				return RetVal(ErrBadValue, 'illegal characters in user id')
-			id_type = 2
-
-		if not _domain_pattern.match(parts[1]):
+		if not self.domain.set(parts[1]):
 			return RetVal(ErrBadValue, 'bad domain')
-		
-		self.id_type = id_type
-		self.id = parts[0].casefold()
-		self.domain = parts[1].casefold()
 
+		if self.id.is_wid():
+			self.id_type = 1
+		else:
+			self.id_type = 2
+		
 		return RetVal()
+	
+	def __str__(self) -> str:
+		return self.as_string()
+	
+	def is_valid(self) -> bool:
+		return self.id_type in [1,2] and self.id.is_valid() and self.domain.is_valid()
 	
 
 def validate_uuid(indata: str) -> bool:

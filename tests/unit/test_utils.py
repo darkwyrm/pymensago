@@ -51,7 +51,7 @@ def test_userid():
 	'''Tests UserID.set() and is_valid()'''
 
 	uid = utils.UserID()
-	for testid in [ "GoodID", "alsogoooood", "🐧", "ಅಎಇ" ]:
+	for testid in [ "GoodID", "alsogoooood", "🐧", "ಅಎಇ", "11111111-1111-1111-1111-111111111111" ]:
 		assert uid.set(testid) == testid.strip().casefold(), \
 			f"test_userid_set failed good user ID '{testid}'"
 		assert uid.is_valid(), f"test_userid_is_valid failed good user ID '{testid}'"
@@ -74,6 +74,7 @@ def test_domain():
 		assert not dom.set(testdom), f"test_domain_set passed bad domain'{testdom}'"
 		assert not dom.is_valid(), f"test_domain_is_valid passed bad domain '{testdom}'"
 
+
 def test_uuid():
 	'''Tests UUID.set() and is_valid()'''
 
@@ -87,6 +88,7 @@ def test_uuid():
 	for testwid in [ "11111111111111111111111111111111", "also_bad" ]:
 		assert not wid.set(testwid), f"test_uuid_is_valid passed bad workspace ID'{testwid}'"
 		assert not wid.is_valid(), f"test_uuid_is_valid passed bad workspace ID '{testwid}'"
+
 
 if __name__ == '__main__':
 	test_maddress_set()
