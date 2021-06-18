@@ -169,9 +169,15 @@ class Profile:
 			return utils.WAddress('/'.join([self.wid, self.domain]))
 		
 		# We got this far, which means we need to get the info from the profile database
+		
+		cursor = self.db.cursor()
+		cursor.execute("SELECT wid,domain FROM workspaces WHERE wid=? OR wtype = 'identity'", 
+			(self.wid,))
+		results = cursor.fetchone()
+		if not results or not results[0]:
+			return RetVal(ErrNotFound)
 
-		# TODO: load identity from database
-		return None
+		return utils.WAddress('/'.join([results[0], results[1]]))
 	
 	def set_identity(self, w: Workspace) -> RetVal:
 		'''Assigns an identity workspace to the profile. Because so much is tied to an identity 
