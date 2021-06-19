@@ -7,7 +7,7 @@ from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
 from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password, \
 	ErrUnsupportedAlgorithm
-from pymensago.utils import WAddress
+from pymensago.utils import WAddress, UUID
 
 def get_credentials(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
@@ -40,14 +40,12 @@ def set_credentials(db, addr: WAddress, pw: Password) -> RetVal:
 	return RetVal()
 
 
-def add_device_session(db, address: WAddress, devid: str, devpair: EncryptionPair, 
+def add_device_session(db, address: WAddress, devid: UUID, devpair: EncryptionPair, 
 	devname='') -> RetVal:
 	'''Adds a device to a workspace'''
 
 	if not address.is_valid():
 		return RetVal(ErrBadValue, 'bad address')
-	if address.id_type == 2:
-		return RetVal(ErrBadValue, 'workspace address is required')
 	
 	if not devid:
 		return RetVal(ErrEmptyData)
@@ -55,11 +53,9 @@ def add_device_session(db, address: WAddress, devid: str, devpair: EncryptionPai
 	if devpair.enctype != 'CURVE25519':
 		return RetVal(ErrUnsupportedAlgorithm, "enctype must be 'CURVE25519'")
 
-	devid = devid.casefold()
-	
 	# address has to be valid and existing already
 	cursor = db.cursor()
-	cursor.execute("SELECT wid FROM workspaces WHERE wid=?",(address.id,))
+	cursor.execute("SELECT wid FROM workspaces WHERE wid=?",(address.id.as_string(),))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
@@ -75,31 +71,28 @@ def add_device_session(db, address: WAddress, devid: str, devpair: EncryptionPai
 		cursor.execute('''INSERT INTO sessions(
 				address, devid, enctype, public_key, private_key, devname) 
 				VALUES(?,?,?,?,?,?)''',
-				(address.as_string(), devid.casefold, devpair.enctype, devpair.public_key, 
-				devpair.private_key, devname))
+				(address.as_string(), devid.as_string(), devpair.enctype, devpair.public.as_string(), 
+				devpair.private.as_string(), devname))
 	else:
 		cursor.execute('''INSERT INTO sessions(
 				address, devid, enctype, public_key, private_key) 
 				VALUES(?,?,?,?,?)''',
-				(address.as_string(), devid, devpair.enctype, devpair.public_key, 
-				devpair.private_key))
+				(address.as_string(), devid.as_string(), devpair.enctype, devpair.public.as_string(), 
+				devpair.private.as_string()))
 	db.commit()
 	return RetVal()
 
 
-def remove_device_session(db, devid: str) -> RetVal:
-	'''
-	Removes an authorized device from the workspace. Returns a boolean success code.
-	'''
-	devid = devid.casefold()
+def remove_device_session(db, devid: UUID) -> RetVal:
+	'''	Removes an authorized device from the workspace. Returns a boolean success code.'''
 
 	cursor = db.cursor()
-	cursor.execute("SELECT devid FROM sessions WHERE devid=?", (devid,))
+	cursor.execute("SELECT devid FROM sessions WHERE devid=?", (devid.as_string(),))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
 
-	cursor.execute("DELETE FROM sessions WHERE devid=?", (devid,))
+	cursor.execute("DELETE FROM sessions WHERE devid=?", (devid.as_string(),))
 	db.commit()
 	return RetVal()
 
@@ -134,32 +127,39 @@ def add_key(db: sqlite3.Connection, key: CryptoKey, address: str) -> RetVal:
 	error : string
 	'''
 	cursor = db.cursor()
-	cursor.execute("SELECT keyid FROM keys WHERE keyid=?", (key.get_id(),))
+	cursor.execute("SELECT keyid FROM keys WHERE keyid=?", (key.pubhash,))
 	results = cursor.fetchone()
 	if results:
 		return RetVal(ErrExists)
 	
 	if key.enctype == 'XSALSA20':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,algorithm)
-			VALUES(?,?,?,?,?,?)''', (key.get_id(), address, 'symmetric', '',
+			VALUES(?,?,?,?,?,?)''', (key.pubhash, address, 'symmetric', '',
 				key.get_key(), key.enctype))
 		db.commit()
 		return RetVal()
 	
 	if key.enctype == 'CURVE25519':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
-			VALUES(?,?,?,?,?,?,?)''', (key.get_id(), address, 'asymmetric', '',
+			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'asymmetric', '',
 				key.private.as_string(), key.public.as_string(), key.enctype))
 		db.commit()
 		return RetVal()
 	
-	return RetVal(ErrBadValue, "Key must be 'asymmetric' or 'symmetric'")
+	if key.enctype == 'ED25519':
+		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
+			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'signing', '',
+				key.private.as_string(), key.public.as_string(), key.enctype))
+		db.commit()
+		return RetVal()
+	
+	return RetVal(ErrUnsupportedAlgorithm, f"Unsupported key algorithm {key.enctype}")
 
 
 def remove_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	'''Deletes an encryption key from a workspace.
 	Parameters:
-	keyid : uuid
+	keyid : CryptoString-formatted key hash
 
 	Returns:
 	error : string

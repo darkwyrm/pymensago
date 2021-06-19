@@ -8,7 +8,7 @@ from pymensago.config import load_server_config
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
 from pymensago.serverconn import ServerConnection
-from pymensago.utils import validate_domain, MAddress
+from pymensago.utils import Domain, validate_domain, MAddress
 
 class KCResolver:
 	'''A caching keycard resolver class'''
@@ -194,7 +194,7 @@ class KCResolver:
 		return RetVal()
 
 
-def get_server_config(domain: str) -> RetVal:
+def get_server_config(domain: Domain) -> RetVal:
 	'''Given a domain, obtains the configuration information for the Mensago server for that 
 	domain. The server's FQDN will be in the `server` field and the port in `port`.'''
 

@@ -42,7 +42,7 @@ class Workspace:
 		if status.error():
 			return status
 		
-		address = '/'.join([wid,server])
+		address = wid.as_string() + '/' + server.as_string()
 
 		# Generate user's encryption keys
 		keys = {
@@ -77,7 +77,7 @@ class Workspace:
 
 		for folder in folderlist:
 			foldermap.MakeID()
-			foldermap.Set(address, keys['folder'].get_id(), folder, 'root')
+			foldermap.Set(address, keys['folder'].pubhash, folder, 'root')
 			self.add_folder(foldermap)
 
 		# Create the folders themselves
@@ -97,13 +97,15 @@ class Workspace:
 		'''Adds a workspace to the storage database'''
 
 		cursor = self.db.cursor()
-		cursor.execute("SELECT wid FROM workspaces WHERE wid=? OR wtype = 'identity'", (self.wid,))
+		cursor.execute("SELECT wid FROM workspaces WHERE wid=? OR type = 'identity'", 
+			(self.wid.as_string(),))
 		results = cursor.fetchone()
 		if results:
-			return RetVal(ErrExists, self.wid)
+			return RetVal(ErrExists, self.wid.as_string())
 		
 		cursor.execute('''INSERT INTO workspaces(wid,domain,password,pwhashtype,type)
-			VALUES(?,?,?,?,?)''', (self.wid, self.domain, pw.hashstring, pw.hashtype, self.type))
+			VALUES(?,?,?,?,?)''', 
+			(self.wid.as_string(), self.domain.as_string(), pw.hashstring, pw.hashtype, self.type))
 		self.db.commit()
 		return RetVal()
 
@@ -128,19 +130,21 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 	
-	def remove_workspace_entry(self, wid: str, domain: str) -> RetVal:
+	def remove_workspace_entry(self, wid: UUID, domain: Domain) -> RetVal:
 		'''
 		Removes a workspace from the storage database.
 		NOTE: this only removes the workspace entry itself. It does not remove keys, sessions,
 		or other associated data.
 		'''
 		cursor = self.db.cursor()
-		cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
+		cursor.execute("SELECT wid FROM workspaces WHERE wid=? AND domain=?", 
+			(wid.as_string(),domain.as_string()))
 		results = cursor.fetchone()
 		if not results or not results[0]:
-			return RetVal(ErrNotFound, "%s/%s not found" % (wid,domain))
+			return RetVal(ErrNotFound, "%s/%s not found" % (wid.as_string(),domain.as_string()))
 		
-		cursor.execute("DELETE FROM workspaces WHERE wid=? AND domain=?", (wid,domain))
+		cursor.execute("DELETE FROM workspaces WHERE wid=? AND domain=?", 
+			(wid.as_string(),domain.as_string()))
 		self.db.commit()
 		return RetVal()
 		
@@ -215,7 +219,7 @@ class Workspace:
 		SET userid=?
 		WHERE wid=? and domain=?
 		'''
-		cursor.execute(sqlcmd, (userid, self.wid, self.domain))
+		cursor.execute(sqlcmd, (userid.as_string(), self.wid.as_string(), self.domain.as_string()))
 		self.db.commit()
 		self.uid = userid
 

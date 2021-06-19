@@ -155,7 +155,7 @@ class WAddress:
 		return self.id and self.domain
 	
 	def as_string(self) -> str:
-		return self.id.as_string() + '/' + self.domain.as_string
+		return self.id.as_string() + '/' + self.domain.as_string()
 
 
 class MAddress:

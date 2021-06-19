@@ -1,6 +1,6 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
-from pymensago.utils import MAddress
+from pymensago.utils import Domain, MAddress
 import socket
 
 from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
@@ -10,6 +10,7 @@ import pymensago.iscmds as iscmds
 import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as profile
+import pymensago.utils as utils
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.workspace import Workspace
 
@@ -40,7 +41,7 @@ class MensagoClient:
 		status = self.conn.connect(status['host'],status['port'])
 		return status
 	
-	def connect(self, domain: str) -> RetVal:
+	def connect(self, domain: Domain) -> RetVal:
 		'''Establishes a network connection to a Mensago server. No logging in is performed.'''
 		serverconfig = kcresolver.get_server_config(domain)
 		if serverconfig.error():
@@ -140,14 +141,13 @@ class MensagoClient:
 		
 		devpair = EncryptionPair()
 
-		# For now, we will just use the default port (2001) and convert example.com to localhost
-		if address.domain in ['localhost', 'example.com']:
-			host = 'localhost'
-		else:
-			# TODO: Eventually look up the IP/port from the DNS management record.
-			return RetVal(ErrUnimplemented, 'DNS support not yet implemented. Sorry!')
+		status = kcresolver.get_server_config(address.domain)
+		if status.error():
+			return status
 		
-		status = self.conn.connect(host, 2001)
+		host = status['server']
+		port = status['port']
+		status = self.conn.connect(host, port)
 		if status.error():
 			return status
 		
@@ -177,7 +177,7 @@ class MensagoClient:
 
 		return regdata
 	
-	def register_account(self, server: str, userpass: str, userid='') -> RetVal:
+	def register_account(self, domain: Domain, userpass: str, userid=None) -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
@@ -218,9 +218,11 @@ class MensagoClient:
 		if profile.domain:
 			return RetVal(ErrExists, 'a user workspace already exists')
 
-		# TODO: Look up the server connection info from the management record
-		host = server
-		port = 2001
+		status = kcresolver.get_server_config(domain)
+		if status.error():
+			return status
+		host = status['server']
+		port = status['port']
 		
 		# Password requirements aren't really set here, but we do have to draw the 
 		# line *somewhere*.
@@ -236,7 +238,12 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		regdata = iscmds.register(self.conn, userid, pw.hashstring, devpair.public)
+		if userid:
+			regdata = iscmds.register(self.conn, userid, pw.hashstring, devpair.public)
+		else:
+			regdata = iscmds.register(self.conn, utils.UserID(utils.UUID().generate()), 
+				pw.hashstring, devpair.public)
+
 		self.conn.disconnect()
 		if regdata.error():
 			return regdata
@@ -247,13 +254,16 @@ class MensagoClient:
 					.set_value('status', 300)
 
 		w = Workspace(profile.db, profile.path)
-		status = w.generate(profile, server, regdata['wid'], pw)
+		status = w.generate(userid, regdata['domain'], regdata['wid'], pw)
 		if status.error():
 			return status
 		
+		address = utils.WAddress()
+		address.id = regdata['wid']
+		address.domain = regdata['domain']
 		
-		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{host}"),
-				regdata['devid'], devpair, socket.gethostname())
+		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair,
+			socket.gethostname())
 		if status.error():
 			return status
 

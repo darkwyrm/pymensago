@@ -61,15 +61,10 @@ class CryptoKey:
 	'''Defines a generic interface to an Mensago encryption key, which contains more
 	information than just the key itself'''
 	def __init__(self):
-		self.id = str(uuid.uuid4())
 		self.pubhash = ''
 		self.privhash = ''
 		self.enctype = ''
 		self.type = ''
-	
-	def get_id(self):
-		'''Returns the ID of the key'''
-		return self.id
 	
 	def get_encryption_type(self):
 		'''Returns the name of the encryption used, such as rsa, aes256, etc.'''
@@ -422,7 +417,8 @@ class SecretKey (CryptoKey):
 			self.enctype = 'XSALSA20'
 			self.key = CryptoString('XSALSA20', nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE))
 		
-		self.hash = blake2hash(self.key.data.encode())
+		self.privhash = blake2hash(self.key.data.encode())
+		self.pubhash = self.privhash
 
 	def __str__(self):
 		return self.get_key()

@@ -505,7 +505,7 @@ def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
 	wid = utils.UUID()
 	response = dict()
 	tries = 1
-	while not wid.is_empty():
+	while wid.is_empty():
 		if not tries % 10:
 			time.sleep(3.0)
 		
@@ -516,14 +516,14 @@ def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
 		request = {
 			'Action' : 'REGISTER',
 			'Data' : {
-				'Workspace-ID' : wid,
+				'Workspace-ID' : wid.as_string(),
 				'Password-Hash' : pwhash,
-				'Device-ID' : devid,
+				'Device-ID' : devid.as_string(),
 				'Device-Key' : devicekey.as_string()
 			}
 		}
 		if uid:
-			request['Data']['User-ID'] = uid
+			request['Data']['User-ID'] = uid.as_string()
 
 		status = conn.send_message(request)
 		if status.error():
@@ -537,7 +537,7 @@ def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
 			out.set_values({
 				'devid' : devid,
 				'wid' : wid,
-				'domain' : response['Data']['Domain'],
+				'domain' : utils.Domain(response['Data']['Domain']),
 				'uid' : uid
 			})
 			break
