@@ -2,7 +2,6 @@ from base64 import b85encode
 import re
 import secrets
 import time
-import uuid
 
 from pycryptostring import CryptoString
 from retval import RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemented
@@ -97,7 +96,7 @@ def device(conn: ServerConnection, devid: utils.UUID, devpair: EncryptionPair) -
 	status = conn.send_message({
 		'Action' : "DEVICE",
 		'Data' : { 
-			'Device-ID' : devid,
+			'Device-ID' : devid.as_string(),
 			'Device-Key' : devpair.public.as_string()
 		}
 	})
@@ -228,13 +227,13 @@ def getwid(conn: ServerConnection, uid: utils.UserID, domain: utils.Domain) -> R
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
-	return RetVal().set_value('Workspace-ID', response['Data']['Workspace-ID'])
+	return RetVal().set_value('Workspace-ID', utils.UUID(response['Data']['Workspace-ID']))
 
 
 def iscurrent(conn: ServerConnection, index: int, wid: utils.UUID) -> RetVal:
 	'''Finds out if an entry index is current. If wid is empty, the index is checked for the 
 	organization.'''
-	if wid.is_empty() or not wid.is_valid():
+	if not wid.is_empty() and not wid.is_valid():
 		return RetVal(MsgBadRequest).set_value('status', 400)
 	
 	request = {
@@ -243,7 +242,7 @@ def iscurrent(conn: ServerConnection, index: int, wid: utils.UUID) -> RetVal:
 			'Index' : str(index)
 		}
 	}
-	if wid:
+	if not wid.is_empty():
 		request['Data']['Workspace-ID'] = wid.as_string()
 	status = conn.send_message(request)
 	if status.error():
@@ -399,18 +398,18 @@ def password(conn: ServerConnection, pwhash: str) -> RetVal:
 	return RetVal()
 
 
-def preregister(conn: ServerConnection, id: utils.UserID, domain: utils.Domain) -> RetVal:
+def preregister(conn: ServerConnection, wid: utils.UUID, uid: utils.UserID, domain: utils.Domain) -> RetVal:
 	'''Provisions a preregistered account on the server.'''
 	request = { 'Action':'PREREG', 'Data':{} }
 
-	if not id.is_empty():
-		if id.is_wid():
-			request['Data']['Workspace-ID'] = id.as_string()
-		else:
-			request['Data']['User-ID'] = id.as_string()
+	if not wid.is_empty():
+		request['Data']['Workspace-ID'] = wid.as_string()
 	
-	if domain.value:
-		request['Data']['Domain'] = domain
+	if not uid.is_empty():
+			request['Data']['User-ID'] = uid.as_string()
+	
+	if not domain.is_empty():
+		request['Data']['Domain'] = domain.as_string()
 
 	status = conn.send_message(request)
 	if status.error():
@@ -452,23 +451,24 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 	if not address.is_valid():
 		return RetVal(ErrBadValue, 'bad address')
 	
-	devid = str(uuid.uuid4())
+	devid = utils.UUID()
+	devid.generate()
 
 	request = {
 		'Action':'REGCODE',
 		'Data':{
 			'Reg-Code': code,
 			'Password-Hash': pwhash,
-			'Device-ID': devid,
+			'Device-ID': devid.as_string(),
 			'Device-Key': devpair.public.as_string(),
-			'Domain': address.domain
+			'Domain': address.domain.as_string()
 		}
 	}
 
 	if address.id_type == 1:
-		request['Data']['Workspace-ID'] = address.id
+		request['Data']['Workspace-ID'] = address.id.as_string()
 	else:
-		request['Data']['User-ID'] = address.id
+		request['Data']['User-ID'] = address.id.as_string()
 	
 	status = conn.send_message(request)
 	if status.error():
@@ -482,7 +482,7 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 		return wrap_server_error(response)
 	
 	return RetVal().set_values({
-		'devid': devid,
+		'devid': devid.as_string(),
 		'wid': response['Data']['Workspace-ID']
 	})
 	

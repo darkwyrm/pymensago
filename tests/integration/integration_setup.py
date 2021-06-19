@@ -17,7 +17,7 @@ from pymensago.encryption import Password, EncryptionPair, SigningPair
 import pymensago.keycard as keycard
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
-from pymensago.utils import MAddress
+import pymensago.utils as utils
 
 # Keys used in the various tests. 
 # THESE KEYS ARE STORED ON GITHUB! DO NOT USE THESE FOR ANYTHING EXCEPT UNIT TESTS!!
@@ -207,7 +207,7 @@ def init_server(dbconn) -> dict:
 
 
 	# Prereg the admin account
-	admin_wid = 'ae406c5e-2673-4d3e-af20-91325d9623ca'
+	admin_wid = utils.UUID('ae406c5e-2673-4d3e-af20-91325d9623ca')
 	regcode = 'Undamaged Shining Amaretto Improve Scuttle Uptake'
 	cur.execute(f"INSERT INTO prereg(wid, uid, domain, regcode) VALUES('{admin_wid}', 'admin', "
 		f"'example.com', '{regcode}');")
@@ -217,13 +217,13 @@ def init_server(dbconn) -> dict:
 	cur.execute("INSERT INTO workspaces(wid, uid, domain, password, status, wtype) "
 		f"VALUES('{abuse_wid}', 'abuse', 'example.com', '-', 'active', 'alias');")
 	cur.execute(f"INSERT INTO aliases(wid, alias) VALUES('{abuse_wid}', "
-		f"'{'/'.join([admin_wid, 'example.com'])}');")
+		f"'{'/'.join([admin_wid.as_string(), 'example.com'])}');")
 
 	support_wid = 'f0309ef1-a155-4655-836f-55173cc1bc3b'
 	cur.execute(f"INSERT INTO workspaces(wid, uid, domain, password, status, wtype) "
 		f"VALUES('{support_wid}', 'support', 'example.com', '-', 'active', 'alias');")
 	cur.execute(f"INSERT INTO aliases(wid, alias) VALUES('{support_wid}', "
-		f"'{'/'.join([admin_wid, 'example.com'])}');")
+		f"'{'/'.join([admin_wid.as_string(), 'example.com'])}');")
 	
 	cur.close()
 	dbconn.commit()	
@@ -234,28 +234,14 @@ def init_server(dbconn) -> dict:
 		'oskey' : keys['sign.private'],
 		'oekey' : keys['encrypt.public'],
 		'odkey' : keys['encrypt.private'],
-		'admin_wid' : admin_wid,
+		'admin_wid' : utils.UUID(admin_wid),
 		'admin_regcode' : regcode,
 		'root_org_entry' : root_entry,
 		'second_org_entry' : new_entry,
-		'support_wid' : support_wid,
-		'abuse_wid' : abuse_wid
+		'support_wid' : utils.UUID(support_wid),
+		'abuse_wid' : utils.UUID(abuse_wid)
 	}
 
-def validate_uuid(indata):
-	'''Validates a UUID's basic format. Does not check version information.'''
-
-	# With dashes, should be 36 characters or 32 without
-	if (len(indata) != 36 and len(indata) != 32) or len(indata) == 0:
-		return False
-	
-	uuid_pattern = re.compile(
-			r"[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12}")
-	
-	if not uuid_pattern.match(indata):
-		return False
-	
-	return True
 
 def reset_workspace_dir(config: dict):
 	'''Resets the system workspace storage directory to an empty skeleton'''
@@ -318,16 +304,16 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	)
 	config['admin_spair'] = devpair
 
-	status = iscmds.regcode(conn, MAddress('admin/example.com'), config['admin_regcode'], 
+	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), config['admin_regcode'], 
 		password.hashstring, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
-	devid = status['devid']
-	config['admin_devid'] = status['devid']
+	devid = utils.UUID(status['devid'])
+	config['admin_devid'] = devid
 
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, config['admin_wid'], password.hashstring)
+	status = iscmds.password(conn, password.hashstring)
 	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, devid, devpair)
@@ -337,7 +323,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	entry = keycard.UserEntry()
 	entry.set_fields({
 		'Name':'Administrator',
-		'Workspace-ID':config['admin_wid'],
+		'Workspace-ID':config['admin_wid'].as_string(),
 		'User-ID':'admin',
 		'Domain':'example.com',
 		'Contact-Request-Verification-Key':crspair.get_public_key(),
@@ -363,23 +349,25 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Creates a test user for command testing'''
 	
-	userwid = '33333333-3333-3333-3333-333333333333'
-	status = iscmds.preregister(conn, userwid, 'csimons', 'example.com')
+	userid = utils.UserID('33333333-3333-3333-3333-333333333333')
+	status = iscmds.preregister(conn, userid, utils.UserID('csimons'), utils.Domain('example.com'))
 	assert not status.error(), "init_user(): uid preregistration failed"
-	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status and \
-		status['uid'] == 'csimons', "init_user(): failed to return expected data"
+	assert status['domain'].as_string() == 'example.com' and \
+		'wid' in status and \
+		'regcode' in status and	\
+		status['uid'].as_string() == 'csimons', "init_user(): failed to return expected data"
 
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	status = iscmds.regcode(conn, MAddress('csimons/example.com'), regdata['regcode'], 
+	status = iscmds.regcode(conn, utils.MAddress('csimons/example.com'), regdata['regcode'], 
 		password.hashstring, devpair)
 	assert not status.error(), "init_user(): uid regcode failed"
-	devid = status['devid']
+	devid = utils.UUID(status['devid'])
 
-	config['user_wid'] = userwid
-	config['user_uid'] = regdata['uid']
-	config['user_domain'] = regdata['domain']
+	config['user_wid'] = userid
+	config['user_uid'] = utils.UserID(regdata['uid'])
+	config['user_domain'] = utils.Domain(regdata['domain'])
 	config['user_devid'] = devid
 	config['user_devpair'] = devpair
 	config['user_password'] = password

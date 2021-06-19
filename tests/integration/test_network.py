@@ -5,7 +5,7 @@ from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn
-from pymensago.utils import MAddress
+import pymensago.utils as utils
 
 def test_addentry():
 	'''Tests the addentry() command'''
@@ -69,9 +69,10 @@ def test_getwid():
 	status = init_admin(conn, dbdata)
 	assert not status.error(), f"test_getwid(): init_admin failed: {status.info()}"
 
-	status = iscmds.getwid(conn, 'admin', 'example.com')
+	status = iscmds.getwid(conn, utils.UserID('admin'), utils.Domain('example.com'))
 	assert not status.error(), f"test_getwid(): getwid failed: {status.info()}"
-	assert status['Workspace-ID'] == dbdata['admin_wid'], "test_getwid(): admin wid mismatch"
+	assert status['Workspace-ID'].value == dbdata['admin_wid'].value, \
+		"test_getwid(): admin wid mismatch"
 
 	conn.disconnect()
 
@@ -86,10 +87,10 @@ def test_iscurrent():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
 
-	status = iscmds.iscurrent(conn, 1)
+	status = iscmds.iscurrent(conn, 1, utils.UUID())
 	assert not status.error(), f"test_iscurrent(): org failure check failed: {status.info()}"
 
-	status = iscmds.iscurrent(conn, 2)
+	status = iscmds.iscurrent(conn, 2, utils.UUID())
 	assert not status.error(), f"test_iscurrent(): org success check failed: {status.info()}"
 
 
@@ -103,34 +104,35 @@ def test_preregister_regcode():
 	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
 
 	password = Password('Linguini2Pegboard*Album')
-	devid = '14142135-9c22-4d3e-84a3-2aa281f65714'
+	devid = utils.UUID('14142135-9c22-4d3e-84a3-2aa281f65714')
 	keypair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	status = iscmds.regcode(conn, MAddress('admin/example.com'), dbdata['admin_regcode'],
+	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), dbdata['admin_regcode'],
 		password.hashstring, keypair)
 	assert not status.error(), f"test_preregister_regcode(): regcode failed: {status.info()}"
 
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_preregister_regcode(): login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, dbdata['admin_wid'], password.hashstring)
+	status = iscmds.password(conn, password.hashstring)
 	assert not status.error(), f"test_preregister_regcode(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, devid, keypair)
 	assert not status.error(), "test_preregister_regcode(): device phase failed: " \
 		f"{status.info()}"
 
-	status = iscmds.preregister(conn, '', 'csimons', 'example.com')
+	status = iscmds.preregister(conn, utils.UUID(), utils.UserID('csimons'), 
+		utils.Domain('example.com'))
 	assert not status.error(), "test_preregister_regcode(): uid preregistration failed"
-	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status and \
-		status['uid'] == 'csimons', "test_preregister_regcode(): failed to return expected data"
+	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status, \
+		"test_preregister_regcode(): failed to return expected data"
 
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	status = iscmds.regcode(conn, MAddress('csimons/example.com'), regdata['regcode'], 
+	status = iscmds.regcode(conn, utils.MAddress('csimons/example.com'), regdata['regcode'], 
 		password.hashstring, devpair)
 	assert not status.error(), "test_preregister_regcode(): uid regcode failed"
 
@@ -154,7 +156,7 @@ def test_register():
 	
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	status = iscmds.register(conn, 'csimons', password.hashstring, devpair.public)
+	status = iscmds.register(conn, utils.UserID('csimons'), password.hashstring, devpair.public)
 	assert not status.error(), f"test_register: failed to register test account: {status.info()}"
 
 	conn.disconnect()
@@ -174,7 +176,7 @@ def test_reset_password():
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
-	status = iscmds.regcode(conn, MAddress('admin/example.com'), dbdata['admin_regcode'], 
+	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), dbdata['admin_regcode'], 
 		password.hashstring, keypair)
 	assert not status.error(), f"test_reset_password(): regcode failed: {status.info()}"
 	devid = status['devid']
@@ -291,10 +293,9 @@ if __name__ == '__main__':
 	# test_connect()
 	# test_devkey()
 	# test_iscurrent()
-	# test_login_regcode()
-	# test_preregister_regcode()
+	test_preregister_regcode()
 	# test_register()
 	# test_reset_password()
 	# test_set_password()
-	test_set_status()
+	# test_set_status()
 	# test_unregister()

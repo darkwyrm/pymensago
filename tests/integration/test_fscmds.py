@@ -7,6 +7,7 @@ from retval import RetVal
 
 from .integration_setup import setup_test, init_server, init_admin, reset_workspace_dir
 import pymensago.serverconn as serverconn
+import pymensago.utils as utils
 
 def make_test_file(path: str, file_size=-1, file_name='') -> RetVal:
 	'''Generate a test file containing nothing but zeroes. If the file size is negative, a random 
@@ -46,7 +47,7 @@ def test_copy():
 	assert not status.error(), f"test_copy: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 	inner_dir = os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111')
 	os.mkdir(inner_dir)
 
@@ -54,8 +55,8 @@ def test_copy():
 	assert not status.error(), f"test_copy(): error creating test file: {status.info()}"
 	testname = status['name']
 
-	status = serverconn.copy(conn, f"/ wsp {dbdata['admin_wid']} {testname}", 
-		f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+	status = serverconn.copy(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}", 
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_copy(): error copying test file: {status.info()}"
 
 	conn.disconnect()
@@ -77,13 +78,13 @@ def test_delete():
 	assert not status.error(), f"test_delete: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 
 	status = make_test_file(admin_dir)
 	assert not status.error(), f"test_delete(): error creating test file: {status.info()}"
 	testname = status['name']
 
-	status = serverconn.delete(conn, f"/ wsp {dbdata['admin_wid']} {testname}")
+	status = serverconn.delete(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}")
 	assert not status.error(), f"test_delete(): error deleting test file: {status.info()}"
 
 	conn.disconnect()
@@ -105,7 +106,7 @@ def test_download():
 	assert not status.error(), f"test_download: init_admin failed: {status.info()}"
 
 	local_admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 	local_inner_dir = os.path.join(local_admin_dir, '11111111-1111-1111-1111-111111111111')
 	serverconn.mkdir(conn, local_inner_dir)
 
@@ -113,7 +114,7 @@ def test_download():
 	assert not status.error(), f"test_download: error creating test file: {status.info()}"
 	testname = status['name']
 
-	status = serverconn.download(conn, f"/ wsp {dbdata['admin_wid']} {testname}", local_inner_dir)
+	status = serverconn.download(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}", local_inner_dir)
 	assert not status.error(), f"test_download: download failed: {status.info()}"
 
 	conn.disconnect()
@@ -135,13 +136,13 @@ def test_exists():
 	assert not status.error(), f"test_exists: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 
 	status = make_test_file(admin_dir)
 	assert not status.error(), f"test_exists(): error creating test file: {status.info()}"
 	testname = status['name']
 
-	status = serverconn.delete(conn, f"/ wsp {dbdata['admin_wid']} {testname}")
+	status = serverconn.delete(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}")
 	assert not status.error(), f"test_exists(): error checking for test file: {status.info()}"
 
 	conn.disconnect()
@@ -163,12 +164,12 @@ def test_getquotainfo():
 	assert not status.error(), f"test_getquotainfo: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 
 	status = make_test_file(admin_dir)
 	assert not status.error(), f"test_getquotainfo(): error creating test file: {status.info()}"
 
-	status = serverconn.getquotainfo(conn)
+	status = serverconn.getquotainfo(conn, utils.UUID())
 	assert not status.error(), f"test_getquotainfo(): error checking for test file: {status.info()}"
 
 	conn.disconnect()
@@ -190,7 +191,7 @@ def test_listfiles():
 	assert not status.error(), f"test_listfiles: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 	subdir = '11111111-1111-1111-1111-111111111111'
 
 	os.mkdir(os.path.join(admin_dir, subdir))
@@ -204,7 +205,7 @@ def test_listfiles():
 		fhandle.write('0' * 500)
 		fhandle.close()
 
-	status = serverconn.listfiles(conn, f"/ wsp {dbdata['admin_wid']} {subdir}", 3000)
+	status = serverconn.listfiles(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {subdir}", 3000)
 	assert not status.error() and len(status['files']) == 3, \
 		f"test_listfiles(): error listing test files: {status.info()}"
 
@@ -227,7 +228,7 @@ def test_listdirs():
 	assert not status.error(), f"test_listdirs: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 	subdir = '11111111-1111-1111-1111-111111111111'
 
 	os.mkdir(os.path.join(admin_dir, subdir))
@@ -240,7 +241,7 @@ def test_listdirs():
 		
 		make_test_file(os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111'))
 
-	status = serverconn.listdirs(conn, f"/ wsp {dbdata['admin_wid']} {subdir}")
+	status = serverconn.listdirs(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {subdir}")
 	assert not status.error() and len(status['directories']) == 5, \
 		f"test_listdirs(): error listing test directories: {status.info()}"
 
@@ -263,7 +264,7 @@ def test_mkdir():
 	assert not status.error(), f"test_mkdir: init_admin failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
-		f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_mkdir: mkdir failed: {status.info()}"
 
 	conn.disconnect()
@@ -285,7 +286,7 @@ def test_move():
 	assert not status.error(), f"test_move: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
+		dbdata['admin_wid'].as_string())
 	inner_dir = os.path.join(admin_dir, '11111111-1111-1111-1111-111111111111')
 	os.mkdir(inner_dir)
 
@@ -293,8 +294,8 @@ def test_move():
 	assert not status.error(), f"test_move(): error creating test file: {status.info()}"
 	testname = status['name']
 
-	status = serverconn.copy(conn, f"/ wsp {dbdata['admin_wid']} {testname}", 
-		f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+	status = serverconn.copy(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}", 
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_move(): error moving test file: {status.info()}"
 
 	conn.disconnect()
@@ -316,7 +317,7 @@ def test_rmdir():
 	assert not status.error(), f"test_rmdir: init_admin failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
-		f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_rmdir: rmdir failed: {status.info()}"
 
 	conn.disconnect()
@@ -338,7 +339,7 @@ def test_select():
 	assert not status.error(), f"test_select: init_admin failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
-		f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111")
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_select: directory change failed: {status.info()}"
 
 	conn.disconnect()
@@ -359,7 +360,7 @@ def test_setquota():
 	status = init_admin(conn, dbdata)
 	assert not status.error(), f"test_setquota: init_admin failed: {status.info()}"
 
-	status = serverconn.setquota(conn, dbdata['admin_wid'], 10240)
+	status = serverconn.setquota(conn, dbdata['admin_wid'].as_string(), 10240)
 	assert not status.error(), f"test_setquota: quota size change failed: {status.info()}"
 
 	conn.disconnect()
@@ -380,8 +381,8 @@ def test_upload():
 	assert not status.error(), f"test_upload: init_admin failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
-		dbdata['admin_wid'])
-	inner_dir = f"/ wsp {dbdata['admin_wid']} 11111111-1111-1111-1111-111111111111"
+		dbdata['admin_wid'].as_string())
+	inner_dir = f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111"
 	serverconn.mkdir(conn, inner_dir)
 
 	status = make_test_file(admin_dir)
@@ -395,15 +396,15 @@ def test_upload():
 	conn.disconnect()
 
 if __name__ == '__main__':
-	# test_copy()
-	# test_delete()
+	test_copy()
+	test_delete()
 	test_download()
-	# test_exists()
-	# test_getquotainfo()
-	# test_listfiles()
-	# test_listdirs()
-	# test_mkdir()
-	# test_move()
-	# test_select()
-	# test_setquota()
-	# test_upload()
+	test_exists()
+	test_getquotainfo()
+	test_listfiles()
+	test_listdirs()
+	test_mkdir()
+	test_move()
+	test_select()
+	test_setquota()
+	test_upload()
