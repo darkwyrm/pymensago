@@ -126,7 +126,7 @@ def test_preregister_regcode():
 	status = iscmds.preregister(conn, utils.UUID(), utils.UserID('csimons'), 
 		utils.Domain('example.com'))
 	assert not status.error(), "test_preregister_regcode(): uid preregistration failed"
-	assert status['domain'] == 'example.com' and 'wid' in status and 'regcode' in status, \
+	assert status['domain'].as_string() == 'example.com' and 'wid' in status and 'regcode' in status, \
 		"test_preregister_regcode(): failed to return expected data"
 
 	regdata = status
@@ -184,7 +184,7 @@ def test_reset_password():
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_reset_password(): login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, dbdata['admin_wid'], password.hashstring)
+	status = iscmds.password(conn, password.hashstring)
 	assert not status.error(), f"test_reset_password(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, devid, keypair)
@@ -276,13 +276,13 @@ def test_unregister():
 	status = iscmds.login(conn, dbdata['user_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_unregister(): user login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, dbdata['user_wid'], dbdata['user_password'].hashstring)
+	status = iscmds.password(conn, dbdata['user_password'].hashstring)
 	assert not status.error(), f"test_unregister(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, dbdata['user_devid'], dbdata['user_devpair'])
 	assert not status.error(), f"test_unregister(): device phase failed: {status.info()}"
 
-	status = iscmds.unregister(conn, dbdata['user_password'].hashstring, '')
+	status = iscmds.unregister(conn, dbdata['user_password'].hashstring, utils.UUID())
 	assert not status.error(), f"test_unregister(): unregister failed: {status.info()}"
 
 	conn.disconnect()
