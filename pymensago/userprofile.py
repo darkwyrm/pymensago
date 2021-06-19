@@ -451,8 +451,7 @@ class ProfileManager:
 		
 		return RetVal().set_values({
 			'wid' : self.profiles[active_index].wid,
-			'host' : self.profiles[active_index].domain,
-			'port' : self.profiles[active_index].port 
+			'host' : self.profiles[active_index].domain
 		})
 
 	def get_active_profile(self) -> RetVal:

@@ -23,46 +23,12 @@ def setup_test(name):
 	return profiletest_folder
 
 
-def test_profile_class():
-	'''Test the Profile class. It's not big or complicated, so several 
-	tests are grouped together into one'''
-
-	profile_test_folder = setup_test('profile_class')
-	profile = Profile(profile_test_folder)
-	profile.name = 'Primary'
-	profile.id = 'ca7149eb-e533-4de6-90b1-3b0181d6fa16'
-	profile.wid = 'b5a9367e-680d-46c0-bb2c-73932a6d4007'
-	profile.domain = 'example.com'
-
-	# Most of the class is so simple that it doesn't really need test
-	# coverage, but set_from_dict and as_dict are a bit more than that.
-	test_dict = {
-		'name' : 'Primary',
-		'isdefault' : False,
-		'id' : 'ca7149eb-e533-4de6-90b1-3b0181d6fa16',
-		'wid' : 'b5a9367e-680d-46c0-bb2c-73932a6d4007',
-		'domain' : 'example.com',
-		'port' : 2001
-	}
-	assert profile.as_dict() == test_dict, "Output did not match test data"
-
-	profile = Profile(profile_test_folder)
-	profile.set_from_dict(test_dict)
-	assert 	profile.name == 'Primary' and \
-			profile.isdefault is False and \
-			profile.id == 'ca7149eb-e533-4de6-90b1-3b0181d6fa16' and \
-			profile.wid == 'b5a9367e-680d-46c0-bb2c-73932a6d4007' and \
-			profile.domain == 'example.com' and \
-			profile.port == 2001, "set_dict() assignments did not match test data."
-
-
 def test_profile_dbinit():
 	'''Test the Profile class database initializer'''
 
 	profile_test_folder = setup_test('profile_dbinit')
 	profile = Profile(profile_test_folder)
-	profile.name = 'Primary'
-	profile.id = 'ca7149eb-e533-4de6-90b1-3b0181d6fa16'
+	profile.name = 'primary'
 	profile.wid = 'b5a9367e-680d-46c0-bb2c-73932a6d4007'
 	profile.domain = 'example.com'
 
@@ -83,10 +49,11 @@ def test_pman_init():
 	# reset_db()
 
 	profile_test_folder = setup_test('pman_init')
-	pman = ProfileManager(profile_test_folder)
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), "test_pman_init: load_profiles failed"
 	
 	# Nothing has been done, so there should be 1 profile called 'primary'.
-	assert not pman.error_state.error(), "ProfileManager didn't init: %s" % pman.error_state.error()
 	assert len(pman.profiles) == 1, "Profile folder bootstrap didn't have a profile"
 	assert pman.active_index == 0, 'Active profile index not 0'
 	assert pman.default_profile == 'primary', 'Init profile not primary'
@@ -95,7 +62,9 @@ def test_pman_init():
 def test_pman_create():
 	'''Tests ProfileManager's create() method'''
 	profile_test_folder = setup_test('pman_create')
-	pman = ProfileManager(profile_test_folder)
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), "test_pman_create: load_profiles failed"
 
 	# Creation tests: empty name (fail), existing profile, new profile
 	status = pman.create_profile(None)
@@ -110,7 +79,9 @@ def test_pman_create():
 def test_pman_delete():
 	'''Tests ProfileManager's delete() method'''
 	profile_test_folder = setup_test('pman_delete')
-	pman = ProfileManager(profile_test_folder)
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), "test_pman_delete: load_profiles failed"
 
 	# Deletion tests: empty name (fail), existing profile, nonexistent profile
 	status = pman.create_profile('secondary')
@@ -128,7 +99,9 @@ def test_pman_delete():
 def test_pman_rename():
 	'''Tests ProfileManager's rename() method'''
 	profile_test_folder = setup_test('pman_rename')
-	pman = ProfileManager(profile_test_folder)
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), "test_pman_rename: load_profiles failed"
 
 	# Rename tests: empty old name (fail), empty new name (fail), old name == new name, missing old
 	# name profile, existing new name profile, successful rename
@@ -153,7 +126,9 @@ def test_pman_rename():
 def test_pman_activate():
 	'''Tests ProfileManager's activate() method'''
 	profile_test_folder = setup_test('pman_activate')
-	pman = ProfileManager(profile_test_folder)
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), "test_pman_activate: load_profiles failed"
 
 	# Activate tests: empty name (fail), nonexistent name, successful call 
 	status = pman.create_profile('secondary')
@@ -167,3 +142,11 @@ def test_pman_activate():
 	
 	status = pman.activate_profile('secondary')
 	assert not status.error(), "activate_profile: failed to activate profile"
+
+if __name__ == '__main__':
+	test_profile_dbinit()
+	test_pman_init()
+	test_pman_create()
+	test_pman_delete()
+	test_pman_rename()
+	test_pman_activate()
