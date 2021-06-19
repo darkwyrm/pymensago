@@ -98,9 +98,10 @@ class UUID:
 	def is_empty(self) -> bool:
 		return self.value == ''
 	
-	def generate(self) -> None:
+	def generate(self) -> str:
 		'''Generates a random (v4) UUID and assigns it to the instance'''
 		self.value = str(uuid.uuid4())
+		return self.value
 
 	def set(self, obj) -> str:
 		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
