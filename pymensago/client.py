@@ -2,7 +2,6 @@
 Mensago client'''
 from pymensago.utils import MAddress
 import socket
-import uuid
 
 from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
 
@@ -10,8 +9,8 @@ import pymensago.auth as auth
 import pymensago.iscmds as iscmds
 import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
+import pymensago.userprofile as profile
 from pymensago.encryption import Password, EncryptionPair
-from pymensago.userprofile import Profile, ProfileManager
 from pymensago.workspace import Workspace
 
 class MensagoClient:
@@ -21,9 +20,13 @@ class MensagoClient:
 	def __init__(self, profile_folder=''):
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
-		self.pman = ProfileManager(profile_folder)
-		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
+		self.pman = profile.profman
+		self.pman.load_profiles(profile_folder)
 		self.login_active = False
+		
+		# This unusual construct is because if the profile manager is given an empty profile folder
+		# path, it defaults to a predetermined location
+		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
 
 	def activate_profile(self, name) -> RetVal:
 		'''Activates the specified profile'''
@@ -54,9 +57,6 @@ class MensagoClient:
 		self.login_active = False
 		self.conn.disconnect()
 
-	def get_profile_manager(self) -> ProfileManager:
-		return self.pman
-	
 	def login(self, address: MAddress) -> RetVal:
 		'''Logs into a server. NOTE: not the same as connecting to one. At the same time, if no 
 		connection is established, login() will also create the connection.'''

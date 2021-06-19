@@ -1,6 +1,7 @@
 *.pyc
 .vscode/*
 tests/unit/testfiles/*
+tests/integration/testfiles/*
 .cache/*
 testcards/*
 pymensago.egg-info/*
