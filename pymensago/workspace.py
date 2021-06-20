@@ -98,9 +98,16 @@ class Workspace:
 		if results:
 			return RetVal(ErrExists, self.wid.as_string())
 		
-		cursor.execute('''INSERT INTO workspaces(wid,domain,password,pwhashtype,type)
-			VALUES(?,?,?,?,?)''', 
-			(self.wid.as_string(), self.domain.as_string(), pw.hashstring, pw.hashtype, self.type))
+		if self.uid.is_valid():
+			cursor.execute('''INSERT INTO workspaces(wid,userid,domain,password,pwhashtype,type)
+				VALUES(?,?,?,?,?,?)''', 
+				(self.wid.as_string(), self.uid.as_string(), self.domain.as_string(), 
+					pw.hashstring, pw.hashtype, self.type))
+		else:
+			cursor.execute('''INSERT INTO workspaces(wid,domain,password,pwhashtype,type)
+				VALUES(?,?,?,?,?)''', 
+				(self.wid.as_string(), self.domain.as_string(), pw.hashstring, pw.hashtype, 
+					self.type))
 		self.db.commit()
 		return RetVal()
 
