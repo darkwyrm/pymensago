@@ -37,11 +37,6 @@ class Workspace:
 		self.domain = server
 		self.pw = pw
 
-		# Add workspace
-		status = self.add_to_db(pw)
-		if status.error():
-			return status
-		
 		address = wid.as_string() + '/' + server.as_string()
 
 		# Generate user's encryption keys
