@@ -12,6 +12,7 @@ from retval import RetVal
 
 # pylint: disable=import-error
 import pymensago.auth as auth
+from pymensago.client import MensagoClient
 from pymensago.config import load_server_config
 from pymensago.encryption import Password, EncryptionPair, SigningPair, FolderMapping, SecretKey
 import pymensago.keycard as keycard
@@ -276,6 +277,8 @@ def reset_workspace_dir(config: dict):
 def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	'''Creates the client-side profile for the administrator account'''
 
+	config['profile_folder'] = profile_folder
+
 	profman = userprofile.profman
 	status = profman.load_profiles(profile_folder)
 	assert not status.error(), f"{funcname()}(): Failed to init profile folder {profile_folder}"
@@ -290,6 +293,7 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	# admin and add it to the primary profile.
 	
 	password = Password('Linguini2Pegboard*Album')
+	config['admin_password'] = password
 
 	# In order to have consistent keys for debugging and testing purposes, we are going to more
 	# or less reimplement Workspace.generate() here.'
@@ -378,9 +382,6 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Finishes setting up the admin account by registering it, logging in, and uploading a 
 	root keycard entry'''
 	
-	password = Password('Linguini2Pegboard*Album')
-	config['admin_password'] = password
-	
 	devpair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
@@ -388,7 +389,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	config['admin_devpair'] = devpair
 
 	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), config['admin_regcode'], 
-		password.hashstring, devpair)
+		config['admin_password'].hashstring, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
 	devid = utils.UUID(status['devid'])
 	config['admin_devid'] = devid
@@ -396,7 +397,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, password.hashstring)
+	status = iscmds.password(conn, config['admin_password'].hashstring)
 	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, devid, devpair)
