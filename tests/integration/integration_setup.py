@@ -334,7 +334,7 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	config['admin_folder'] = keys['folder']
 
 	for k,v in keys.items():
-		status = auth.add_key(profile.db, v, address)
+		status = auth.add_key(profile.db, v, address, k)
 		assert not status.error(), f"{funcname()}(): Failed to add {k} key to db"
 	
 	# Add folder mappings

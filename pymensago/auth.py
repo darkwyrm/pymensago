@@ -117,7 +117,7 @@ def get_session_private_key(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	return RetVal().set_value('key', results[0])
 
 
-def add_key(db: sqlite3.Connection, key: CryptoKey, address: str) -> RetVal:
+def add_key(db: sqlite3.Connection, key: CryptoKey, address: str, category='') -> RetVal:
 	'''Adds an encryption key to a workspace.
 	Parameters:
 	key: CryptoKey from encryption module
@@ -134,21 +134,21 @@ def add_key(db: sqlite3.Connection, key: CryptoKey, address: str) -> RetVal:
 	
 	if key.enctype == 'XSALSA20':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,algorithm)
-			VALUES(?,?,?,?,?,?)''', (key.pubhash, address, 'symmetric', '',
+			VALUES(?,?,?,?,?,?)''', (key.pubhash, address, 'symmetric', category,
 				key.get_key(), key.enctype))
 		db.commit()
 		return RetVal()
 	
 	if key.enctype == 'CURVE25519':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
-			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'asymmetric', '',
+			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'asymmetric', category,
 				key.private.as_string(), key.public.as_string(), key.enctype))
 		db.commit()
 		return RetVal()
 	
 	if key.enctype == 'ED25519':
 		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
-			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'signing', '',
+			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'signing', category,
 				key.private.as_string(), key.public.as_string(), key.enctype))
 		db.commit()
 		return RetVal()
