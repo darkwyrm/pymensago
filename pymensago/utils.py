@@ -190,7 +190,7 @@ class MAddress:
 		return RetVal()
 
 	def __str__(self) -> str:
-		return self.id.as_string() + '/' + self.domain.as_string
+		return self.id.as_string() + '/' + self.domain.as_string()
 	
 	def is_valid(self) -> bool:
 		return self.id_type in [1,2] and self.id.is_valid() and self.domain.is_valid()
@@ -199,7 +199,7 @@ class MAddress:
 		return self.id.is_empty() and self.domain.is_empty()
 
 	def as_string(self) -> str:
-		return self.id.as_string() + '/' + self.domain.as_string
+		return self.id.as_string() + '/' + self.domain.as_string()
 	
 
 def validate_domain(indata: str) -> bool:

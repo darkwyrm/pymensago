@@ -151,7 +151,7 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		regdata = iscmds.regcode(self.conn, str(address), regcode, pw.hashstring, )
+		regdata = iscmds.regcode(self.conn, address, regcode, pw.hashstring, devpair)
 		self.conn.disconnect()
 		if regdata.error():
 			return regdata
@@ -162,7 +162,7 @@ class MensagoClient:
 					.set_value('status', 300)
 
 		w = Workspace(profile.db, profile.path)
-		status = w.generate(profile, address.domain, regdata['wid'], pw)
+		status = w.generate(address.id, address.domain, regdata['wid'], pw)
 		if status.error():
 			return status
 

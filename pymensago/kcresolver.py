@@ -200,7 +200,7 @@ def get_server_config(domain: Domain) -> RetVal:
 
 	# TODO: POSTDEMO: Implement get_server_config for non-localhost domains
 
-	if domain.endswith('example.com'):
+	if domain.value.endswith('example.com'):
 		config = load_server_config()
 
 		return RetVal().set_values({

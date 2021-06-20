@@ -188,7 +188,7 @@ class Profile:
 		
 		saved_db = w.db
 		w.db = self.db
-		status = w.add_to_db()
+		status = w.add_to_db(w.pw)
 		if status.error():
 			w.db = saved_db
 		return status
