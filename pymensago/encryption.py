@@ -412,6 +412,7 @@ class SecretKey (CryptoKey):
 		if key:
 			if type(key).__name__ != 'CryptoString':
 				raise TypeError
+			self.enctype = key.prefix
 			self.key = key
 		else:
 			self.enctype = 'XSALSA20'
