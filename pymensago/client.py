@@ -1,5 +1,6 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
+from pycryptostring import CryptoString
 from pymensago.utils import Domain, MAddress
 import socket
 
@@ -64,11 +65,11 @@ class MensagoClient:
 		if not self.conn.is_connected():
 			self.connect(address.domain)
 		
-		record = kcresolver.get_mgmt_record(address.domain)
+		record = kcresolver.get_mgmt_record(address.domain.as_string())
 		if record.error():
 			return record
 
-		status = iscmds.login(self.conn, address.id, record['pvk'])
+		status = iscmds.login(self.conn, address.id, CryptoString(record['pvk']))
 		if not status.error():
 			self.login_active = True
 		return status

@@ -112,11 +112,14 @@ class ServerConnection:
 
 	def is_connected(self) -> bool:
 		'''Returns whether or not the instance is connected to a server'''
-		return bool(self.socket is None)
+		return not bool(self.socket is None)
 
 	def disconnect(self) -> RetVal:
 		'''Disconnects by sending a QUIT command to the server'''
-		return self.send_message({'Action':'QUIT','Data':{}})
+		status = self.send_message({'Action':'QUIT','Data':{}})
+		if not status.error():
+			self.socket = None
+		return status
 
 	def send_message(self, command : dict) -> RetVal:
 		'''Sends a message to the server with command sent as JSON data'''
