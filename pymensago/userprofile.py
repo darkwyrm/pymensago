@@ -222,6 +222,21 @@ class Profile:
 			cursor.execute(sqlcmd)
 		self.db.commit()
 		return RetVal().set_value('connection', self.db)
+	
+	def resolve_address(self, address: utils.MAddress) -> RetVal:
+		'''Resolves a Mensago address and returns a workspace ID in the field 'wid'''
+
+		if address.id_type == 1:
+			return RetVal().set_value('wid', address.id.as_string())
+		
+		cursor = self.db.cursor()
+		cursor.execute("SELECT wid FROM workspaces WHERE userid=? AND domain=?", 
+			(address.id.as_string(), address.domain.as_string()))
+		results = cursor.fetchone()
+		if not results or not results[0]:
+			return RetVal(ErrNotFound)
+
+		return RetVal().set_value('wid', utils.UUID(results[0]))
 
 
 class ProfileManager:
