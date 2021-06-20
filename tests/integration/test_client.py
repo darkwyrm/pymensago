@@ -53,11 +53,13 @@ def test_login():
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
 	status = init_admin(client.conn, dbdata)
 	assert not status.error(), f"{funcname()}(): Couldn't init admin"
-
-	# assert not client.is_logged_in(), f"{funcname()}(): Not logged in, but says so"
-	# status = client.login(utils.MAddress('admin/example.com'))
-	# assert not status.error(), f"{funcname()}(): Couldn't log admin in"
-	# assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
+	
+	status = client.disconnect()
+	status = client.connect(utils.Domain('example.com'))
+	assert not client.is_logged_in(), f"{funcname()}(): Not logged in, but says so"
+	status = client.login(utils.MAddress('admin/example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't log admin in"
+	assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
 
 
 def test_register():
@@ -107,7 +109,7 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	test_connect()
+	# test_connect()
 	test_login()
-	test_register()
-	test_regcode()
+	# test_register()
+	# test_regcode()
