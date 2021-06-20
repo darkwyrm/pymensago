@@ -259,6 +259,10 @@ class MensagoClient:
 		if status.error():
 			return status
 		
+		status = profile.set_identity(w)
+		if status.error():
+			return status
+
 		address = utils.WAddress()
 		address.id = regdata['wid']
 		address.domain = regdata['domain']

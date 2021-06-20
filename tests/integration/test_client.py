@@ -9,7 +9,7 @@ import pymensago.utils as utils
 from tests.integration.integration_setup import setup_admin_profile, setup_test, init_server, \
 	load_server_config, init_admin, funcname
 
-def setup_profile(name):
+def setup_profile_base(name):
 	'''Creates a new profile folder hierarchy'''
 	test_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'testfiles')
 	if not os.path.exists(test_folder):
@@ -28,7 +28,7 @@ def setup_profile(name):
 
 def test_connect():
 	'''Tests basic client connectivity'''
-	test_folder = setup_profile('test_client_connect')
+	test_folder = setup_profile_base('test_client_connect')
 	client = MensagoClient(test_folder)
 
 	assert not client.is_connected(), f"{funcname()}(): Not connected, but says so"
@@ -41,7 +41,7 @@ def test_connect():
 
 def test_login():
 	load_server_config()
-	test_folder = setup_profile('test_client_login')
+	test_folder = setup_profile_base('test_client_login')
 	client = MensagoClient(test_folder)
 
 	pgdb = setup_test()
@@ -49,10 +49,10 @@ def test_login():
 	status = setup_admin_profile(test_folder, dbdata)
 	assert not status.error(), f"{funcname()}(): Couldn't set up admin profile"
 
-	# status = client.connect(utils.Domain('example.com'))
-	# assert not status.error(), f"{funcname()}(): Couldn't connect to server"
-	# status = init_admin(client.conn, dbdata)
-	# assert not status.error(), f"{funcname()}(): Couldn't init admin"
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
+	status = init_admin(client.conn, dbdata)
+	assert not status.error(), f"{funcname()}(): Couldn't init admin"
 
 	# assert not client.is_logged_in(), f"{funcname()}(): Not logged in, but says so"
 	# status = client.login(utils.MAddress('admin/example.com'))
@@ -65,23 +65,26 @@ def test_register():
 	if serverdbdata['global']['registration'] not in ['network', 'public']:
 		return
 	
-	test_folder = setup_profile('test_client_register')
-	client = MensagoClient(test_folder)
-
-	pgdb = setup_test()
-	init_server(pgdb)
-
-	status = client.register_account('example.com', 'MyS3cretPassw*rd', utils.UserID('csimons'))
-	assert not status.error(), f"test_register_account: failed to register test account: {status.info()}"
-
-
-def test_regcode():
-	load_server_config()
-	test_folder = setup_profile('test_client_regcode')
+	test_folder = setup_profile_base('test_client_register')
 	client = MensagoClient(test_folder)
 
 	pgdb = setup_test()
 	dbdata = init_server(pgdb)
+
+	status = client.register_account(utils.Domain('example.com'), 'MyS3cretPassw*rd', 
+		utils.UserID('csimons'))
+	assert not status.error(), \
+		f"test_register_account: failed to register test account: {status.info()}"
+
+
+def test_regcode():
+	load_server_config()
+	test_folder = setup_profile_base('test_client_regcode')
+	client = MensagoClient(test_folder)
+
+	pgdb = setup_test()
+	dbdata = init_server(pgdb)
+	status = setup_admin_profile(test_folder, dbdata)
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
@@ -104,7 +107,7 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	# test_connect()
+	test_connect()
 	test_login()
-	# test_register()
-	# test_regcode()
+	test_register()
+	test_regcode()
