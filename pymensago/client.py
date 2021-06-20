@@ -10,7 +10,7 @@ import pymensago.auth as auth
 import pymensago.iscmds as iscmds
 import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
-import pymensago.userprofile as profile
+import pymensago.userprofile as userprofile
 import pymensago.utils as utils
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.workspace import Workspace
@@ -22,7 +22,7 @@ class MensagoClient:
 	def __init__(self, profile_folder=''):
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
-		self.pman = profile.profman
+		self.pman = userprofile.profman
 		self.pman.load_profiles(profile_folder)
 		self.login_active = False
 		
@@ -69,7 +69,23 @@ class MensagoClient:
 		if record.error():
 			return record
 
-		status = iscmds.login(self.conn, address.id, CryptoString(record['pvk']))
+		if address.id_type == 1:
+			status = iscmds.login(self.conn, address.id, CryptoString(record['ek']))
+		else:
+			status = userprofile.profman.get_active_profile()
+			if status.error():
+				return status
+			profile = status['profile']
+
+			status = profile.resolve_address(address)
+			if status.error():
+				return status
+
+			status = iscmds.login(self.conn, status['wid'], CryptoString(record['ek']))
+
+		# status = iscmds.password(conn, password.hashstring)
+		# status = iscmds.device(conn, devid, keypair)
+
 		if not status.error():
 			self.login_active = True
 		return status
