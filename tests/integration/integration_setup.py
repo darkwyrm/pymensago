@@ -1,7 +1,6 @@
 from glob import glob
+import inspect
 import os.path
-import platform
-import re
 import shutil
 import sys
 import time
@@ -373,3 +372,7 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	config['user_password'] = password
 
 	return RetVal()
+
+def funcname() -> str: 
+    frame = inspect.currentframe()
+    return inspect.getframeinfo(frame).function

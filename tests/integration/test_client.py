@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 
-from integration_setup import setup_test, init_server, load_server_config, init_admin
+from integration_setup import setup_test, init_server, load_server_config, init_admin, funcname
 from pymensago.client import MensagoClient
 import pymensago.iscmds as iscmds
 from pymensago.encryption import Password
@@ -36,6 +36,18 @@ def test_connect():
 	client.disconnect()
 
 
+def test_login():
+	load_server_config()
+	test_folder = setup_profile('test_client_login')
+	client = MensagoClient(test_folder)
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+
+	status = client.connect(utils.Domain('example.com'))
+	status = init_admin(client.conn, dbdata)
+
+
 def test_register():
 	serverdbdata = load_server_config()
 	if serverdbdata['global']['registration'] not in ['network', 'public']:
@@ -52,7 +64,7 @@ def test_register():
 
 
 def test_regcode():
-	serverdbdata = load_server_config()
+	load_server_config()
 	test_folder = setup_profile('test_client_regcode')
 	client = MensagoClient(test_folder)
 
@@ -60,16 +72,18 @@ def test_regcode():
 	dbdata = init_server(dbconn)
 
 	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
 	status = init_admin(client.conn, dbdata)
+	assert not status.error(), f"{funcname()}(): Couldn't init admin"
 
 	userid = utils.UserID('33333333-3333-3333-3333-333333333333')
 	status = iscmds.preregister(client.conn, userid, utils.UserID('csimons'),
 		utils.Domain('example.com'))
-	assert not status.error(), "init_user(): uid preregistration failed"
+	assert not status.error(), f"{funcname()}(): user preregistration failed"
 	assert status['domain'].as_string() == 'example.com' and \
 		'wid' in status and \
 		'regcode' in status and	\
-		status['uid'].as_string() == 'csimons', "init_user(): failed to return expected data"
+		status['uid'].as_string() == 'csimons', f"{funcname()}(): failed to return expected data"
 
 	regdata = status
 	address = utils.MAddress('csimons/example.com')
@@ -78,6 +92,6 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	# test_connect()
-	# test_register()
+	test_connect()
+	test_register()
 	test_regcode()
