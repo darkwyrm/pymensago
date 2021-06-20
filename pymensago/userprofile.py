@@ -114,6 +114,9 @@ class Profile:
 		self.domain = ''
 		self.db = None
 
+		if os.path.exists(os.path.join(self.path, 'default.txt')):
+			self.default = True
+
 	def activate(self) -> RetVal:
 		'''Connects the profile to its associated database'''
 
@@ -250,18 +253,19 @@ class ProfileManager:
 		self.profiles = list()
 		self.default_profile = ''
 		for item in items:
-			if not os.path.isdir(item):
+			itempath = os.path.join(self.profile_folder, item)
+			if not os.path.isdir(itempath):
 				continue
 			
-			profile = Profile(item)
+			profile = Profile(itempath)
 			self.profiles.append(profile)
 			if profile.is_default():
 				if self.default_profile:
-					self.default_profile = profile.name
-				else:
 					# If we have more than profile marked as default, the first one encountered
 					# retains that status
 					profile.set_default(False)
+				else:
+					self.default_profile = profile.name
 
 		if not self.get_profiles():
 			self.error_state = self.create_profile('primary')
