@@ -2,10 +2,11 @@
 
 import base64
 import sqlite3
+from pycryptostring import CryptoString
 
 from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
-from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, Password, \
+from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, SigningPair, Password, \
 	ErrUnsupportedAlgorithm
 from pymensago.utils import WAddress, UUID
 
@@ -97,24 +98,17 @@ def remove_device_session(db, devid: UUID) -> RetVal:
 	return RetVal()
 
 
-def get_session_public_key(db: sqlite3.Connection, addr: WAddress) -> RetVal:
-	'''Returns the public key for the device for a session'''
+def get_session_keypair(db: sqlite3.Connection, addr: WAddress) -> RetVal:
+	'''Returns the device key for a server session'''
 	cursor = db.cursor()
-	cursor.execute("SELECT public_key FROM sessions WHERE address=?", (addr.as_string(),))
+	cursor.execute("SELECT public_key,private_key FROM sessions WHERE address=?", 
+		(addr.as_string(),))
 	results = cursor.fetchone()
-	if not results or not results[0]:
+	if not results or not (results[0] and results[1]):
 		return RetVal(ErrNotFound)
-	return RetVal().set_value('key', results[0])
-
-
-def get_session_private_key(db: sqlite3.Connection, addr: WAddress) -> RetVal:
-	'''Returns the private key for the device for a session'''
-	cursor = db.cursor()
-	cursor.execute("SELECT private_key FROM sessions WHERE address=?", (addr.as_string(),))
-	results = cursor.fetchone()
-	if not results or not results[0]:
-		return RetVal(ErrNotFound)
-	return RetVal().set_value('key', results[0])
+	
+	keypair = EncryptionPair(CryptoString(results[0]), CryptoString(results[1]))
+	return RetVal().set_value('keypair', keypair)
 
 
 def add_key(db: sqlite3.Connection, key: CryptoKey, address: str, category='') -> RetVal:
@@ -197,12 +191,19 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	if results[1] == 'asymmetric':
 		public = base64.b85decode(results[4])
 		private = base64.b85decode(results[3])
-		key = EncryptionPair(public,	private)
+		key = EncryptionPair(public,private)
 		return RetVal().set_value('key', key)
 	
 	if results[1] == 'symmetric':
 		private = base64.b85decode(results[3])
 		key = SecretKey(private)
 		return RetVal().set_value('key', key)
+
+	if results[1] == 'signing':
+		public = base64.b85decode(results[4])
+		private = base64.b85decode(results[3])
+		key = SigningPair(public,private)
+		return RetVal().set_value('key', key)
 	
-	return RetVal(ErrBadValue, "Key must be 'asymmetric' or 'symmetric'")
+
+	return RetVal(ErrBadValue, "Key must be 'asymmetric', 'symmetric', or 'signing'")
