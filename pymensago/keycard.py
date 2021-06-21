@@ -679,16 +679,22 @@ class OrgEntry(EntryBase):
 		out['encrypt.private'] = ekey.get_private_key()
 		out['encrypt.privhash'] = ekey.get_private_hash()
 		
+
+		new_entry.fields['Primary-Verification-Key'] = skey.get_public_key()
+		new_entry.fields['Encryption-Key'] = ekey.get_public_key()
+
 		if rotate_optional:
 			altskey = SigningPair()
 			out['altsign.public'] = altskey.get_public_key()
 			out['altsign.pubhash'] = altskey.get_public_hash()
 			out['altsign.private'] = altskey.get_private_key()
 			out['altsign.privhash'] = altskey.get_private_hash()
+			new_entry.fields['Secondary-Verification-Key'] = altskey.get_public_key()
 		else:
 			out['altsign.public'] = self.fields['Primary-Verification-Key']
 			out['altsign.pubhash'] = blake2hash(self.fields['Primary-Verification-Key'].encode())
 			out['altsign.private'] = ''
+			new_entry.fields['Secondary-Verification-Key'] = self.fields['Primary-Verification-Key']
 
 		status = new_entry.sign(key, 'Custody')
 		if status.error():
