@@ -2,7 +2,6 @@ from glob import glob
 import inspect
 import os.path
 import shutil
-import sqlite3
 import sys
 import time
 
@@ -171,9 +170,6 @@ def init_server(dbconn) -> dict:
 	cur.close()
 	dbconn.commit()	
 	cur = dbconn.cursor()
-
-	# Sleep for 1 second in order for the new entry's timestamp to be useful
-	time.sleep(1)
 
 	# Chain a new entry to the root
 
