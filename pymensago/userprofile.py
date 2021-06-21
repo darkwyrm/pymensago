@@ -246,6 +246,7 @@ class ProfileManager:
 		self.profiles = list()
 		self.default_profile = ''
 		self.active_index = -1
+		self.error_state = RetVal()
 
 	def load_profiles(self, profile_path='') -> RetVal:
 		'''Loads profile information from the specified JSON file stored in the top level of the 
