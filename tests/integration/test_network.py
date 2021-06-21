@@ -1,6 +1,7 @@
 from pycryptostring import CryptoString
 
-from .integration_setup import setup_test, init_server, init_admin, init_user
+from tests.integration.integration_setup import setup_test, init_server, init_admin, init_user, \
+	setup_admin_profile, setup_profile_base
 from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
@@ -11,6 +12,8 @@ def test_addentry():
 	'''Tests the addentry() command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_addentry')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -37,6 +40,8 @@ def test_devkey():
 	'''Tests the devkey() command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_devkey')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -61,6 +66,8 @@ def test_getwid():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_getwid')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -81,7 +88,9 @@ def test_iscurrent():
 	'''Tests the iscurrent() command'''
 
 	dbconn = setup_test()
-	init_server(dbconn)
+	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_iscurrent')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -98,6 +107,8 @@ def test_preregister_regcode():
 	'''Test the preregister and regcode commands'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_preregister_regcode')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -148,7 +159,9 @@ def test_register():
 		return
 
 	dbconn = setup_test()
-	init_server(dbconn)
+	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_register')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -166,6 +179,8 @@ def test_reset_password():
 	'''Tests password reset code'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_reset_password')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -211,6 +226,8 @@ def test_set_password():
 	'''Test the SETPASSWORD command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_set_password')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -238,6 +255,8 @@ def test_set_status():
 	'''Test the SETSTATUS command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_setstatus')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -259,6 +278,8 @@ def test_unregister():
 	'''Tests the unregister() command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_unregister')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -289,13 +310,13 @@ def test_unregister():
 
 
 if __name__ == '__main__':
-	# test_addentry()
-	# test_connect()
-	# test_devkey()
-	# test_iscurrent()
+	test_addentry()
+	test_connect()
+	test_devkey()
+	test_iscurrent()
 	test_preregister_regcode()
-	# test_register()
-	# test_reset_password()
-	# test_set_password()
-	# test_set_status()
-	# test_unregister()
+	test_register()
+	test_reset_password()
+	test_set_password()
+	test_set_status()
+	test_unregister()

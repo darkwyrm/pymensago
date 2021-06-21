@@ -7,23 +7,7 @@ import pymensago.iscmds as iscmds
 from pymensago.encryption import Password
 import pymensago.utils as utils
 from tests.integration.integration_setup import setup_admin_profile, setup_test, init_server, \
-	load_server_config, init_admin, funcname
-
-def setup_profile_base(name):
-	'''Creates a new profile folder hierarchy'''
-	test_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'testfiles')
-	if not os.path.exists(test_folder):
-		os.mkdir(test_folder)
-
-	profiletest_folder = os.path.join(test_folder, name)
-	while os.path.exists(profiletest_folder):
-		try:
-			shutil.rmtree(profiletest_folder)
-		except:
-			print("Waiting a second for test folder to unlock")
-			time.sleep(1.0)
-	os.mkdir(profiletest_folder)
-	return profiletest_folder
+	load_server_config, init_admin, funcname, setup_profile_base
 
 
 def test_connect():

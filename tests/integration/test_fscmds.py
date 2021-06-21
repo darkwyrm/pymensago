@@ -5,7 +5,8 @@ import uuid
 
 from retval import RetVal
 
-from .integration_setup import setup_test, init_server, init_admin, reset_workspace_dir
+from tests.integration.integration_setup import setup_test, init_server, init_admin, \
+	reset_workspace_dir, setup_profile_base, setup_admin_profile
 import pymensago.serverconn as serverconn
 import pymensago.utils as utils
 
@@ -36,6 +37,8 @@ def test_copy():
 	
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_copy')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -67,6 +70,8 @@ def test_delete():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_delete')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -95,6 +100,8 @@ def test_download():
 	
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_download')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -125,6 +132,8 @@ def test_exists():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_exists')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -153,6 +162,8 @@ def test_getquotainfo():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_getquotainfo')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -180,6 +191,8 @@ def test_listfiles():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_listfiles')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -217,6 +230,8 @@ def test_listdirs():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_dirs')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -253,6 +268,8 @@ def test_mkdir():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_mkdir')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -275,6 +292,8 @@ def test_move():
 	
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_move')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -306,6 +325,8 @@ def test_rmdir():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_rmdir')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -328,6 +349,8 @@ def test_select():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_select')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -350,6 +373,8 @@ def test_setquota():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_setquota')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
@@ -370,6 +395,8 @@ def test_upload():
 	'''Tests the UPLOAD command'''
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_upload')
+	status = setup_admin_profile(test_folder, dbdata)
 
 	reset_workspace_dir(dbdata)
 
