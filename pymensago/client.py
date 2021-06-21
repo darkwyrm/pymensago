@@ -1,7 +1,7 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
 from pycryptostring import CryptoString
-from pymensago.utils import Domain, MAddress
+from pymensago.utils import Domain, MAddress, WAddress
 import socket
 
 from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
@@ -69,26 +69,43 @@ class MensagoClient:
 		if record.error():
 			return record
 
+		status = userprofile.profman.get_active_profile()
+		if status.error():
+			return status
+		profile = status['profile']
+		
+		waddr = WAddress()
 		if address.id_type == 1:
-			status = iscmds.login(self.conn, address.id, CryptoString(record['ek']))
+			waddr.id.set(waddr.id.as_string())
 		else:
-			status = userprofile.profman.get_active_profile()
-			if status.error():
-				return status
-			profile = status['profile']
-
 			status = profile.resolve_address(address)
 			if status.error():
 				return status
+			
+			waddr.id = status['wid']
+		waddr.domain = address.domain
+		
+		if not status.is_valid():
+			return RetVal(ErrBadValue, 'bad resolved workpace ID')
 
-			status = iscmds.login(self.conn, status['wid'], CryptoString(record['ek']))
+		status = iscmds.login(self.conn, waddr.id, CryptoString(record['ek']))
+		if status.error():
+			return status
+		
+		status = auth.get_credentials(profile.db, waddr)
+		if status.error():
+			return status
+		
+		status = iscmds.password(self.conn, status['password'].hashstring)
+		if status.error():
+			return status
+		
+		# status = iscmds.device(self.conn, devid, keypair)
 
-		# status = iscmds.password(conn, password.hashstring)
-		# status = iscmds.device(conn, devid, keypair)
-
-		if not status.error():
-			self.login_active = True
-		return status
+		# if not status.error():
+		# 	self.login_active = True
+		# return status
+		return RetVal(ErrUnimplemented, 'client login() is incomplete. Sorry!')
 
 	def is_logged_in(self) -> bool:
 		'''Returns true if an active login session has been completed'''
