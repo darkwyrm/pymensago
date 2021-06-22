@@ -1,4 +1,5 @@
 '''The userprofile module handles user profile management'''
+import json
 import os
 import pathlib
 import platform
@@ -113,9 +114,15 @@ class Profile:
 		self.wid = ''
 		self.domain = ''
 		self.db = None
+		self.devid = utils.UUID()
 
 		if os.path.exists(os.path.join(self.path, 'default.txt')):
 			self.default = True
+		
+		status = self.load_config()
+		if status.error():
+			self.devid.generate()
+			self.save_config()
 
 	def activate(self) -> RetVal:
 		'''Connects the profile to its associated database'''
@@ -132,6 +139,41 @@ class Profile:
 			return RetVal().set_value('connection', self.db)
 		
 		return self.reset_db()
+
+	def load_config(self) -> RetVal:
+		'''Loads the config file for the profile'''
+
+		config_path = os.path.join(self.path, 'config.json')
+		if os.path.exists(config_path):
+			filedata = dict()
+			with open(config_path, 'r') as fhandle:
+				try:
+					filedata = json.load(fhandle)
+				except Exception as e:
+					return RetVal().wrap_exception(e)
+			status = self.devid.set(filedata['Device-ID'])
+			if status.error():
+				return status
+		
+		return RetVal()
+	
+	def save_config(self) -> RetVal:
+		'''Saves the profile-specific configuration information to a file'''	
+		config_path = os.path.join(self.path, 'config.json')
+		if os.path.exists(config_path):
+			try:
+				os.unlink(config_path)
+			except Exception as e:
+				return RetVal().wrap_exception(e)
+		
+		filedata = { 'Driver-ID': self.devid }
+		with open(config_path, 'w') as fhandle:
+			try:
+				filedata = json.dump(filedata, fhandle)
+			except Exception as e:
+				return RetVal().wrap_exception(e)
+		
+		return RetVal()
 	
 	def deactivate(self):
 		'''Disconnects the profile from its associated database'''
