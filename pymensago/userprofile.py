@@ -32,10 +32,10 @@ _db_setup_cmds = [ '''
 	CREATE table "sessions"(
 		"address" TEXT NOT NULL,
 		"devid" TEXT NOT NULL,
-		"devname" TEXT,
-		"enctype" TEXT NOT NULL,
+		"devname" TEXT NOT NULL,
 		"public_key" TEXT NOT NULL,
-		"private_key" TEXT NOT NULL
+		"private_key" TEXT NOT NULL,
+		"os" TEXT NOT NULL
 	);''', '''
 	CREATE table "keys"(
 		"keyid" TEXT NOT NULL UNIQUE,
