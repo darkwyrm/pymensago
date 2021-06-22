@@ -401,11 +401,14 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	)
 	config['admin_devpair'] = devpair
 
+	status = userprofile.profman.get_active_profile()
+	profile = None
+	if not status.error():
+		profile = status['profile']
+	
 	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), config['admin_regcode'], 
-		config['admin_password'].hashstring, devpair)
+		config['admin_password'].hashstring, profile.devid, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
-	devid = utils.UUID(status['devid'])
-	config['admin_devid'] = devid
 
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
@@ -413,7 +416,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	status = iscmds.password(conn, config['admin_password'].hashstring)
 	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
 
-	status = iscmds.device(conn, devid, devpair)
+	status = iscmds.device(conn, profile.devid, devpair)
 	assert not status.error(), "init_admin(): device phase failed: " \
 		f"{status.info()}"
 
@@ -454,13 +457,13 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		'regcode' in status and	\
 		status['uid'].as_string() == 'csimons', "init_user(): failed to return expected data"
 
+	devid = utils.UUID(status['devid'])
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
 	status = iscmds.regcode(conn, utils.MAddress('csimons/example.com'), regdata['regcode'], 
-		password.hashstring, devpair)
+		password.hashstring, devid, devpair)
 	assert not status.error(), "init_user(): uid regcode failed"
-	devid = utils.UUID(status['devid'])
 
 	config['user_wid'] = userid
 	config['user_uid'] = utils.UserID(regdata['uid'])

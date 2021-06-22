@@ -445,15 +445,12 @@ def preregister(conn: ServerConnection, wid: utils.UUID, uid: utils.UserID, doma
 
 
 def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: str, 
-	devpair: EncryptionPair) -> RetVal:
+	devid: utils.UUID, devpair: EncryptionPair) -> RetVal:
 	'''Finishes registration of a workspace'''
 	
 	if not address.is_valid():
 		return RetVal(ErrBadValue, 'bad address')
 	
-	devid = utils.UUID()
-	devid.generate()
-
 	request = {
 		'Action':'REGCODE',
 		'Data':{
@@ -487,8 +484,8 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 	})
 	
 
-def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
-			devicekey: CryptoString) -> RetVal:
+def register(conn: ServerConnection, uid: utils.UserID, pwhash: str, devid: utils.UUID,
+	devicekey: CryptoString) -> RetVal:
 	'''Creates an account on the server.'''
 	
 	if not uid.is_valid():
@@ -500,8 +497,6 @@ def register(conn: ServerConnection, uid: utils.UserID, pwhash: str,
 	# client keeps generating collisions, it should wait 3 seconds after 10 collisions to reduce 
 	# server load.
 	out = RetVal()
-	devid = utils.UUID()
-	devid.generate()
 	wid = utils.UUID()
 	response = dict()
 	tries = 1

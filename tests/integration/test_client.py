@@ -94,6 +94,6 @@ def test_regcode():
 
 if __name__ == '__main__':
 	# test_connect()
-	test_login()
-	# test_register()
+	# test_login()
+	test_register()
 	# test_regcode()

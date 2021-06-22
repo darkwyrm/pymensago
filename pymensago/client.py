@@ -85,7 +85,7 @@ class MensagoClient:
 			waddr.id = status['wid']
 		waddr.domain = address.domain
 		
-		if not status.is_valid():
+		if not waddr.is_valid():
 			return RetVal(ErrBadValue, 'bad resolved workpace ID')
 
 		status = iscmds.login(self.conn, waddr.id, CryptoString(record['ek']))
@@ -185,7 +185,7 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		regdata = iscmds.regcode(self.conn, address, regcode, pw.hashstring, devpair)
+		regdata = iscmds.regcode(self.conn, address, regcode, pw.hashstring, profile.devid, devpair)
 		self.conn.disconnect()
 		if regdata.error():
 			return regdata
@@ -273,10 +273,11 @@ class MensagoClient:
 			return status
 		
 		if userid:
-			regdata = iscmds.register(self.conn, userid, pw.hashstring, devpair.public)
+			regdata = iscmds.register(self.conn, userid, pw.hashstring, profile.devid, 
+				devpair.public)
 		else:
 			regdata = iscmds.register(self.conn, utils.UserID(utils.UUID().generate()), 
-				pw.hashstring, devpair.public)
+				pw.hashstring, profile.devid, devpair.public)
 
 		self.conn.disconnect()
 		if regdata.error():
