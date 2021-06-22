@@ -20,6 +20,7 @@ setup(
 	python_requires='>=3.5',
 	install_requires=[
 		# 'blake3>=0.1.7',
+		'distro>=1.5.0',
 		'PyNaCl>=1.3.0',
 		'jsonschema>=3.2.0',
 		'pillow>=8.2.0',
