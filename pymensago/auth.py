@@ -16,7 +16,7 @@ def get_credentials(db: sqlite3.Connection, addr: WAddress) -> RetVal:
 	'''Returns the stored login credentials for the requested wid'''
 	cursor = db.cursor()
 	cursor.execute('''SELECT password,pwhashtype FROM workspaces WHERE wid=? AND domain=?''',
-		(addr.id,addr.domain))
+		(addr.id.as_string(),addr.domain.as_string()))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
