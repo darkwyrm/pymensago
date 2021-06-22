@@ -9,6 +9,7 @@ import os
 import re
 import time
 
+# TODO: resolve blake3 under Windows
 # Temporarily disabled while building blake3 module on Windows is sorted out
 # import blake3
 import nacl.public
