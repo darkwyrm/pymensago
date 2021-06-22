@@ -154,6 +154,8 @@ class Profile:
 			status = self.devid.set(filedata['Device-ID'])
 			if status.error():
 				return status
+		else:
+			return RetVal(ErrNotFound, 'profile config file missing')
 		
 		return RetVal()
 	
