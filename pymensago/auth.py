@@ -1,9 +1,11 @@
 '''This module encapsulates authentication, credentials, and session management'''
 
 import base64
+import platform
 import sqlite3
-from pycryptostring import CryptoString
 
+import distro
+from pycryptostring import CryptoString
 from retval import ErrEmptyData, RetVal, ErrNotFound, ErrExists, ErrBadValue
 
 from pymensago.encryption import CryptoKey, SecretKey, EncryptionPair, SigningPair, Password, \
@@ -68,18 +70,20 @@ def add_device_session(db, address: WAddress, devid: UUID, devpair: EncryptionPa
 		return RetVal(ErrExists)
 	
 	cursor = db.cursor()
-	if devname:
-		cursor.execute('''INSERT INTO sessions(
-				address, devid, enctype, public_key, private_key, devname) 
-				VALUES(?,?,?,?,?,?)''',
-				(address.as_string(), devid.as_string(), devpair.enctype, devpair.public.as_string(), 
-				devpair.private.as_string(), devname))
-	else:
-		cursor.execute('''INSERT INTO sessions(
-				address, devid, enctype, public_key, private_key) 
-				VALUES(?,?,?,?,?)''',
-				(address.as_string(), devid.as_string(), devpair.enctype, devpair.public.as_string(), 
-				devpair.private.as_string()))
+	if not devname:
+		devname = platform.node().casefold()
+	
+	osname = platform.system().casefold()
+
+	# Use the name of the distro if running Linux
+	if osname == 'linux' and distro.id():
+		osname = distro.id().casefold()
+		
+	cursor.execute('''INSERT INTO sessions(
+			address, devid, devname, public_key, private_key, os) 
+			VALUES(?,?,?,?,?,?)''',
+			(address.as_string(), devid.as_string(), devname, devpair.public.as_string(), 
+			devpair.private.as_string(), osname))
 	db.commit()
 	return RetVal()
 
