@@ -44,9 +44,8 @@ def test_login():
 	status = client.connect(utils.Domain('example.com'))
 	assert not client.is_logged_in(), f"{funcname()}(): Not logged in, but says so"
 	status = client.login(utils.MAddress('admin/example.com'))
-	assert status.error() == ErrUnimplemented, f"{funcname()}(): out of sync with client code"
-	# assert not status.error(), f"{funcname()}(): Couldn't log admin in"
-	# assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
+	assert not status.error(), f"{funcname()}(): Couldn't log admin in"
+	assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
 
 
 def test_register():
@@ -97,6 +96,6 @@ def test_regcode():
 
 if __name__ == '__main__':
 	# test_connect()
-	# test_login()
-	test_register()
+	test_login()
+	# test_register()
 	# test_regcode()

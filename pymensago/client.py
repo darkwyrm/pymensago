@@ -99,13 +99,17 @@ class MensagoClient:
 		status = iscmds.password(self.conn, status['password'].hashstring)
 		if status.error():
 			return status
-		
-		# status = iscmds.device(self.conn, devid, keypair)
 
-		# if not status.error():
-		# 	self.login_active = True
-		# return status
-		return RetVal(ErrUnimplemented, 'client login() is incomplete. Sorry!')
+		status = auth.get_session_keypair(profile.db, waddr)
+		if status.error():
+			return status
+		devpair = status['keypair']
+
+		status = iscmds.device(self.conn, profile.devid, devpair)
+
+		if not status.error():
+			self.login_active = True
+		return status
 
 	def is_logged_in(self) -> bool:
 		'''Returns true if an active login session has been completed'''

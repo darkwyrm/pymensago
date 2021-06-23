@@ -410,6 +410,11 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		config['admin_password'].hashstring, profile.devid, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
 
+	waddr = utils.WAddress()
+	waddr.id = config['admin_wid']
+	waddr.domain = utils.Domain('example.com')
+	auth.add_device_session(profile.db, waddr, profile.devid, devpair)
+
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
 
