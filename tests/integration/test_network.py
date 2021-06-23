@@ -43,6 +43,10 @@ def test_devkey():
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_devkey')
 	status = setup_admin_profile(test_folder, dbdata)
+	
+	status = userprofile.profman.get_active_profile()
+	assert not status.error(), f"{funcname()}: failed to get active profile"
+	profile = status['profile']
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -56,7 +60,7 @@ def test_devkey():
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
 
-	status = iscmds.devkey(conn, dbdata['admin_devid'], dbdata['admin_devpair'], newdevpair)
+	status = iscmds.devkey(conn, profile.devid, dbdata['admin_devpair'], newdevpair)
 	assert not status.error(), f"test_devkey(): error returned: {status.info()}"
 
 	conn.disconnect()
@@ -126,7 +130,7 @@ def test_preregister_regcode():
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
 	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), dbdata['admin_regcode'],
-		password.hashstring, keypair)
+		password.hashstring, profile.devid, keypair)
 	assert not status.error(), f"{funcname()}: regcode failed: {status.info()}"
 
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
@@ -148,8 +152,10 @@ def test_preregister_regcode():
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
+	devid = utils.UUID()
+	devid.generate()
 	status = iscmds.regcode(conn, utils.MAddress('csimons/example.com'), regdata['regcode'], 
-		password.hashstring, dbdata['user_devid'], devpair)
+		password.hashstring, devid, devpair)
 	assert not status.error(), f"{funcname()}: uid regcode failed"
 
 	conn.disconnect()
@@ -167,6 +173,10 @@ def test_register():
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_register')
 	status = setup_admin_profile(test_folder, dbdata)
+	
+	status = userprofile.profman.get_active_profile()
+	assert not status.error(), f"{funcname()}: failed to get active profile"
+	profile = status['profile']
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -174,7 +184,8 @@ def test_register():
 	
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
-	status = iscmds.register(conn, utils.UserID('csimons'), password.hashstring, devpair.public)
+	status = iscmds.register(conn, utils.UserID('csimons'), password.hashstring, profile.devid, 
+		devpair.public)
 	assert not status.error(), f"test_register: failed to register test account: {status.info()}"
 
 	conn.disconnect()
@@ -204,7 +215,6 @@ def test_reset_password():
 	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), dbdata['admin_regcode'], 
 		password.hashstring, profile.devid, keypair)
 	assert not status.error(), f"test_reset_password(): regcode failed: {status.info()}"
-	devid = status['devid']
 
 	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
 	assert not status.error(), f"test_reset_password(): login phase failed: {status.info()}"
@@ -212,7 +222,7 @@ def test_reset_password():
 	status = iscmds.password(conn, password.hashstring)
 	assert not status.error(), f"test_reset_password(): password phase failed: {status.info()}"
 
-	status = iscmds.device(conn, devid, keypair)
+	status = iscmds.device(conn, profile.devid, keypair)
 	assert not status.error(), "test_reset_password(): device phase failed: " \
 		f"{status.info()}"
 

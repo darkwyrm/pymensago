@@ -457,7 +457,8 @@ def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		'regcode' in status and	\
 		status['uid'].as_string() == 'csimons', "init_user(): failed to return expected data"
 
-	devid = utils.UUID(status['devid'])
+	devid = utils.UUID()
+	devid.generate()
 	regdata = status
 	password = Password('MyS3cretPassw*rd')
 	devpair = EncryptionPair()
