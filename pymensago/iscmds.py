@@ -349,6 +349,7 @@ def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 		entry_strings.pop()
 	
 	card = Keycard()
+	card.type = 'Organization'
 	for entrystr in entry_strings:
 		if entrystr.startswith('----- BEGIN ORG ENTRY -----\r\n'):
 			entry = OrgEntry()

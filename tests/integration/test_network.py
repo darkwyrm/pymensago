@@ -50,10 +50,10 @@ def test_devkey():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_devkey(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
 
 	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_devkey(): init_admin failed: {status.info()}"
+	assert not status.error(), f"{funcname()}(): init_admin failed: {status.info()}"
 
 	newdevpair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
@@ -61,7 +61,7 @@ def test_devkey():
 	)
 
 	status = iscmds.devkey(conn, profile.devid, dbdata['admin_devpair'], newdevpair)
-	assert not status.error(), f"test_devkey(): error returned: {status.info()}"
+	assert not status.error(), f"{funcname()}(): error returned: {status.info()}"
 
 	conn.disconnect()
 
@@ -71,7 +71,7 @@ def test_getwid():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
-	test_folder = setup_profile_base('test_getwid')
+	test_folder = setup_profile_base(funcname())
 	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
@@ -94,18 +94,47 @@ def test_iscurrent():
 
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
-	test_folder = setup_profile_base('test_iscurrent')
+	test_folder = setup_profile_base(funcname())
 	status = setup_admin_profile(test_folder, dbdata)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
 
 	status = iscmds.iscurrent(conn, 1, utils.UUID())
-	assert not status.error(), f"test_iscurrent(): org failure check failed: {status.info()}"
+	assert not status.error(), f"{funcname()}(): org failure check failed: {status.info()}"
 
 	status = iscmds.iscurrent(conn, 2, utils.UUID())
-	assert not status.error(), f"test_iscurrent(): org success check failed: {status.info()}"
+	assert not status.error(), f"{funcname()}(): org success check failed: {status.info()}"
+
+
+def test_orgcard():
+	'''Tests the orgcard command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base(funcname())
+	status = setup_admin_profile(test_folder, dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
+
+	status = iscmds.orgcard(conn, 1, -1)
+	assert not status.error() and 'card' in status, ""
+
+	card = status['card']
+	assert card.type == 'Organization', f"{funcname()}(): subtest #1 wrong card type received"
+	assert len(card.entries) == 2, f"{funcname()}(): subtest #1 card had wrong number of entries"
+
+	status = iscmds.orgcard(conn, 0, -1)
+	assert not status.error() and 'card' in status, ""
+
+	card = status['card']
+	assert card.type == 'Organization', f"{funcname()}(): subtest #2 wrong card type received"
+	assert len(card.entries) == 1, f"{funcname()}(): subtest #2 card had wrong number of entries"
+	
+	conn.disconnect()
 
 
 def test_preregister_regcode():
@@ -117,7 +146,7 @@ def test_preregister_regcode():
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
 
 	status = userprofile.profman.get_active_profile()
 	profile = None
@@ -330,13 +359,14 @@ def test_unregister():
 
 
 if __name__ == '__main__':
-	test_addentry()
-	test_connect()
-	test_devkey()
-	test_iscurrent()
-	test_preregister_regcode()
-	test_register()
-	test_reset_password()
-	test_set_password()
-	test_set_status()
-	test_unregister()
+	# test_addentry()
+	# test_connect()
+	# test_devkey()
+	# test_iscurrent()
+	test_orgcard()
+	# test_preregister_regcode()
+	# test_register()
+	# test_reset_password()
+	# test_set_password()
+	# test_set_status()
+	# test_unregister()
