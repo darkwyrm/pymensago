@@ -323,6 +323,9 @@ def orgcard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
 		return status
 
 	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
 	data_size = int(response['Data']['Total-Size'])
 	status = conn.send_message({'Action':'TRANSFER'})
 	if status.error():
