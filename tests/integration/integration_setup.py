@@ -116,7 +116,7 @@ def init_server(dbconn) -> dict:
 	# Start off by generating the org's root keycard entry and add to the database
 
 	cur = dbconn.cursor()
-	card = keycard.Keycard()
+	card = keycard.Keycard('Organization')
 	
 	root_entry = keycard.OrgEntry()
 	root_entry.set_fields({
@@ -173,7 +173,7 @@ def init_server(dbconn) -> dict:
 
 	# Chain a new entry to the root
 
-	status = card.chain(initial_oskey, True)
+	status = card.chain(initial_oskey, False)
 	assert not status.error(), f'keycard chain failed: {status}'
 
 	# Save the keys to a separate RetVal so we can keep using status for return codes
