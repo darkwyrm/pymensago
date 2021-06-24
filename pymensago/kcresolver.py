@@ -233,20 +233,16 @@ def get_mgmt_record(domain: str) -> RetVal:
 			return status
 		
 		# We just need the current keys, so just get the current org card entry
-
-		# TODO: Revert this to (conn, 0, -1) so that we only get the current key once the bug
-		# which causes the local server's keycard to not be correctly rotated is fixed.
-		status = iscmds.orgcard(conn, 1, -1)
+		status = iscmds.orgcard(conn, 0, -1)
 		if status.error():
 			return status
 		conn.disconnect()
 		card = status['card']
 
-		# TODO: These calls need to be [0] once only the current entry is received.
-		out['pvk'] = card.entries[-1].fields['Primary-Verification-Key']
-		out['ek'] = card.entries[-1].fields['Encryption-Key']
+		out['pvk'] = card.entries[0].fields['Primary-Verification-Key']
+		out['ek'] = card.entries[0].fields['Encryption-Key']
 		if 'Secondary-Verification-Key' in card.entries[0].fields:
-			out['svk'] = card.entries[-1].fields['Secondary-Verification-Key']
+			out['svk'] = card.entries[0].fields['Secondary-Verification-Key']
 		
 		# Because TLS isn't implemented yet, we won't worry about the TLS cert key hash
 		# TODO: POSTDEMO: get hash field for localhost TLS cert in get_mgmt_record()
