@@ -30,7 +30,6 @@ class KCResolver:
 
 	def _resolve_card(self, owner: str) -> RetVal:
 		'''internal method which does all the actual resolving if the card isn't in the db'''
-		# TODO: implement KCResolver._resolve_card()
 
 		# First, determine if this is an org card or a user card. It's a user card unless we are
 		# just given a domain, in which case it's an org card that we need.
@@ -118,7 +117,7 @@ class KCResolver:
 	def _get_card_from_db(self, owner: str, isorg: bool) -> RetVal:
 		'''gets a keycard from the db cache if it exists'''
 		
-		# TODO: Implement keycard Time-To-Live handling
+		# TODO: POSTDEMO: Implement keycard Time-To-Live handling
 
 		out = RetVal()
 		card = keycard.Keycard()
@@ -150,7 +149,7 @@ class KCResolver:
 	def _add_card_to_db(self, owner: str, isorg: bool, card: keycard.Keycard) -> RetVal:
 		'''adds a keycard to the database cache after removing any stale entries'''
 
-		# TODO: Implement keycard Time-To-Live handling
+		# TODO: POSTDEMO: Implement keycard Time-To-Live handling
 
 		cursor = self.db.cursor()
 		cursor.execute("DELETE FROM keycards WHERE owner=?", (owner,))
@@ -165,7 +164,7 @@ class KCResolver:
 	def _update_card_in_db(self, owner: str, isorg: bool, card: keycard.Keycard) -> RetVal:
 		'''updates a keycard in the database cache'''
 
-		# TODO: Implement keycard Time-To-Live handling
+		# TODO: POSTDEMO: Implement keycard Time-To-Live handling
 
 		# Because keycards are append-only, we just have to find out what the last index stored
 		# in the database is and then add any remaining entries to the database

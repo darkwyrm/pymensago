@@ -240,11 +240,6 @@ class Profile:
 			w.db = saved_db
 		return status
 
-	def get_workspaces(self) -> list:
-		'''Returns a list containing all subscribed workspaces in the profile'''
-		# TODO: Implement
-		return list()
-
 	def reset_db(self) -> RetVal:
 		'''This function reinitializes the database to empty, taking a path to the file used by the 
 		SQLite database. The status includes the field 'connection' which contains a 
