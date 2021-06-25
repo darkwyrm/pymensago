@@ -295,6 +295,8 @@ class ProfileManager:
 		'''Loads profile information from the specified JSON file stored in the top level of the 
 		profile folder.'''
 
+		self.active_index = -1
+		
 		if profile_path:
 			self.profile_folder = profile_path
 		else:
