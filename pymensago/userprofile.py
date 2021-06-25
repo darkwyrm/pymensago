@@ -436,7 +436,7 @@ class ProfileManager:
 		
 		return RetVal()
 	
-	def get_profiles(self) -> dict:
+	def get_profiles(self) -> list:
 		'''Returns a list of loaded profiles'''
 		return self.profiles
 	
