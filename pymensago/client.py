@@ -208,7 +208,7 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{host}"),
+		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{address.domain}"),
 										regdata['devid'], devpair, socket.gethostname())
 		if status.error():
 			return status
