@@ -238,6 +238,10 @@ class Profile:
 		status = w.add_to_db(w.pw)
 		if status.error():
 			w.db = saved_db
+		
+		self.wid = w.wid
+		self.domain = w.domain
+
 		return status
 
 	def reset_db(self) -> RetVal:
@@ -491,10 +495,6 @@ class ProfileManager:
 		"host" : string
 		"port" : integer
 		'''
-		if self.active_index >= 0:
-			self.profiles[self.active_index].deactivate()
-			self.active_index = -1
-		
 		if not name:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
 		
@@ -502,6 +502,10 @@ class ProfileManager:
 		active_index = self._index_for_profile(name_squashed)
 		if active_index < 0:
 			return RetVal(ErrNotFound, f"{name_squashed} doesn't exist")
+		
+		if self.active_index >= 0:
+			self.profiles[self.active_index].deactivate()
+			self.active_index = -1
 		
 		self.profile_id = name_squashed
 
