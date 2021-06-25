@@ -75,8 +75,8 @@ from pymensago.workspace import Workspace
 # Initial User Signing Key: ED25519:;NEoR>t9n3v%RbLJC#*%n4g%oxqzs)&~k+fH4uqi
 
 def funcname() -> str: 
-	frame = inspect.currentframe()
-	return inspect.getframeinfo(frame).function
+	frames = inspect.getouterframes(inspect.currentframe())
+	return frames[1].function
 
 def setup_test():
 	'''Resets the Postgres test database to be ready for an integration test'''
