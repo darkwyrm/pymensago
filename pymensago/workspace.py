@@ -92,8 +92,7 @@ class Workspace:
 		'''Adds a workspace to the storage database'''
 
 		cursor = self.db.cursor()
-		cursor.execute("SELECT wid FROM workspaces WHERE wid=? OR type = 'identity'", 
-			(self.wid.as_string(),))
+		cursor.execute("SELECT wid FROM workspaces WHERE type = 'identity'")
 		results = cursor.fetchone()
 		if results:
 			return RetVal(ErrExists, self.wid.as_string())
