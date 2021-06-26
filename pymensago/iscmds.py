@@ -402,17 +402,20 @@ def password(conn: ServerConnection, pwhash: str) -> RetVal:
 	return RetVal()
 
 
-def preregister(conn: ServerConnection, wid: utils.UUID, uid: utils.UserID, domain: utils.Domain) -> RetVal:
-	'''Provisions a preregistered account on the server.'''
+def preregister(conn: ServerConnection, wid: utils.UUID=None, uid: utils.UserID=None,
+				domain: utils.Domain=None) -> RetVal:
+	'''Provisions a preregistered account on the server. Note that the uid, wid, and domain are 
+	all optional. If none of them are specified, then the server generates a workspace with the 
+	organization's default domain.'''
 	request = { 'Action':'PREREG', 'Data':{} }
 
-	if not wid.is_empty():
+	if wid and not wid.is_empty():
 		request['Data']['Workspace-ID'] = wid.as_string()
 	
-	if not uid.is_empty():
+	if uid and not uid.is_empty():
 			request['Data']['User-ID'] = uid.as_string()
 	
-	if not domain.is_empty():
+	if domain and not domain.is_empty():
 		request['Data']['Domain'] = domain.as_string()
 
 	status = conn.send_message(request)
