@@ -29,6 +29,7 @@ class MensagoClient:
 		self.pman = userprofile.profman
 		self.pman.load_profiles(profile_folder)
 		self.login_active = False
+		self.is_admin = False
 		
 		# This unusual construct is because if the profile manager is given an empty profile folder
 		# path, it defaults to a predetermined location
@@ -113,6 +114,7 @@ class MensagoClient:
 
 		if not status.error():
 			self.login_active = True
+			self.is_admin = status['isadmin']
 		return status
 
 	def is_logged_in(self) -> bool:
@@ -131,7 +133,7 @@ class MensagoClient:
 		'''Create a new account on the local server. This is a simple command because it is not 
 		meant to create a local profile.'''
 
-		if not self.is_logged_in():
+		if not self.is_logged_in() or not self.is_admin:
 			return RetVal(ErrNotLoggedIn, 'must be logged in as admin')
 		
 		uid = UserID()

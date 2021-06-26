@@ -134,11 +134,11 @@ def device(conn: ServerConnection, devid: utils.UUID, devpair: EncryptionPair) -
 	if response.error():
 		return response
 	
-	if response['Code'] == 200:
-		return RetVal()
+	if response['Code'] != 200:
+		return wrap_server_error(response)
 	
-	return wrap_server_error(response)
-
+	return RetVal().set_value('isadmin', response['Data']['Is-Admin'] == "True")
+	
 
 def devkey(conn: ServerConnection, devid: utils.UUID, oldpair: EncryptionPair, newpair: EncryptionPair):
 	'''Replaces the specified device's key stored on the server'''
