@@ -15,6 +15,10 @@ import pymensago.utils as utils
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.workspace import Workspace
 
+ErrNotLoggedIn = 'ErrNotLoggedIn'
+ErrNotConnected = 'ErrNotConnected'
+ErrNotAdmin = 'ErrNotAdmin'
+
 class MensagoClient:
 	'''
 	This is the primary interface to the entire library from an application perspective.
@@ -123,15 +127,18 @@ class MensagoClient:
 		self.login_active = False
 		return iscmds.logout(self.conn)
 
-	def preregister_account(self, id: UserID, domain: Domain) -> RetVal:
+	def preregister_account(self, id: UserID=None, domain: Domain=None) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
 		meant to create a local profile.'''
 
+		if not self.is_logged_in():
+			return RetVal(ErrNotLoggedIn, 'must be logged in as admin')
+		
 		uid = UserID()
 		wid = UUID()
 		dom = Domain()
 		
-		if not id.is_empty():
+		if id and not id.is_empty():
 			if not id.is_valid():
 				return RetVal(ErrBadValue, 'Bad user ID')
 			
@@ -140,20 +147,10 @@ class MensagoClient:
 			else:
 				uid = id
 		
-		if domain:
+		if domain and not domain.is_empty():
 			if not domain.is_valid():
 				return RetVal(ErrBadValue, 'Bad domain')
 			dom = domain
-
-		status = kcresolver.get_server_config(domain)
-		if status.error():
-			return status
-		
-		host = status['server']
-		port = status['port']
-		status = self.conn.connect(host, port)
-		if status.error():
-			return status
 		
 		# This call works because preregister checks to make sure that the optional parameters
 		# are both != None and aren't empty.
