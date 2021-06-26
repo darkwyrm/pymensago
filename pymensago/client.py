@@ -123,29 +123,26 @@ class MensagoClient:
 		self.login_active = False
 		return iscmds.logout(self.conn)
 
-	def preregister_account(self, port_str: str, uid: str) -> RetVal:
+	def preregister_account(self, uid: utils.UserID, domain: utils.Domain) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
 		meant to create a local profile.'''
-		
-		if port_str:
-			try:
-				port = int(port_str)
-			except:
-				return RetVal(ErrBadValue, 'Bad port number')
-		else:
-			port = 2001
-		
-		if port < 0 or port > 65535:
-			return RetVal(ErrBadValue, 'Bad port number')
 
-		if '"' in uid or '/' in uid:
+		if not (uid.is_valid() and domain.is_valid()):
 			return RetVal(ErrBadValue, "User ID can't contain \" or /")
 
-		status = self.conn.connect('127.0.0.1', port)
+		status = kcresolver.get_server_config(domain)
 		if status.error():
 			return status
 		
-		regdata = serverconn.preregister(self.conn, '', uid, '')
+		host = status['server']
+		port = status['port']
+		status = self.conn.connect(host, port)
+		if status.error():
+			return status
+		
+		# TODO: Finish updating client.preregister_account
+		# The actual preregister call needs refactored in light of the new UserID and domain classes
+		regdata = iscmds.preregister(self.conn, '', uid, '')
 		if regdata.error():
 			return regdata
 		self.conn.disconnect()
