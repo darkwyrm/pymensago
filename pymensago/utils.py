@@ -11,10 +11,58 @@ _domain_pattern = re.compile(r'([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9\-]+')
 _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 
 
+class UUID:
+	'''Although there already is a uuid module, this class makes interaction easier by keeping it 
+	as a string and ensuring that the formatting is always lowercase and has dashes, two Mensago 
+	requirements to ensure consistency and fewer bugs.'''
+	def __init__(self, obj='') -> None:
+		self.value = str(obj)
+
+	def is_valid(self) -> bool:
+		'''Returns true if the instance is a valid UUID'''
+		global _uuid_pattern
+		return _uuid_pattern.match(self.value)
+	
+	def is_empty(self) -> bool:
+		return self.value == ''
+	
+	def generate(self) -> str:
+		'''Generates a random (v4) UUID and assigns it to the instance'''
+		self.value = str(uuid.uuid4())
+		return self.value
+
+	def set(self, obj) -> str:
+		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
+		removed, and the value is validated. set() returns the object's final internal value or 
+		an empty string if an error occurred.'''
+		
+		self.value = str(obj).strip().casefold()
+		if self.is_valid():
+			return self.value
+		return ''
+
+	def __str__(self) -> str:
+		return self.value
+	
+	def as_string(self) -> str:
+		return self.value
+
+
 class UserID:
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
 		self.widflag = False
+
+	def as_wid(self) -> UUID:
+		'''Returns the user ID as a UUID or None if not a valid workspace ID'''
+		if not self.widflag:
+			return None
+		
+		# By not passing the value to the constructor and assigning directly we avoid making an
+		# unnecessary (and expensive) regex call
+		out = UUID()
+		out.value = self.value
+		return out
 
 	def is_valid(self) -> bool:
 		'''Returns true if the instance is a valid Mensago user ID'''
@@ -68,43 +116,6 @@ class Domain:
 	
 	def set(self, obj) -> str:
 		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
-		removed, and the value is validated. set() returns the object's final internal value or 
-		an empty string if an error occurred.'''
-		
-		self.value = str(obj).strip().casefold()
-		if self.is_valid():
-			return self.value
-		return ''
-
-	def __str__(self) -> str:
-		return self.value
-	
-	def as_string(self) -> str:
-		return self.value
-
-
-class UUID:
-	'''Although there already is a uuid module, this class makes interaction easier by keeping it 
-	as a string and ensuring that the formatting is always lowercase and has dashes, two Mensago 
-	requirements to ensure consistency and fewer bugs.'''
-	def __init__(self, obj='') -> None:
-		self.value = str(obj)
-
-	def is_valid(self) -> bool:
-		'''Returns true if the instance is a valid UUID'''
-		global _uuid_pattern
-		return _uuid_pattern.match(self.value)
-	
-	def is_empty(self) -> bool:
-		return self.value == ''
-	
-	def generate(self) -> str:
-		'''Generates a random (v4) UUID and assigns it to the instance'''
-		self.value = str(uuid.uuid4())
-		return self.value
-
-	def set(self, obj) -> str:
-		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
 		removed, and the value is validated. set() returns the object's final internal value or 
 		an empty string if an error occurred.'''
 		
