@@ -48,6 +48,58 @@ def test_login():
 	assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
 
 
+# TODO: Finish debugging test_preregister
+def test_preregister():
+	test_folder = setup_profile_base('test_client_preregister')
+	client = MensagoClient(test_folder)
+
+	pgdb = setup_test()
+	dbdata = init_server(pgdb)
+	status = setup_admin_profile(test_folder, dbdata)
+
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
+	status = init_admin(client.conn, dbdata)
+	assert not status.error(), f"{funcname()}(): Couldn't init admin"
+	status = client.login(utils.MAddress('admin/example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't log in as admin"
+
+	emptyID = utils.UserID()
+	exampledom = utils.Domain('example.com')
+	
+	# Subtest #1: No data supplied
+	
+	status = client.preregister_account(emptyID, exampledom)
+	assert not status.error(), f"{funcname()}(): Subtest #1 (no data) preregistration failed"
+	assert status['domain'].as_string() == 'example.com' and \
+		'wid' in status and 'regcode' in status, \
+		f"{funcname()}(): Subtest #1 returned bad data"
+
+	# Subtest #2: Workspace ID supplied
+	
+	status = client.preregister_account(utils.UserID('33333333-3333-3333-3333-333333333333'),
+		exampledom)
+	assert not status.error(), f"{funcname()}(): Subtest #2 (wid) preregistration failed"
+	assert status['domain'].as_string() == 'example.com' and \
+		'wid' in status and \
+		'regcode' in status and \
+		status['wid'].as_string() == '33333333-3333-3333-3333-333333333333', \
+		f"{funcname()}(): Subtest #2 returned bad data"
+
+	# Subtest #3: User ID supplied
+
+	status = client.preregister_account(utils.UserID('csimons'), exampledom)
+	assert not status.error(), f"{funcname()}(): Subtest #2 (wid) preregistration failed"
+	assert status['domain'].as_string() == 'example.com' and \
+		'wid' in status and \
+		'regcode' in status and \
+		status['uid'].as_string() == 'csimons', \
+		f"{funcname()}(): Subtest #3 returned bad data"
+
+	client.disconnect()
+
+
+
 def test_register():
 	serverdbdata = load_server_config()
 	if serverdbdata['global']['registration'] not in ['network', 'public']:
@@ -96,6 +148,7 @@ def test_regcode():
 
 if __name__ == '__main__':
 	# test_connect()
-	test_login()
+	# test_login()
+	test_preregister()
 	# test_register()
 	# test_regcode()

@@ -1,10 +1,10 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
 from pycryptostring import CryptoString
-from pymensago.utils import Domain, MAddress, WAddress
+from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
 import socket
 
-from retval import ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
+from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
 import pymensago.iscmds as iscmds
@@ -123,12 +123,27 @@ class MensagoClient:
 		self.login_active = False
 		return iscmds.logout(self.conn)
 
-	def preregister_account(self, uid: utils.UserID, domain: utils.Domain) -> RetVal:
+	def preregister_account(self, id: UserID, domain: Domain) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
 		meant to create a local profile.'''
 
-		if not (uid.is_valid() and domain.is_valid()):
-			return RetVal(ErrBadValue, "User ID can't contain \" or /")
+		uid = UserID()
+		wid = UUID()
+		dom = Domain()
+		
+		if not id.is_empty():
+			if not id.is_valid():
+				return RetVal(ErrBadValue, 'Bad user ID')
+			
+			if id.is_wid():
+				wid = id.as_wid()
+			else:
+				uid = id
+		
+		if domain:
+			if not domain.is_valid():
+				return RetVal(ErrBadValue, 'Bad domain')
+			dom = domain
 
 		status = kcresolver.get_server_config(domain)
 		if status.error():
@@ -140,9 +155,9 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		# TODO: Finish updating client.preregister_account
-		# The actual preregister call needs refactored in light of the new UserID and domain classes
-		regdata = iscmds.preregister(self.conn, '', uid, '')
+		# This call works because preregister checks to make sure that the optional parameters
+		# are both != None and aren't empty.
+		regdata = iscmds.preregister(self.conn, wid, uid, dom)
 		if regdata.error():
 			return regdata
 		self.conn.disconnect()
