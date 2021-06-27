@@ -79,7 +79,7 @@ def funcname() -> str:
 	return frames[1].function
 
 def setup_test():
-	'''Resets the Postgres test database to be ready for an integration test'''
+	'''Empties and resets the server's database to start from a clean slate'''
 	
 	serverconfig = load_server_config()
 
@@ -110,8 +110,8 @@ def setup_test():
 
 
 def init_server(dbconn) -> dict:
-	'''Adds basic data to the database as if setupconfig had been run. Returns data needed for 
-	tests, such as the keys'''
+	'''Adds basic data to the database as if setupconfig had been run. It also rotates the org 
+	keycard so that there are two entries. Returns data needed for tests, such as the keys'''
 	
 	# Start off by generating the org's root keycard entry and add to the database
 
@@ -271,7 +271,8 @@ def reset_workspace_dir(config: dict):
 # Setup functions for tests and commands
 
 def setup_profile_base(name):
-	'''Creates a new profile folder hierarchy'''
+	'''Creates a new profile folder hierarchy on the client side in the specified test folder'''
+
 	test_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'testfiles')
 	if not os.path.exists(test_folder):
 		os.mkdir(test_folder)
@@ -288,7 +289,9 @@ def setup_profile_base(name):
 
 
 def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
-	'''Creates the client-side profile for the administrator account'''
+	'''Creates the client-side profile for the administrator account. This call does not merely 
+	call the corresponding client-level functions so that crypto keys are the same from one test 
+	to the next.'''
 
 	config['profile_folder'] = profile_folder
 
