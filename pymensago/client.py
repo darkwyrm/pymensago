@@ -159,9 +159,8 @@ class MensagoClient:
 		regdata = iscmds.preregister(self.conn, wid, uid, dom)
 		if regdata.error():
 			return regdata
-		self.conn.disconnect()
 
-		if regdata['status'] != 200:
+		if regdata.error():
 			return regdata
 		
 		if 'wid' not in regdata or 'regcode' not in regdata:

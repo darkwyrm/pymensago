@@ -48,7 +48,6 @@ def test_login():
 	assert client.is_logged_in(), f"{funcname()}(): Logged in, but says not"
 
 
-# TODO: Finish debugging test_preregister
 def test_preregister():
 	test_folder = setup_profile_base('test_client_preregister')
 	client = MensagoClient(test_folder)
@@ -60,9 +59,13 @@ def test_preregister():
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
 	status = init_admin(client.conn, dbdata)
+	
+	# This small hack is because init_admin() does the logging in directly. This saves completely
+	# restructuring all of the client-side integration tests
+	client.login_active = True
+	client.is_admin = True
+
 	assert not status.error(), f"{funcname()}(): Couldn't init admin"
-	status = client.login(utils.MAddress('admin/example.com'))
-	assert not status.error(), f"{funcname()}(): Couldn't log in as admin"
 
 	emptyID = utils.UserID()
 	exampledom = utils.Domain('example.com')
@@ -147,8 +150,8 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	# test_connect()
-	# test_login()
+	test_connect()
+	test_login()
 	test_preregister()
-	# test_register()
-	# test_regcode()
+	test_register()
+	test_regcode()
