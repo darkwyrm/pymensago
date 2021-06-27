@@ -120,8 +120,10 @@ class Profile:
 			self.default = True
 		
 		status = self.load_config()
-		if status.error():
+		if not self.devid.is_valid():
 			self.devid.generate()
+		
+		if status.error():
 			self.save_config()
 
 	def activate(self) -> RetVal:
@@ -152,15 +154,19 @@ class Profile:
 				except Exception as e:
 					return RetVal().wrap_exception(e)
 			status = self.devid.set(filedata['Device-ID'])
-			if status.error():
-				return status
+			if not status:
+				self.devid.generate()
 		else:
 			return RetVal(ErrNotFound, 'profile config file missing')
 		
 		return RetVal()
 	
 	def save_config(self) -> RetVal:
-		'''Saves the profile-specific configuration information to a file'''	
+		'''Saves the profile-specific configuration information to a file'''
+		
+		if self.devid.is_empty():
+			return RetVal()
+		
 		config_path = os.path.join(self.path, 'config.json')
 		if os.path.exists(config_path):
 			try:
@@ -168,7 +174,7 @@ class Profile:
 			except Exception as e:
 				return RetVal().wrap_exception(e)
 		
-		filedata = { 'Driver-ID': self.devid }
+		filedata = { 'Device-ID': self.devid.as_string() }
 		with open(config_path, 'w') as fhandle:
 			try:
 				filedata = json.dump(filedata, fhandle)
