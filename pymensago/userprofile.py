@@ -111,8 +111,9 @@ class Profile:
 		self.name = os.path.basename(path)
 		self.path = path
 		self.default = False
-		self.wid = ''
-		self.domain = ''
+		self.userid = utils.UserID()
+		self.wid = utils.UUID()
+		self.domain = utils.Domain()
 		self.db = None
 		self.devid = utils.UUID()
 
@@ -215,22 +216,41 @@ class Profile:
 		''''Returns true if the profile is the default one'''
 		return self.default
 		
-	def get_identity(self) -> utils.WAddress:
+	def get_identity(self) -> utils.MAddress:
 		'''Returns the identity workspace address for the profile'''
 		
+		out = utils.MAddress()
+		if self.userid and self.domain:
+			out.set_from_userid(self.userid, self.domain)
+			return out
+		
 		if self.wid and self.domain:
-			return utils.WAddress('/'.join([self.wid, self.domain]))
+			out.set_from_wid(self.wid, self.domain)
+			return out
 		
 		# We got this far, which means we need to get the info from the profile database
 		
 		cursor = self.db.cursor()
-		cursor.execute("SELECT wid,domain FROM workspaces WHERE wid=? OR wtype = 'identity'", 
-			(self.wid,))
+		cursor.execute("SELECT wid,domain,userid FROM workspaces WHERE type = 'identity'")
 		results = cursor.fetchone()
 		if not results or not results[0]:
 			return RetVal(ErrNotFound)
 
-		return utils.WAddress('/'.join([results[0], results[1]]))
+		if self.wid.is_empty():
+			self.wid.set(results[0])
+		if self.domain.is_empty():
+			self.domain.set(results[1])
+		if self.userid.is_empty():
+			self.userid.set(results[2])
+
+		out = utils.MAddress()
+		if self.userid and self.domain:
+			out.set_from_userid(self.userid, self.domain)
+			return out
+		
+		if self.wid and self.domain:
+			out.set_from_wid(self.wid, self.domain)
+			return out
 	
 	def set_identity(self, w: Workspace) -> RetVal:
 		'''Assigns an identity workspace to the profile. Because so much is tied to an identity 
