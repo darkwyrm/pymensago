@@ -212,6 +212,24 @@ class MAddress:
 	def as_string(self) -> str:
 		return self.id.as_string() + '/' + self.domain.as_string()
 	
+	def set_from_userid(self, uid: UserID, domain: Domain) -> RetVal:
+		if not (uid.is_valid() and domain.is_valid()):
+			return RetVal(ErrBadValue, 'bad parameter')
+		self.id = uid
+		self.domain = domain
+		if uid.is_wid():
+			self.id_type = 1
+		else:
+			self.id_type = 2
+		return RetVal()
+	
+	def set_from_wid(self, wid: UUID, domain: Domain) -> RetVal:
+		if not (wid.is_valid() and domain.is_valid()):
+			return RetVal(ErrBadValue, 'bad parameter')
+		self.id.set(wid.as_string())
+		self.domain = domain
+		self.id_type = 1
+		return RetVal()
 
 def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
