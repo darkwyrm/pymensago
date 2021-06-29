@@ -263,7 +263,7 @@ class MensagoClient:
 			return status
 		
 		profile = status['profile']
-		if profile.domain:
+		if not profile.domain.is_empty():
 			return RetVal(ErrExists, 'a user workspace already exists')
 
 		status = kcresolver.get_server_config(domain)
