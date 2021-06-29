@@ -539,6 +539,9 @@ class ProfileManager:
 
 		self.active_index = active_index
 		self.profiles[self.active_index].activate()
+
+		# Force loading of basic identity info if it hasn't already been done
+		self.profiles[self.active_index].get_identity()
 		
 		return RetVal().set_values({
 			'wid' : self.profiles[active_index].wid,
