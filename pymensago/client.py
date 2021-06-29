@@ -35,18 +35,6 @@ class MensagoClient:
 		# path, it defaults to a predetermined location
 		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
 
-	def activate_profile(self, name) -> RetVal:
-		'''Activates the specified profile'''
-
-		status = self.pman.activate_profile(name)
-		if status.error():
-			return status
-		
-		self.conn.disconnect()
-		
-		status = self.conn.connect(status['host'],status['port'])
-		return status
-	
 	def connect(self, domain: Domain) -> RetVal:
 		'''Establishes a network connection to a Mensago server. No logging in is performed.'''
 		serverconfig = kcresolver.get_server_config(domain)
