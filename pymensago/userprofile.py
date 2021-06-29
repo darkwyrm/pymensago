@@ -220,11 +220,11 @@ class Profile:
 		'''Returns the identity workspace address for the profile'''
 		
 		out = utils.MAddress()
-		if self.userid and self.domain:
+		if self.userid.is_valid() and self.domain.is_valid():
 			out.set_from_userid(self.userid, self.domain)
 			return out
 		
-		if self.wid and self.domain:
+		if self.wid.is_valid() and self.domain.is_valid():
 			out.set_from_wid(self.wid, self.domain)
 			return out
 		
@@ -243,12 +243,11 @@ class Profile:
 		if self.userid.is_empty():
 			self.userid.set(results[2])
 
-		out = utils.MAddress()
-		if self.userid and self.domain:
+		if self.userid.is_valid() and self.domain.is_valid():
 			out.set_from_userid(self.userid, self.domain)
 			return out
 		
-		if self.wid and self.domain:
+		if self.wid.is_valid() and self.domain.is_valid():
 			out.set_from_wid(self.wid, self.domain)
 			return out
 	
@@ -266,6 +265,7 @@ class Profile:
 			w.db = saved_db
 		
 		self.wid = w.wid
+		self.userid = w.uid
 		self.domain = w.domain
 
 		return status
