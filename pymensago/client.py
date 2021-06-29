@@ -177,7 +177,7 @@ class MensagoClient:
 			return status
 		
 		profile = status['profile']
-		if profile.domain:
+		if not profile.domain.is_empty():
 			return RetVal(ErrExists, 'an identity workspace already exists on this profile')
 
 		# Password requirements aren't really set here, but we do have to draw the 
