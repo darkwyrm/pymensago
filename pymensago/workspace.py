@@ -3,7 +3,7 @@
 import pathlib
 
 import sqlite3
-from retval import RetVal, ErrExists, ErrNotFound, ErrBadValue
+from retval import ErrBadData, RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
@@ -87,6 +87,41 @@ class Workspace:
 
 		self.set_userid(userid)
 		return RetVal()
+
+	def load_from_db(self, wid: UUID=None):
+		'''Loads the workspace information from the local database. If no workspace ID is 
+		specified, the identity workspace for the profile is loaded.'''
+		
+		if not wid or wid.is_empty():
+			cursor = self.db.cursor()
+			cursor.execute("SELECT wid FROM workspaces WHERE type = 'identity'")
+			results = cursor.fetchone()
+			if not results:
+				return RetVal(ErrNotFound, 'No identity workspace found')
+			wid = UUID(results[0])
+		
+		if not wid.is_valid():
+			return RetVal(ErrBadData, 'Bad identity workspace in profile')
+		
+		cursor = self.db.cursor()
+		cursor.execute("SELECT wid,domain,userid FROM workspaces WHERE wid = '?'",
+			(wid.as_string(),))
+		results = cursor.fetchone()
+		if not results:
+			return RetVal(ErrNotFound, 'Workspace data not found')
+		
+		status = self.wid.set(results[0])
+		if status.error():
+			return status.set_info(f"Bad workspace loaded from database: {results[0]}")
+		status = self.domain.set(results[1])
+		if status.error():
+			return status.set_info(f"Bad domain loaded from database: {results[1]}")
+		status = self.uid.set(results[2])
+		if results[2] and status.error():
+			return status.set_info(f"Bad user ID loaded from database: {results[2]}")
+		
+		return RetVal()
+		
 
 	def add_to_db(self, pw: encryption.Password) -> RetVal:
 		'''Adds a workspace to the storage database'''
