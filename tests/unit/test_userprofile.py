@@ -1,10 +1,16 @@
 '''This module tests the Profile and ProfileManager classes'''
+import inspect
 import os
 import shutil
 import time
 
 # pylint: disable=import-error
 from pymensago.userprofile import Profile, ProfileManager
+
+def funcname() -> str: 
+	frames = inspect.getouterframes(inspect.currentframe())
+	return frames[1].function
+
 
 def setup_test(name):
 	'''Creates a new profile folder hierarchy'''
@@ -76,6 +82,7 @@ def test_pman_create():
 	status = pman.create_profile('secondary')
 	assert 'profile' in status and status['profile'], "Failed to get new profile"
 
+
 def test_pman_delete():
 	'''Tests ProfileManager's delete() method'''
 	profile_test_folder = setup_test('pman_delete')
@@ -95,6 +102,7 @@ def test_pman_delete():
 
 	status = pman.delete_profile('secondary')
 	assert status.error(), "delete_profile: failed to handle nonexistent profile"
+
 
 def test_pman_rename():
 	'''Tests ProfileManager's rename() method'''
@@ -123,6 +131,7 @@ def test_pman_rename():
 	status = pman.rename_profile('foo', 'secondary')
 	assert not status.error(), "rename_profile: failed to rename profile"
 
+
 def test_pman_activate():
 	'''Tests ProfileManager's activate() method'''
 	profile_test_folder = setup_test('pman_activate')
@@ -143,6 +152,27 @@ def test_pman_activate():
 	status = pman.activate_profile('secondary')
 	assert not status.error(), "activate_profile: failed to activate profile"
 
+
+def test_pman_multitest():
+	'''Performs multiple interactions with profiles to test similar to day-to-day usage'''
+
+	profile_test_folder = setup_test(f"{funcname()}")
+	pman = ProfileManager()
+	status = pman.load_profiles(profile_test_folder)
+	assert not status.error(), f"{funcname()}: load_profiles failed"
+
+	status = pman.create_profile('secondary')
+	assert not status.error(), f"{funcname()}: failed to create secondary profile"
+	status = pman.activate_profile('secondary')
+	assert not status.error(), f"{funcname()}: failed to activate secondary profile"
+	status = pman.set_default_profile('secondary')
+	assert not status.error(), f"{funcname()}: failed to set secondary profile as default"
+	status = pman.rename_profile('primary', 'trash')
+	assert not status.error(), f"{funcname()}: failed to rename primary profile to trash"
+	status = pman.delete_profile('trash')
+	assert not status.error(), f"{funcname()}: failed to delete trash profile"
+
+
 if __name__ == '__main__':
 	test_profile_dbinit()
 	test_pman_init()
@@ -150,3 +180,5 @@ if __name__ == '__main__':
 	test_pman_delete()
 	test_pman_rename()
 	test_pman_activate()
+	test_pman_multitest()
+
