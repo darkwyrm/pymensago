@@ -69,7 +69,7 @@ class MensagoClient:
 		
 		waddr = WAddress()
 		if address.id_type == 1:
-			waddr.id.set(waddr.id.as_string())
+			waddr.id.set(address.id.as_string())
 		else:
 			status = profile.resolve_address(address)
 			if status.error():
