@@ -23,7 +23,7 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 class Contact:
 	'''Class to hold and manage contact information'''
 	def __init__(self):
-		self._fields = {
+		self.fields = {
 			'Version': '1.0',
 			'Sensitivity': 'private',
 			'EntityType': 'individual',
@@ -32,60 +32,84 @@ class Contact:
 			'ID': '',
 			'Name': { 'Given': '', 'Family': '' }
 		}
+		self.overlay = dict()
 	
 	def __contains__(self, key):
-		return key in self._fields
+		return key in self.fields
 
 	def __delitem__(self, key):
-		del self._fields[key]
+		del self.fields[key]
 
 	def __getitem__(self, key):
-		return self._fields[key]
+		return self.fields[key]
 	
 	def __iter__(self):
-		return self._fields.__iter__()
+		return self.fields.__iter__()
 	
 	def __setitem__(self, key, value):
-		self._fields[key] = value
+		self.fields[key] = value
 
 	# TODO: implement __str__ to dump a nicely-formatted multiline string of contact info
 	# def __str__(self):
 	# 	return '\n'.join(out)
 
 	def fields(self) -> list:
-		return self._fields
+		return self.fields
 
+	def overlay_values(self, values: dict):
+		'''Adds multiple dictionary fields to the object's contact info overlay.'''
+		
+		for k,v in values.items():
+			if k in [ '_error', '_info' ]:
+				return False
+			self.overlay[k] = v
+		
+		return self
+	
 	def set_values(self, values: dict):
 		'''Adds multiple dictionary fields to the object.'''
 		
 		for k,v in values.items():
 			if k in [ '_error', '_info' ]:
 				return False
-			self._fields[k] = v
+			self.fields[k] = v
 		
 		return self
 	
 	def has_value(self, s: str) -> bool:
 		'''Tests if a specific value field has been returned'''
 		
-		return s in self._fields
+		return s in self.fields
+	
+	def has_overlay(self, s: str) -> bool:
+		'''Tests if a specific value field has been returned'''
+		
+		return s in self.overlay
 	
 	def empty(self):
 		'''Empties the object of all values and clears any errors'''
 		
-		self._fields = dict()
+		self.fields = dict()
+		self.overlay = dict()
 		return self
 
 	def count(self) -> int:
 		'''Returns the number of values contained by the return value'''
 		
-		return len(self._fields)
+		return len(self.fields)
 
 	def merge(self, contact, clobber=False):
 		'''Imports information from another contact, optionally overwriting'''
 
 		# This call enables recursion
-		_merge_dict(self._fields, contact._fields, clobber)
+		_merge_dict(self.fields, contact.fields, clobber)
+	
+	def merge_overlay(self, contact, clobber=False):
+		'''Imports information from another contact into the instance's overlay, optionally 
+		overwriting'''
+
+		# This call enables recursion
+		_merge_dict(self.overlay, contact.fields, clobber)
 	
 	def setphoto(self, path: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
@@ -130,7 +154,7 @@ class Contact:
 		
 		rawdata = fhandle.read()
 		fhandle.close()
-		self._fields['Photo'] = {
+		self.fields['Photo'] = {
 			'Mime': filetype,
 			'Data': b85encode(rawdata).decode()
 		}
