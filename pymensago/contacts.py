@@ -30,7 +30,8 @@ class Contact:
 			'Source': 'owner',
 			'Update': 'no',
 			'ID': '',
-			'Name': { 'Given': '', 'Family': '' }
+			'Name.Given': '',
+			'Name.Family': ''
 		}
 		self.overlay = dict()
 	
@@ -56,7 +57,7 @@ class Contact:
 	def fields(self) -> list:
 		return self.fields
 
-	def overlay_values(self, values: dict):
+	def set_overlay_values(self, values: dict):
 		'''Adds multiple dictionary fields to the object's contact info overlay.'''
 		
 		for k,v in values.items():
@@ -111,6 +112,14 @@ class Contact:
 		# This call enables recursion
 		_merge_dict(self.overlay, contact.fields, clobber)
 	
+	def get_data(self, sensitivity: str) -> dict:
+		'''Returns a dictionary containing all the data at the specified sensitivity level or less, 
+		filling in data from the overlay as appropriate'''
+		out = dict()
+
+		# TODO: finish implementing Contact.get_data()
+		return out
+
 	def setphoto(self, path: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
 		if path == '' and 'Photo' in self:
