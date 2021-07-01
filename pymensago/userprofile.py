@@ -67,20 +67,13 @@ _db_setup_cmds = [ '''
 		"body" TEXT,
 		"attachments" TEXT
 	);''', '''
-	CREATE TABLE "contacts" (
-		"id" TEXT NOT NULL,
-		"sensitivity" TEXT NOT NULL,
-		"source" TEXT NOT NULL,
-		"fieldname"	TEXT NOT NULL,
-		"fieldvalue" TEXT
-	);''', '''
-	CREATE TABLE "personalinfo" (
+	CREATE TABLE "contactinfo" (
 		"id" TEXT NOT NULL,
 		"sensitivity" TEXT NOT NULL,
 		"source" TEXT NOT NULL,
 		"fieldname" TEXT NOT NULL,
 		"fieldvalue" TEXT,
-		"pips" TEXT
+		"pip" TEXT
 	);''', '''
 	CREATE TABLE "notes" (
 		"id"	TEXT NOT NULL UNIQUE,
