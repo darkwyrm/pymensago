@@ -20,22 +20,72 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 				dest[k] = source[k]
 
 
-class Contact(dict):
+class Contact:
 	'''Class to hold and manage contact information'''
-	def __init__(self) -> None:
-		self['Version'] = '1.0'
-		self['Sensitivity'] = 'private'
-		self['EntityType'] = 'individual'
-		self['Source'] = 'owner'
-		self['Update'] = 'no'
-		self['ID'] = ''
-		self['Name'] = { 'Given': '', 'Family': ''	}
+	def __init__(self):
+		self._fields = {
+			'Version': '1.0',
+			'Sensitivity': 'private',
+			'EntityType': 'individual',
+			'Source': 'owner',
+			'Update': 'no',
+			'ID': '',
+			'Name': { 'Given': '', 'Family': '' }
+		}
 	
+	def __contains__(self, key):
+		return key in self._fields
+
+	def __delitem__(self, key):
+		del self._fields[key]
+
+	def __getitem__(self, key):
+		return self._fields[key]
+	
+	def __iter__(self):
+		return self._fields.__iter__()
+	
+	def __setitem__(self, key, value):
+		self._fields[key] = value
+
+	# TODO: implement __str__ to dump a nicely-formatted multiline string of contact info
+	# def __str__(self):
+	# 	return '\n'.join(out)
+
+	def fields(self) -> list:
+		return self._fields
+
+	def set_values(self, values: dict):
+		'''Adds multiple dictionary fields to the object.'''
+		
+		for k,v in values.items():
+			if k in [ '_error', '_info' ]:
+				return False
+			self._fields[k] = v
+		
+		return self
+	
+	def has_value(self, s: str) -> bool:
+		'''Tests if a specific value field has been returned'''
+		
+		return s in self._fields
+	
+	def empty(self):
+		'''Empties the object of all values and clears any errors'''
+		
+		self._fields = dict()
+		return self
+
+	def count(self) -> int:
+		'''Returns the number of values contained by the return value'''
+		
+		return len(self._fields)
+
 	def merge(self, contact, clobber=False):
 		'''Imports information from another contact, optionally overwriting'''
 
 		# This call enables recursion
-		_merge_dict(self, contact, clobber)
+		_merge_dict(self._fields, contact._fields, clobber)
 	
 	def setphoto(self, path: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
@@ -80,7 +130,7 @@ class Contact(dict):
 		
 		rawdata = fhandle.read()
 		fhandle.close()
-		self['Photo'] = {
+		self._fields['Photo'] = {
 			'Mime': filetype,
 			'Data': b85encode(rawdata).decode()
 		}
