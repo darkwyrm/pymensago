@@ -79,9 +79,20 @@ class Contact:
 		
 		return RetVal()
 	
-	def get_field(self, privacy: str) -> RetVal:
+	def get_field(self, key: str, privacy: str) -> RetVal:
 		'''Obtains the value of a field at the requested privacy level'''
-		# TODO: implement Contact.get_field()
+
+		levels = ['Secret', 'Private', 'Public', 'Annotations']
+		if privacy not in levels:
+			return RetVal(ErrBadValue, 'bad privacy value')
+		level_index = levels.index(privacy)
+
+		while level_index < len(levels):
+			if key in self.fields[levels[level_index]]:
+				return RetVal().set_value('field', self.fields[levels[level_index]][key])
+			level_index = level_index + 1
+		
+		return RetVal(ErrNotFound, f"{key} not found")
 
 	def get_data(self, key: str, privacy: str) -> RetVal:
 		'''Returns a dictionary containing all the data at the specified sensitivity level or less, 
