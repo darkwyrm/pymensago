@@ -20,7 +20,6 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 				or (clobber and k in dest):
 				dest[k] = source[k]
 
-
 class Contact:
 	'''Class to hold and manage contact information'''
 	def __init__(self):
@@ -44,9 +43,8 @@ class Contact:
 	def __setitem__(self, key, value):
 		self.fields[key] = value
 
-	# TODO: implement __str__ to dump a nicely-formatted multiline string of contact info
-	# def __str__(self):
-	# 	return '\n'.join(out)
+	def to_string(self, privacy: str) -> str:
+		return _dumps(self, privacy)
 
 	def empty(self):
 		'''Empties the object of all values'''
@@ -165,5 +163,77 @@ class Contact:
 			os.remove(temppath)
 
 		return RetVal()
+
+def _generate_formatted_name(c: Contact, privacy: str) -> str:
+	'''Attempts to create a FormattedName field using data accessible at the specified privacy 
+	level'''
+	# TODO: Implement _generate_formatted_name()
+
+def _dumps(c: Contact, privacy: str) -> str:
+	'''Creates a pretty-printed string from a contact'''
+
+	out = list()
+	if c['Header']['EntityType'] == 'org':
+		out.append('Type: Organization')
+	else:
+		out.append(c['Header']['EntityType'].capitalize())
+	
+	status = c.get_field('FormattedName', privacy)
+	if status.error():
+		if status.error() != ErrNotFound():
+			return ''
+		temp = _generate_formatted_name(c, privacy)
+		if temp:
+			out.append(f"Name: {temp}")
+	else:
+		out.append(status['field'])
+	
+	status = c.get_field('Nicknames', privacy)
+	if not status.error():
+		out.append("Nicknames: %s" %  ', '.join(status['field']))
+
+	status = c.get_field('Gender', privacy)
+	if not status.error():
+		out.append(f"Gender: {status['field']}")
+	
+	# TODO: Finish implementing _dumps()
+	
+	# MailingAddresses
+	# Phone
+
+	# Mensago:UserID
+	# Mensago:Domain
+	# Mensago:Keys:KeyHash
+	# Mensago:Keys:Value
+
+	# Anniversary
+	# Birthday
+	# Email
+	
+	status = c.get_field('Organization', privacy)
+	if not status.error():
+		out.append(f"Organization: {status['field']}")
+	
+	status = c.get_field('Title', privacy)
+	if not status.error():
+		out.append(f"Title: {status['field']}")
+
+	status = c.get_field('Categories', privacy)
+	if not status.error():
+		out.append("Categories: %s" %  ', '.join(status['field']))
+
+	status = c.get_field('Website', privacy)
+	if not status.error():
+		out.append(f"Website: {status['field']}")
+	
+	# Photo
+	# Languages
+	# Notes
+
+	# Attachments:Name
+	# Attachments:Mime
+	# Attachments:Data
+
+	return '\n'.join(out)
 
 # TODO: Create JSON schemas for contacts and the contact request message type
