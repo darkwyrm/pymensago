@@ -5,7 +5,7 @@ import os
 import tempfile
 import time
 
-from retval import ErrBadType, ErrBadValue, RetVal, ErrBadData 
+from retval import ErrBadType, ErrBadValue, ErrNotFound, RetVal, ErrBadData 
 from PIL import Image
 from pymensago.utils import UUID
 
@@ -78,14 +78,25 @@ class Contact:
 		_merge_dict(self.fields, contact.fields, clobber)
 		
 		return RetVal()
-		
-	def get_data(self, privacy: str) -> dict:
+	
+	def get_field(self, privacy: str) -> RetVal:
+		'''Obtains the value of a field at the requested privacy level'''
+		# TODO: implement Contact.get_field()
+
+	def get_data(self, key: str, privacy: str) -> RetVal:
 		'''Returns a dictionary containing all the data at the specified sensitivity level or less, 
 		filling in data from the overlay as appropriate'''
-		out = dict()
+		
+		levels = ['Annotations', 'Public', 'Private', 'Secret']
+		if privacy not in levels:
+			return RetVal(ErrBadValue, 'bad privacy value')
+		level_limit = levels.index(privacy) + 1
 
-		# TODO: finish implementing Contact.get_data()
-		return out
+		out = dict()
+		for level in range(level_limit):
+			_merge_dict(out, self.fields[levels[level]], True)
+
+		return RetVal().set_value('data', out)
 
 	def setphoto(self, path: str, privacy: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
