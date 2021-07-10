@@ -22,10 +22,11 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 
 class Contact:
 	'''Class to hold and manage contact information'''
-	def __init__(self):
+	def __init__(self, data: dict=dict()):
 		self.id = UUID()
-		self.fields = dict()
-		self.empty()
+		self.fields = data
+		if len(data) == 0:
+			self.empty()
 	
 	def __contains__(self, key):
 		return key in self.fields['Public'] or key in self.fields['Private'] \
@@ -69,13 +70,15 @@ class Contact:
 
 	def merge(self, contact, clobber=False) -> RetVal:
 		'''Imports information from another contact, optionally overwriting'''
-		if not isinstance(contact, Contact):
-			return RetVal(ErrBadType, 'bad contact type')
+		if isinstance(contact, Contact):
+			_merge_dict(self.fields, contact.fields, clobber)
+			return RetVal()
 
-		# This call enables recursion
-		_merge_dict(self.fields, contact.fields, clobber)
+		if isinstance(contact, dict):
+			_merge_dict(self.fields, contact, clobber)
+			return RetVal()
 		
-		return RetVal()
+		return RetVal(ErrBadType, 'bad contact type')
 	
 	def get_field(self, key: str, privacy: str) -> RetVal:
 		'''Obtains the value of a field at the requested privacy level'''
@@ -188,8 +191,8 @@ def _dumps(c: Contact, privacy: str) -> str:
 	else:
 		out.append(status['field'])
 	
-	status = c.get_field('Nicknames', privacy)
-	if not status.error():
+	data = c.get_data()
+	if data['Nicknames']:
 		out.append("Nicknames: %s" %  ', '.join(status['field']))
 
 	status = c.get_field('Gender', privacy)
