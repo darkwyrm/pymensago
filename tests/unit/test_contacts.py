@@ -75,10 +75,29 @@ def test_contact_setphoto():
 		'contact_setphoto failed to set a JPEG'
 
 
-def test_contact_dumps():
+def test_contact_to_string():
 	'''Tests the pretty-printing of a Contact'''
+	c = contacts.Contact({
+		'Header' : {
+			'Version': '1.0',
+			'EntityType': 'individual'
+		},
+		'Public': {
+			'Name': { 'Given':'Richard', 'Family':'Brannan'},
+			'Gender': 'Male',
+			'Website': 'https://www.example.com',
+			'Mensago': { 'UserID':'cavs4life', 'Domain':'example.com' },
+		},
+		'Private': {
+			'Phone': { 'Mobile':'555-555-1234' },
+		},
+		'Secret': {},
+		'Annotations': {}
+	})
+	
+	print(c.to_string('Private'))
 
 if __name__ == '__main__':
 	test_contact_import()
 	test_contact_setphoto()
-	test_contact_dumps()
+	test_contact_to_string()

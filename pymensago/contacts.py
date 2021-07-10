@@ -95,7 +95,7 @@ class Contact:
 		
 		return RetVal(ErrNotFound, f"{key} not found")
 
-	def get_data(self, key: str, privacy: str) -> RetVal:
+	def get_data(self, privacy: str) -> RetVal:
 		'''Returns a dictionary containing all the data at the specified sensitivity level or less, 
 		filling in data from the overlay as appropriate'''
 		
@@ -183,7 +183,7 @@ def _dumps(c: Contact, privacy: str) -> str:
 	
 	status = c.get_field('FormattedName', privacy)
 	if status.error():
-		if status.error() != ErrNotFound():
+		if status.error() != ErrNotFound:
 			return ''
 		temp = _generate_formatted_name(c, privacy)
 		if temp:
@@ -191,8 +191,8 @@ def _dumps(c: Contact, privacy: str) -> str:
 	else:
 		out.append(status['field'])
 	
-	data = c.get_data()
-	if data['Nicknames']:
+	data = c.get_data(privacy)
+	if 'Nicknames' in data:
 		out.append("Nicknames: %s" %  ', '.join(status['field']))
 
 	status = c.get_field('Gender', privacy)
