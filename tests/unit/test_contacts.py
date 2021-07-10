@@ -117,6 +117,8 @@ def test_contact_to_string():
 	})
 	
 	print(c.to_string('Private'))
+	# TODO: Finish test_contact_to_string()
+
 
 if __name__ == '__main__':
 	test_contact_import()
