@@ -20,7 +20,8 @@ def test_contact_import():
 			'EntityType': 'individual'
 		},
 		'Public': {
-			'Name': { 'Given':'Richard', 'Family':'Brannan'},
+			'GivenName': 'Richard',
+			'FamilyName': 'Brannan',
 			'Gender': 'Male',
 			'Website': 'https://www.example.com',
 			'Mensago': { 
@@ -45,7 +46,8 @@ def test_contact_import():
 			'EntityType': 'individual'
 		},
 		'Public': {
-			'Name': { 'Given':'Richard', 'Family':'Brannan'},
+			'GivenName': 'Richard',
+			'FamilyName': 'Brannan',
 			'Gender': 'Male',
 			'Website': 'https://www.example.com',
 			'Mensago': { 
@@ -95,7 +97,8 @@ def test_contact_to_string():
 			'EntityType': 'individual'
 		},
 		'Public': {
-			'Name': { 'Given':'Richard', 'Family':'Brannan'},
+			'GivenName': 'Richard',
+			'FamilyName': 'Brannan',
 			'Gender': 'Male',
 			'Website': 'https://www.example.com',
 			'Mensago': { 

@@ -172,10 +172,6 @@ class Contact:
 
 		return RetVal()
 
-def _generate_formatted_name(c: Contact, privacy: str) -> str:
-	'''Attempts to create a FormattedName field using data accessible at the specified privacy 
-	level'''
-	# TODO: Implement _generate_formatted_name()
 
 def _dumps(c: Contact, privacy: str) -> str:
 	'''Creates a pretty-printed string from a contact'''
@@ -194,7 +190,25 @@ def _dumps(c: Contact, privacy: str) -> str:
 	if 'FormattedName' in data:
 		out.append(f"Name: {data['FormattedName']}")
 	else:	
-		temp = _generate_formatted_name(c, privacy)
+		# TODO: POSTDEMO: Localize generated FormattedName in Contact._dumps()
+		temp = ''
+		if 'GivenName' in data:
+			temp = data['GivenName']		
+		
+		if 'FamilyName' in data:
+			if temp:
+				temp = temp + ' ' + data['FamilyName']
+			else:
+				temp = data['FamilyName']
+		
+		if 'Prefix' in data and temp:
+			temp = f"{data['Prefix']} {temp}"
+		
+		if 'Suffixes' in data and temp:
+			parts = [ temp ]
+			parts.extend(data['Suffixes'])
+			temp = ', '.join(parts)
+		
 		if temp:
 			out.append(f"Name: {temp}")
 	
