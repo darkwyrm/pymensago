@@ -20,6 +20,11 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 				or (clobber and k in dest):
 				dest[k] = source[k]
 
+def _date_to_str(date: str) -> str:
+	'''Converts the short form UTC date format to a localized string'''
+	# TODO: Implement _date_to_str()
+	return ''
+
 class Contact:
 	'''Class to hold and manage contact information'''
 	def __init__(self, data: dict=dict()):
@@ -181,61 +186,133 @@ def _dumps(c: Contact, privacy: str) -> str:
 	else:
 		out.append(c['Header']['EntityType'].capitalize())
 	
-	status = c.get_field('FormattedName', privacy)
+	status = c.get_data(privacy)
 	if status.error():
-		if status.error() != ErrNotFound:
-			return ''
+		return ''
+	data = status['data']
+
+	if 'FormattedName' in data:
+		out.append(f"Name: {data['FormattedName']}")
+	else:	
 		temp = _generate_formatted_name(c, privacy)
 		if temp:
 			out.append(f"Name: {temp}")
-	else:
-		out.append(status['field'])
 	
-	data = c.get_data(privacy)
 	if 'Nicknames' in data:
-		out.append("Nicknames: %s" %  ', '.join(status['field']))
-
-	status = c.get_field('Gender', privacy)
-	if not status.error():
-		out.append(f"Gender: {status['field']}")
+		out.append("Nicknames: %s" %  ', '.join(data['Nicknames']))
 	
-	# TODO: Finish implementing _dumps()
+	if 'Gender' in data:
+		out.append(f"Gender: {data['Gender']}")
 	
-	# MailingAddresses
-	# Phone
+	if 'MailingAddresses' in data:
+		for k,addr in data['MailingAddresses'].items():
+			preferred = False
+			addrname = k
+			if k.endswith('*'):
+				addrname = k[:-1]
+				preferred = True
+			
+			if len(addr) < 1:
+				continue
+			
+			# TODO: POSTDEMO: Localize address output
+			if preferred:
+				out.append(f"{addrname} Address (Preferred)")
+			else:
+				out.append(f"{addrname} Address")
 
-	# Mensago:UserID
-	# Mensago:Domain
-	# Mensago:Keys:KeyHash
-	# Mensago:Keys:Value
+			if 'StreetAddress' in addr:
+				out.append('  ' + addr['StreetAddress'])
+			if 'ExtendedAddress' in addr:
+				out.append('  ' + addr['ExtendedAddress'])
+			
+			line = ''
+			if 'Locality' in addr:
+				line = '  ' + addr['Locality']
+			
+			if 'Region' in addr:
+				if line:
+					line = line + f", {addr['Region']}"
+				else:
+					line = '  ' + addr['Region']
+			
+			if 'PostalCode' in addr:
+				if line:
+					line = line + f" {addr['PostalCode']}"
+				else:
+					line = '  ' + addr['PostalCode']
+			if line:
+				out.append(line)
 
-	# Anniversary
-	# Birthday
-	# Email
+			if 'Country' in addr:
+				out.append('  ' + addr['Country'])			
+
+
+	if 'Phone' in data:
+		for k,v in data['Phone'].items():
+			if k.endswith('*'):
+				out.append(f"Phone ({k[:-1]}, Preferred): {v}")
+			else:
+				out.append(f"Phone ({k}): {v}")
+
+	if 'Mensago' in data:
+		for addrname in data['Mensago'].keys():
+			if 'UserID' in data['Mensago'][addrname]:
+				if addrname.endswith('*'):
+					out.append(f"Mensago ({data['Mensago'][addrname[:-1]]}, Preferred): "
+								f"{data['Mensago'][addrname]['UserID']}/"
+								f"{data['Mensago'][addrname]['Domain']} ")
+				else:
+					out.append(f"Mensago ({addrname}): {data['Mensago'][addrname]['UserID']}/"
+								f"{data['Mensago'][addrname]['Domain']}")
+			else:
+				if addrname.endswith('*'):
+					out.append(f"Mensago ({data['Mensago'][addrname[:-1]]}, Preferred): "
+								f"{data['Mensago'][addrname]['Workspace']}/"
+								f"{data['Mensago'][addrname]['Domain']} ")
+				else:
+					out.append(f"Mensago ({addrname}): {data['Mensago'][addrname]['Workspace']}/"
+								f"{data['Mensago'][addrname]['Domain']}")
+
+	if 'Anniversary' in data:
+		datestr = _date_to_str(data['Anniversary'])
+		if datestr:
+			out.append(f"Anniversary: {datestr}")
 	
-	status = c.get_field('Organization', privacy)
-	if not status.error():
-		out.append(f"Organization: {status['field']}")
+	if 'Birthday' in data:
+		datestr = _date_to_str(data['Birthday'])
+		if datestr:
+			out.append(f"Birthday: {datestr}")
 	
-	status = c.get_field('Title', privacy)
-	if not status.error():
-		out.append(f"Title: {status['field']}")
-
-	status = c.get_field('Categories', privacy)
-	if not status.error():
-		out.append("Categories: %s" %  ', '.join(status['field']))
-
-	status = c.get_field('Website', privacy)
-	if not status.error():
-		out.append(f"Website: {status['field']}")
+	if 'Email' in data:
+		for k,v in data['Email'].items():
+			if k.endswith('*'):
+				out.append(f"E-mail ({k[:-1]}, Preferred): {v}")
+			else:
+				out.append(f"E-mail ({k}): {v}")
 	
-	# Photo
-	# Languages
-	# Notes
+	if 'Organization' in data:
+		out.append(f"Organization: {data['Organization']}")
+	
+	if 'Title' in data:
+		out.append(f"Title: {data['Title']}")
 
-	# Attachments:Name
-	# Attachments:Mime
-	# Attachments:Data
+	if 'Categories' in data:
+		out.append("Categories: %s" %  ', '.join(data['Categories']))
+
+	if 'Website' in data:
+		out.append(f"Website: {data['Website']}")
+	
+	if 'Languages' in data:
+		# TODO: translate language abbreviations to full names
+		out.append("Languages: %s" %  ', '.join(data['Languages']))
+	
+	if 'Attachments' in data:
+		for item in data['Attachments']:
+			out.append(f"Attachment: {item['Name']} / {item['Mime']}")
+	
+	if 'Notes' in data:
+		out.append(f"Notes:\n{data['Notes']}")
 
 	return '\n'.join(out)
 

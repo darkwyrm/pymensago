@@ -22,8 +22,14 @@ def test_contact_import():
 		'Public': {
 			'Name': { 'Given':'Richard', 'Family':'Brannan'},
 			'Gender': 'Male',
-		'Website': 'https://www.example.com',
-		'Mensago': { 'UserID':'cavs4life', 'Domain':'example.com' },
+			'Website': 'https://www.example.com',
+			'Mensago': { 
+				"Home": {
+					'UserID':'cavs4life',
+					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+					'Domain':'example.com'
+				}
+			},
 		},
 		'Private': {
 			'Phone': { 'Mobile':'555-555-1234' },
@@ -42,7 +48,13 @@ def test_contact_import():
 			'Name': { 'Given':'Richard', 'Family':'Brannan'},
 			'Gender': 'Male',
 			'Website': 'https://www.example.com',
-			'Mensago': { 'UserID':'cavs4life', 'Domain':'example.com' },
+			'Mensago': { 
+				"Home": {
+					'UserID':'cavs4life',
+					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+					'Domain':'example.com'
+				}
+			},
 		},
 		'Private': {
 			'Phone': { 'Mobile':'555-555-1234' },
@@ -86,7 +98,13 @@ def test_contact_to_string():
 			'Name': { 'Given':'Richard', 'Family':'Brannan'},
 			'Gender': 'Male',
 			'Website': 'https://www.example.com',
-			'Mensago': { 'UserID':'cavs4life', 'Domain':'example.com' },
+			'Mensago': { 
+				"Home": {
+					'UserID':'cavs4life',
+					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+					'Domain':'example.com'
+				}
+			},
 		},
 		'Private': {
 			'Phone': { 'Mobile':'555-555-1234' },
