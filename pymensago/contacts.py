@@ -1,13 +1,17 @@
 '''Module to implement contact management'''
 
 from base64 import b85encode
+import datetime
 import os
+import re
 import tempfile
-import time
 
 from retval import ErrBadType, ErrBadValue, ErrNotFound, RetVal, ErrBadData 
 from PIL import Image
 from pymensago.utils import UUID
+
+_long_date_pattern = re.compile(r'([1-3]\d{3})([0-1]\d)([0-3]\d)')
+_short_date_pattern = re.compile(r'([0-1]\d)([0-3]\d)')
 
 def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 	for k in source:
@@ -22,7 +26,20 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 
 def _date_to_str(date: str) -> str:
 	'''Converts the short form UTC date format to a localized string'''
-	# TODO: Implement _date_to_str()
+	
+	global _long_date_pattern
+	global _short_date_pattern
+
+	# TODO: Finish implementing Contacts._date_to_str()
+	
+	match = _long_date_pattern.match(date)
+	if match:
+		return ''
+				
+	match = _short_date_pattern.match(date)
+	if match:
+		return ''
+	
 	return ''
 
 class Contact:
