@@ -24,6 +24,7 @@ def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 				or (clobber and k in dest):
 				dest[k] = source[k]
 
+
 def _date_to_str(date: str) -> str:
 	'''Converts the short form UTC date format to a localized string'''
 	
@@ -51,8 +52,7 @@ class Contact:
 			self.empty()
 	
 	def __contains__(self, key):
-		return key in self.fields['Public'] or key in self.fields['Private'] \
-			or key in self.fields['Secret'] or key in self.fields['Annotations']
+		return key in self.fields or key in self.fields['Annotations']
 
 	def __delitem__(self, key):
 		del self.fields[key]
@@ -66,8 +66,8 @@ class Contact:
 	def __setitem__(self, key, value):
 		self.fields[key] = value
 
-	def to_string(self, privacy: str) -> str:
-		return _dumps(self, privacy)
+	def to_string(self) -> str:
+		return _dumps(self)
 
 	def empty(self):
 		'''Empties the object of all values'''
@@ -77,9 +77,6 @@ class Contact:
 				'Version': '1.0',
 				'EntityType': 'individual',
 			},
-			'Public': dict(),
-			'Private': dict(),
-			'Secret': dict(),
 			'Annotations': dict()
 		}
 		return self
@@ -87,8 +84,7 @@ class Contact:
 	def count(self) -> int:
 		'''Returns the number of contact fields contained by the return value'''
 		
-		return len(self.fields['Public']) + len(self.fields['Private']) \
-			+ len(self.fields['Secret']) + len(self.fields['Annotations'])
+		return len(self.fields)
 
 	def merge(self, contact, clobber=False) -> RetVal:
 		'''Imports information from another contact, optionally overwriting'''
@@ -102,42 +98,9 @@ class Contact:
 		
 		return RetVal(ErrBadType, 'bad contact type')
 	
-	def get_field(self, key: str, privacy: str) -> RetVal:
-		'''Obtains the value of a field at the requested privacy level'''
-
-		levels = ['Secret', 'Private', 'Public', 'Annotations']
-		if privacy not in levels:
-			return RetVal(ErrBadValue, 'bad privacy value')
-		level_index = levels.index(privacy)
-
-		while level_index < len(levels):
-			if key in self.fields[levels[level_index]]:
-				return RetVal().set_value('field', self.fields[levels[level_index]][key])
-			level_index = level_index + 1
-		
-		return RetVal(ErrNotFound, f"{key} not found")
-
-	def get_data(self, privacy: str) -> RetVal:
-		'''Returns a dictionary containing all the data at the specified sensitivity level or less, 
-		filling in data from the overlay as appropriate'''
-		
-		levels = ['Annotations', 'Public', 'Private', 'Secret']
-		if privacy not in levels:
-			return RetVal(ErrBadValue, 'bad privacy value')
-		level_limit = levels.index(privacy) + 1
-
-		out = dict()
-		for level in range(level_limit):
-			_merge_dict(out, self.fields[levels[level]], True)
-
-		return RetVal().set_value('data', out)
-
-	def setphoto(self, path: str, privacy: str) -> RetVal:
+	def setphoto(self, path: str) -> RetVal:
 		'''Given a file path, encode and store the data in the contact structure'''
 
-		if privacy not in ['Public', 'Private', 'Secret', 'Annotations']:
-			return RetVal(ErrBadValue, 'bad privacy value')
-		
 		if path == '' and 'Photo' in self:
 			del self['Photo']
 			return RetVal()
@@ -179,7 +142,7 @@ class Contact:
 		
 		rawdata = fhandle.read()
 		fhandle.close()
-		self.fields[privacy]['Photo'] = {
+		self.fields['Photo'] = {
 			'Mime': filetype,
 			'Data': b85encode(rawdata).decode()
 		}
@@ -190,7 +153,7 @@ class Contact:
 		return RetVal()
 
 
-def _dumps(c: Contact, privacy: str) -> str:
+def _dumps(c: Contact) -> str:
 	'''Creates a pretty-printed string from a contact'''
 
 	out = list()
@@ -199,10 +162,7 @@ def _dumps(c: Contact, privacy: str) -> str:
 	else:
 		out.append(c['Header']['EntityType'].capitalize())
 	
-	status = c.get_data(privacy)
-	if status.error():
-		return ''
-	data = status['data']
+	data = c.fields
 
 	if 'FormattedName' in data:
 		out.append(f"Name: {data['FormattedName']}")
