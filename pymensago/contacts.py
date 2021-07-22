@@ -5,6 +5,7 @@ import datetime
 import os
 import re
 import tempfile
+import time
 
 from retval import ErrBadType, ErrBadValue, ErrNotFound, RetVal, ErrBadData 
 from PIL import Image
@@ -31,17 +32,27 @@ def _date_to_str(date: str) -> str:
 	global _long_date_pattern
 	global _short_date_pattern
 
-	# TODO: Finish implementing Contacts._date_to_str()
-	
+	mon, day, year = (0,0,0)
 	match = _long_date_pattern.match(date)
 	if match:
-		return ''
-				
-	match = _short_date_pattern.match(date)
-	if match:
+		mon = int(date[4:6])
+		day = int(date[6:8])
+		year = int(date[0:4])
+	else: 				
+		match = _short_date_pattern.match(date)
+		if match:
+			mon = int(date[0:2])
+			day = int(date[2:4])
+	
+	if not mon or not day:	
 		return ''
 	
-	return ''
+	if year:
+		return time.strftime("%B %d %Y",datetime.datetime(year, mon, day).timetuple())
+	else:
+		return time.strftime("%B %d",datetime.datetime(datetime.datetime.today().year, mon, 
+							day).timetuple())
+
 
 class Contact:
 	'''Class to hold and manage contact information'''
