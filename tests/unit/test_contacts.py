@@ -92,6 +92,8 @@ def test_contact_to_string():
 		'Gender': 'Male',
 		'Website': 'https://www.example.com',
 		'Phone': { 'Mobile':'555-555-1234' },
+		'Birthday': '19750415',
+		'Anniversary': '0714',
 		'Mensago': { 
 			"Home": {
 				'UserID':'cavs4life',
@@ -102,8 +104,11 @@ def test_contact_to_string():
 		'Annotations': {}
 	})
 	
-	print(c.to_string())
-	# TODO: Finish test_contact_to_string()
+	expected_string = '\n'.join(['Individual','Name: Richard Brannan','Gender: Male',
+		'Phone (Mobile): 555-555-1234','Mensago (Home): cavs4life/example.com',
+		'Anniversary: July 14','Birthday: April 15 1975','Website: https://www.example.com'])
+	out_string = c.to_string()
+	assert out_string == expected_string, "to_string() output didn't match expected"
 
 
 if __name__ == '__main__':
