@@ -19,21 +19,17 @@ def test_contact_import():
 			'Version': '1.0',
 			'EntityType': 'individual'
 		},
-		'Public': {
-			'GivenName': 'Richard',
-			'FamilyName': 'Brannan',
-			'Gender': 'Male',
-			'Website': 'https://www.example.com',
-			'Mensago': { 
-				"Home": {
-					'UserID':'cavs4life',
-					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
-					'Domain':'example.com'
-				}
-			},
-		},
-		'Private': {
-			'Phone': { 'Mobile':'555-555-1234' },
+		'GivenName': 'Richard',
+		'FamilyName': 'Brannan',
+		'Gender': 'Male',
+		'Website': 'https://www.example.com',
+		'Phone': { 'Mobile':'555-555-1234' },
+		'Mensago': { 
+			"Home": {
+				'UserID':'cavs4life',
+				'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+				'Domain':'example.com'
+			}
 		}
 	})
 	
@@ -45,29 +41,24 @@ def test_contact_import():
 			'Version': '1.0',
 			'EntityType': 'individual'
 		},
-		'Public': {
-			'GivenName': 'Richard',
-			'FamilyName': 'Brannan',
-			'Gender': 'Male',
-			'Website': 'https://www.example.com',
-			'Mensago': { 
-				"Home": {
-					'UserID':'cavs4life',
-					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
-					'Domain':'example.com'
-				}
-			},
+		'GivenName': 'Richard',
+		'FamilyName': 'Brannan',
+		'Gender': 'Male',
+		'Website': 'https://www.example.com',
+		'Phone': { 'Mobile':'555-555-1234' },
+		'Mensago': { 
+			"Home": {
+				'UserID':'cavs4life',
+				'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+				'Domain':'example.com'
+			}
 		},
-		'Private': {
-			'Phone': { 'Mobile':'555-555-1234' },
-		},
-		'Secret': {},
 		'Annotations': {}
 	}, 'test_contact_import: merge test failed'
 	
-	status = contact1.merge({'Public':{'Website':'https://test.example.com'}}, True)
+	status = contact1.merge({'Website':'https://test.example.com'}, True)
 	assert not status.error(), f"{funcname()}: contact merge #2 failed"
-	assert contact1['Public']['Website'] == 'https://test.example.com', 'clobber test failed'
+	assert contact1['Website'] == 'https://test.example.com', 'clobber test failed'
 
 
 def test_contact_setphoto():
@@ -75,17 +66,17 @@ def test_contact_setphoto():
 	imgfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
 	
 	contact1 = contacts.Contact()
-	status = contact1.setphoto(os.path.join(imgfolder, 'toolarge.png'), 'Public')
+	status = contact1.setphoto(os.path.join(imgfolder, 'toolarge.png'))
 	assert status.error() == ErrBadData, 'contact_setphoto failed to handle a too-large photo'
 
-	status = contact1.setphoto(os.path.join(imgfolder, 'toconvert.gif'), 'Public')
+	status = contact1.setphoto(os.path.join(imgfolder, 'toconvert.gif'))
 	assert not status.error(), 'contact_setphoto failed to handle a GIF'
-	assert contact1['Public']['Photo']['Mime'] == 'image/webp', \
+	assert contact1['Photo']['Mime'] == 'image/webp', \
 		'contact_setphoto failed to convert a GIF'
 
-	status = contact1.setphoto(os.path.join(imgfolder, 'testpic.jpg'), 'Public')
+	status = contact1.setphoto(os.path.join(imgfolder, 'testpic.jpg'))
 	assert not status.error(), 'contact_setphoto failed to handle a JPEG'
-	assert contact1['Public']['Photo']['Mime'] == 'image/jpeg', \
+	assert contact1['Photo']['Mime'] == 'image/jpeg', \
 		'contact_setphoto failed to set a JPEG'
 
 
@@ -96,27 +87,22 @@ def test_contact_to_string():
 			'Version': '1.0',
 			'EntityType': 'individual'
 		},
-		'Public': {
-			'GivenName': 'Richard',
-			'FamilyName': 'Brannan',
-			'Gender': 'Male',
-			'Website': 'https://www.example.com',
-			'Mensago': { 
-				"Home": {
-					'UserID':'cavs4life',
-					'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
-					'Domain':'example.com'
-				}
-			},
+		'GivenName': 'Richard',
+		'FamilyName': 'Brannan',
+		'Gender': 'Male',
+		'Website': 'https://www.example.com',
+		'Phone': { 'Mobile':'555-555-1234' },
+		'Mensago': { 
+			"Home": {
+				'UserID':'cavs4life',
+				'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+				'Domain':'example.com'
+			}
 		},
-		'Private': {
-			'Phone': { 'Mobile':'555-555-1234' },
-		},
-		'Secret': {},
 		'Annotations': {}
 	})
 	
-	print(c.to_string('Private'))
+	print(c.to_string())
 	# TODO: Finish test_contact_to_string()
 
 
