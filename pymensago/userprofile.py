@@ -73,7 +73,15 @@ _db_setup_cmds = [ '''
 		"source" TEXT NOT NULL,
 		"fieldname" TEXT NOT NULL,
 		"fieldvalue" TEXT,
-		"pip" TEXT
+		"group" TEXT
+	);''', '''
+	CREATE TABLE "annotations" (
+		"id" TEXT NOT NULL,
+		"sensitivity" TEXT NOT NULL,
+		"source" TEXT NOT NULL,
+		"fieldname" TEXT NOT NULL,
+		"fieldvalue" TEXT,
+		"group" TEXT
 	);''', '''
 	CREATE TABLE "notes" (
 		"id"	TEXT NOT NULL UNIQUE,
