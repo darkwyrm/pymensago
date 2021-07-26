@@ -79,6 +79,13 @@ _db_setup_cmds = [ '''
 		"fieldvalue" TEXT,
 		"group" TEXT
 	);''', '''
+	CREATE TABLE "photos" (
+		"id" TEXT NOT NULL,
+		"source" TEXT NOT NULL,
+		"type" TEXT NOT NULL,
+		"photodata" BLOB,
+		"group" TEXT
+	);''', '''
 	CREATE TABLE "notes" (
 		"id"	TEXT NOT NULL UNIQUE,
 		"address" TEXT,
