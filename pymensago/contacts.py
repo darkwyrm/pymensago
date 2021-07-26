@@ -14,6 +14,64 @@ from pymensago.utils import UUID
 _long_date_pattern = re.compile(r'([1-3]\d{3})([0-1]\d)([0-3]\d)')
 _short_date_pattern = re.compile(r'([0-1]\d)([0-3]\d)')
 
+_TYPE_STRING = 1
+_TYPE_STRLIST = 2
+_TYPE_DICTLIST = 3
+_TYPE_DICT = 4
+
+_contact_schema_types = {
+	"FormattedName": _TYPE_STRING,
+	"GivenName": _TYPE_STRING,
+	"FamilyName": _TYPE_STRING,
+	"Nicknames": _TYPE_STRLIST,
+	"AdditionalNames": _TYPE_STRLIST,
+	"Prefix": _TYPE_STRING,
+	"Suffixes": _TYPE_STRLIST,
+	"Gender": _TYPE_STRING,
+	"Social": _TYPE_DICT,
+	"Bio": _TYPE_STRING,
+
+	"Mensago": _TYPE_DICT,
+	"UserID": _TYPE_STRING,
+	"Workspace": _TYPE_STRING,
+	"Domain": _TYPE_STRING,
+	"Keys": _TYPE_DICT,
+	"Encrypt": _TYPE_DICT,
+	"Verify": _TYPE_DICT,
+	"KeyHash": _TYPE_STRING,
+	"Value": _TYPE_STRING,
+
+	"MailingAddresses": _TYPE_DICT,
+	"POBox": _TYPE_STRING,
+	"StreetAddress": _TYPE_STRING,
+	"ExtendedAddress": _TYPE_STRING,
+	"Locality": _TYPE_STRING,
+	"Region": _TYPE_STRING,
+	"PostalCode": _TYPE_STRING,
+	"Country": _TYPE_STRING,
+
+	"Phone": _TYPE_DICT,
+	"Anniversary": _TYPE_STRING,
+	"Birthday": _TYPE_STRING,
+	
+	"Email": _TYPE_DICT,
+
+	"Organization": _TYPE_DICT,
+	"Name": _TYPE_STRING,
+	"Units": _TYPE_STRLIST,
+	"Title": _TYPE_STRING,
+
+	"Categories": _TYPE_STRLIST,
+
+	"Website": _TYPE_STRING,
+
+	"Photo": _TYPE_DICT,
+	"Languages": _TYPE_STRLIST,
+	"Notes": _TYPE_STRING,
+	"Attachments": _TYPE_DICTLIST,
+	"Custom": _TYPE_DICT
+}
+
 def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 	for k in source:
 		if isinstance(source[k], dict):
@@ -317,5 +375,26 @@ def _dumps(c: Contact) -> str:
 		out.append(f"Notes:\n{data['Notes']}")
 
 	return '\n'.join(out)
+
+
+def set_user_field(fieldname: str, value: str) -> RetVal:
+	'''Sets the contact information field for the user to the specified value.'''
+	# TODO: Implement set_user_field()
+	pass
+
+def delete_user_field(fieldname: str) -> RetVal:
+	'''Deletes the specified contact information field for the user'''
+	# TODO: Implement delete_user_field()
+	pass
+
+def annotate(wid: UUID, fieldname: str) -> RetVal:
+	'''Adds an annotation for a contact'''
+	# TODO: Implement annotate()
+	pass
+
+def delete_annotation(wid: UUID, fieldname: str) -> RetVal:
+	'''Deletes an annotation for a contact'''
+	# TODO: Implement delete_annotation()
+	pass
 
 # TODO: Create JSON schemas for contacts and the contact request message type
