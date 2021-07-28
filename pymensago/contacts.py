@@ -7,7 +7,7 @@ import re
 import tempfile
 import time
 
-from retval import ErrBadType, ErrBadValue, ErrNotFound, RetVal, ErrBadData 
+from retval import ErrBadType, ErrBadValue, ErrNotFound, ErrUnimplemented, RetVal, ErrBadData 
 from PIL import Image
 from pymensago.utils import UUID
 
@@ -223,6 +223,82 @@ class Contact:
 
 		return RetVal()
 
+	def set_user_field(self, fieldname: str, value: str) -> RetVal:
+		'''Sets the contact information field for the user to the specified value.'''
+		# TODO: Implement set_user_field()
+		pass
+
+	def delete_user_field(self, fieldname: str) -> RetVal:
+		'''Deletes the specified contact information field for the user'''
+		
+		if not fieldname:
+			return RetVal(ErrBadValue)
+		
+		global _contact_schema_types
+
+		parts = fieldname.split('.')
+		if len(parts) == 1 and fieldname[0] in self.fields:
+			del self.fields[fieldname[0]]
+		
+		elif len(parts) == 2:
+			if not isinstance(self.fields[parts[0]], str):
+				return RetVal(ErrBadType, f"{parts[0]} is not a container")
+			
+			if isinstance(self.fields[parts[0]], list):
+				# Field is a list of dictionaries. No other usage for lists exists in the schema
+				# for contacts
+				try:
+					index = int(parts[1])
+				except:
+					return RetVal(ErrBadValue, "bad list index")
+				
+				if index >= 0 and index < len(self.fields[parts[0]]):
+					del self.fields[parts[0]][index]
+					return RetVal()
+							
+			if isinstance(self.fields[parts[0]], dict) and fieldname[0] in self.fields:
+				# Field is a dictionary of string values
+				del self.fields[fieldname[0]]
+				return RetVal()
+		
+		elif len(parts) == 3:
+			# This applies to deleting a field within a list of dictionaries
+			if not isinstance(self.fields[parts[0]], str):
+				return RetVal(ErrBadType, f"{parts[0]} is not a container")
+			
+			# Field is a list of dictionaries. No other usage for lists exists in the schema
+			# for contacts
+			if not isinstance(self.fields[parts[0]], list):
+				return RetVal(ErrBadData, f"schema expects a {'.'.join(parts[0:2])} to be a list")
+			
+			try:
+				index = int(parts[1])
+			except:
+				return RetVal(ErrBadValue, "bad list index")
+			
+			if index < 0 or index >= len(self.fields[parts[0]]):
+				return RetVal(ErrBadValue, "list index out of range")
+							
+			# TODO: finish implementing delete_user_field()
+
+			if isinstance(self.fields[parts[0]], dict) and fieldname[0] in self.fields:
+				# Field is a dictionary of string values
+				del self.fields[fieldname[0]]
+				return RetVal()
+			
+			
+		return RetVal(ErrUnimplemented)
+
+	def annotate(self, wid: UUID, fieldname: str) -> RetVal:
+		'''Adds an annotation for a contact'''
+		# TODO: Implement annotate()
+		pass
+
+	def delete_annotation(self, wid: UUID, fieldname: str) -> RetVal:
+		'''Deletes an annotation for a contact'''
+		# TODO: Implement delete_annotation()
+		pass
+
 
 def _dumps(c: Contact) -> str:
 	'''Creates a pretty-printed string from a contact'''
@@ -385,24 +461,5 @@ def _dumps(c: Contact) -> str:
 	return '\n'.join(out)
 
 
-def set_user_field(fieldname: str, value: str) -> RetVal:
-	'''Sets the contact information field for the user to the specified value.'''
-	# TODO: Implement set_user_field()
-	pass
-
-def delete_user_field(fieldname: str) -> RetVal:
-	'''Deletes the specified contact information field for the user'''
-	# TODO: Implement delete_user_field()
-	pass
-
-def annotate(wid: UUID, fieldname: str) -> RetVal:
-	'''Adds an annotation for a contact'''
-	# TODO: Implement annotate()
-	pass
-
-def delete_annotation(wid: UUID, fieldname: str) -> RetVal:
-	'''Deletes an annotation for a contact'''
-	# TODO: Implement delete_annotation()
-	pass
 
 # TODO: Create JSON schemas for contacts and the contact request message type
