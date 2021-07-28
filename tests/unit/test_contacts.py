@@ -23,7 +23,10 @@ def test_contact_import():
 		'FamilyName': 'Brannan',
 		'Gender': 'Male',
 		'Website': { 'Personal':'https://www.example.com' },
-		'Phone': { 'Mobile':'555-555-1234' },
+		'Phone': [	{	'Label':'Mobile',
+						'Number':'555-555-1234' 
+					}
+				],
 		'Mensago': [ 
 			{	'Label':'Home',
 				'UserID':'cavs4life',
@@ -45,7 +48,10 @@ def test_contact_import():
 		'FamilyName': 'Brannan',
 		'Gender': 'Male',
 		'Website': { 'Personal':'https://www.example.com' },
-		'Phone': { 'Mobile':'555-555-1234' },
+		'Phone': [	{	'Label':'Mobile',
+						'Number':'555-555-1234' 
+					}
+				],
 		'Mensago': [
 			{	'Label':'Home',
 				'UserID':'cavs4life',
@@ -91,7 +97,10 @@ def test_contact_to_string():
 		'FamilyName': 'Brannan',
 		'Gender': 'Male',
 		'Website': { 'Personal':'https://www.example.com' },
-		'Phone': { 'Mobile':'555-555-1234' },
+		'Phone': [	{	'Label':'Mobile',
+						'Number':'555-555-1234' 
+					}
+				],
 		'Birthday': '19750415',
 		'Anniversary': '0714',
 		'Mensago': [

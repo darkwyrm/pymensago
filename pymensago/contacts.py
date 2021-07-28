@@ -265,21 +265,22 @@ def _dumps(c: Contact) -> str:
 		out.append(f"Gender: {data['Gender']}")
 	
 	if 'MailingAddresses' in data:
-		for k,addr in data['MailingAddresses'].items():
-			preferred = False
-			addrname = k
-			if k.endswith('*'):
-				addrname = k[:-1]
-				preferred = True
+		for addr in data['MailingAddresses']:
 			
 			if len(addr) < 1:
 				continue
 			
+			if 'Preferred' in addr and (addr['Preferred'].casefold() == 'yes' \
+										or addr['Preferred'].casefold() == 'true'):
+				preferred = True
+			else:
+				preferred = False
+			
 			# TODO: POSTDEMO: Localize address output
 			if preferred:
-				out.append(f"{addrname} Address (Preferred)")
+				out.append(f"{addr['Label']} Address (Preferred)")
 			else:
-				out.append(f"{addrname} Address")
+				out.append(f"{addr['Label']} Address")
 
 			if 'StreetAddress' in addr:
 				out.append('  ' + addr['StreetAddress'])
@@ -309,30 +310,33 @@ def _dumps(c: Contact) -> str:
 
 
 	if 'Phone' in data:
-		for k,v in data['Phone'].items():
-			if k.endswith('*'):
-				out.append(f"Phone ({k[:-1]}, Preferred): {v}")
+		for pn in data['Phone']:
+			if 'Preferred' in pn and (pn['Preferred'].casefold() == 'yes' \
+										or pn['Preferred'].casefold() == 'true'):
+				out.append(f"Phone ({pn['Label']}, Preferred): {pn['Number']}")
 			else:
-				out.append(f"Phone ({k}): {v}")
+				out.append(f"Phone ({pn['Label']}): {pn['Number']}")
 
 	if 'Mensago' in data:
-		for addrname in data['Mensago'].keys():
-			if 'UserID' in data['Mensago'][addrname]:
-				if addrname.endswith('*'):
-					out.append(f"Mensago ({data['Mensago'][addrname[:-1]]}, Preferred): "
-								f"{data['Mensago'][addrname]['UserID']}/"
-								f"{data['Mensago'][addrname]['Domain']} ")
-				else:
-					out.append(f"Mensago ({addrname}): {data['Mensago'][addrname]['UserID']}/"
-								f"{data['Mensago'][addrname]['Domain']}")
+		for addr in data['Mensago']:
+			if 'Preferred' in addr and (addr['Preferred'].casefold() == 'yes' \
+										or addr['Preferred'].casefold() == 'true'):
+				preferred = True
 			else:
-				if addrname.endswith('*'):
-					out.append(f"Mensago ({data['Mensago'][addrname[:-1]]}, Preferred): "
-								f"{data['Mensago'][addrname]['Workspace']}/"
-								f"{data['Mensago'][addrname]['Domain']} ")
+				preferred = False
+			
+			if 'UserID' in addr:
+				if preferred:
+					out.append(f"Mensago ({addr['Label']}, Preferred): "
+								f"{addr['UserID']}/{addr['Domain']} ")
 				else:
-					out.append(f"Mensago ({addrname}): {data['Mensago'][addrname]['Workspace']}/"
-								f"{data['Mensago'][addrname]['Domain']}")
+					out.append(f"Mensago ({addr['Label']}): {addr['UserID']}/{addr['Domain']}")
+			else:
+				if preferred:
+					out.append(f"Mensago ({addr['Label']}, Preferred): "
+								f"{addr['UserID']}/{addr['Domain']} ")
+				else:
+					out.append(f"Mensago ({addr['Label']}): {addr['Workspace']}/{addr['Domain']}")
 
 	if 'Anniversary' in data:
 		datestr = _date_to_str(data['Anniversary'])
@@ -345,11 +349,12 @@ def _dumps(c: Contact) -> str:
 			out.append(f"Birthday: {datestr}")
 	
 	if 'Email' in data:
-		for k,v in data['Email'].items():
-			if k.endswith('*'):
-				out.append(f"E-mail ({k[:-1]}, Preferred): {v}")
+		for addr in data['Phone']:
+			if 'Preferred' in addr and (addr['Preferred'].casefold() == 'yes' \
+										or addr['Preferred'].casefold() == 'true'):
+				out.append(f"E-mail ({addr['Label']}, Preferred): {addr['Address']}")
 			else:
-				out.append(f"E-mail ({k}): {v}")
+				out.append(f"E-mail ({addr['Label']}): {addr['Address']}")
 	
 	if 'Organization' in data:
 		out.append(f"Organization: {data['Organization']}")
