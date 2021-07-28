@@ -366,7 +366,8 @@ def _dumps(c: Contact) -> str:
 		out.append("Categories: %s" %  ', '.join(data['Categories']))
 
 	if 'Website' in data:
-		out.append(f"Website: {data['Website']}")
+		for k,v in data['Website'].items():
+			out.append(f"Website ({k}): {v}")
 	
 	if 'Languages' in data:
 		# TODO: translate language abbreviations to full names
