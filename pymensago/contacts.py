@@ -14,66 +14,6 @@ from pymensago.utils import UUID
 _long_date_pattern = re.compile(r'([1-3]\d{3})([0-1]\d)([0-3]\d)')
 _short_date_pattern = re.compile(r'([0-1]\d)([0-3]\d)')
 
-_TYPE_STRING = 1
-_TYPE_STRLIST = 2
-_TYPE_DICTLIST = 3
-_TYPE_DICT = 4
-
-_contact_schema_types = {
-	"FormattedName": _TYPE_STRING,
-	"GivenName": _TYPE_STRING,
-	"FamilyName": _TYPE_STRING,
-	"Nicknames": _TYPE_STRLIST,
-	"AdditionalNames": _TYPE_STRLIST,
-	"Prefix": _TYPE_STRING,
-	"Suffixes": _TYPE_STRLIST,
-	"Gender": _TYPE_STRING,
-	"Social": _TYPE_DICT,
-	"Bio": _TYPE_STRING,
-
-	"Mensago": _TYPE_DICTLIST,
-	"UserID": _TYPE_STRING,
-	"Workspace": _TYPE_STRING,
-	"Domain": _TYPE_STRING,
-	"Keys": _TYPE_DICT,
-	"Encrypt": _TYPE_DICT,
-	"Verify": _TYPE_DICT,
-	"KeyHash": _TYPE_STRING,
-	"Value": _TYPE_STRING,
-
-	"MailingAddresses": _TYPE_DICT,
-	"POBox": _TYPE_STRING,
-	"StreetAddress": _TYPE_STRING,
-	"ExtendedAddress": _TYPE_STRING,
-	"Locality": _TYPE_STRING,
-	"Region": _TYPE_STRING,
-	"PostalCode": _TYPE_STRING,
-	"Country": _TYPE_STRING,
-
-	"Phone": _TYPE_DICTLIST,
-	"Number": _TYPE_STRING,
-	"Anniversary": _TYPE_STRING,
-	"Birthday": _TYPE_STRING,
-	
-	"Email": _TYPE_DICTLIST,
-	"Address": _TYPE_DICT,
-
-	"Organization": _TYPE_DICT,
-	"Name": _TYPE_STRING,
-	"Units": _TYPE_STRLIST,
-	"Title": _TYPE_STRING,
-
-	"Categories": _TYPE_STRLIST,
-
-	"Website": _TYPE_DICT,
-
-	"Photo": _TYPE_DICT,
-	"Languages": _TYPE_STRLIST,
-	"Notes": _TYPE_STRING,
-	"Attachments": _TYPE_DICTLIST,
-	"Custom": _TYPE_DICT
-}
-
 def _merge_dict(dest: dict, source: dict, clobber: bool) -> None:
 	for k in source:
 		if isinstance(source[k], dict):
@@ -234,11 +174,9 @@ class Contact:
 		if not fieldname:
 			return RetVal(ErrBadValue)
 		
-		global _contact_schema_types
-
 		parts = fieldname.split('.')
-		if len(parts) == 1 and fieldname[0] in self.fields:
-			del self.fields[fieldname[0]]
+		if len(parts) == 1 and parts[0] in self.fields:
+			del self.fields[parts[0]]
 		
 		elif len(parts) == 2:
 			if not isinstance(self.fields[parts[0]], str):
@@ -256,9 +194,9 @@ class Contact:
 					del self.fields[parts[0]][index]
 					return RetVal()
 							
-			if isinstance(self.fields[parts[0]], dict) and fieldname[0] in self.fields:
+			if isinstance(self.fields[parts[0]], dict) and parts[0] in self.fields:
 				# Field is a dictionary of string values
-				del self.fields[fieldname[0]]
+				del self.fields[parts[0]]
 				return RetVal()
 		
 		elif len(parts) == 3:
@@ -279,15 +217,15 @@ class Contact:
 			if index < 0 or index >= len(self.fields[parts[0]]):
 				return RetVal(ErrBadValue, "list index out of range")
 							
-			# TODO: finish implementing delete_user_field()
-
-			if isinstance(self.fields[parts[0]], dict) and fieldname[0] in self.fields:
+			if isinstance(self.fields[parts[0]][index], dict) \
+				and parts[2] in self.fields[parts[0]][index]:
+				
 				# Field is a dictionary of string values
-				del self.fields[fieldname[0]]
+				del self.fields[parts[0]][index][parts[2]]
 				return RetVal()
 			
 			
-		return RetVal(ErrUnimplemented)
+		return RetVal(ErrBadValue, "bad field name")
 
 	def annotate(self, wid: UUID, fieldname: str) -> RetVal:
 		'''Adds an annotation for a contact'''
