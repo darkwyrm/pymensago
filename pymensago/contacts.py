@@ -31,7 +31,7 @@ _contact_schema_types = {
 	"Social": _TYPE_DICT,
 	"Bio": _TYPE_STRING,
 
-	"Mensago": _TYPE_DICT,
+	"Mensago": _TYPE_DICTLIST,
 	"UserID": _TYPE_STRING,
 	"Workspace": _TYPE_STRING,
 	"Domain": _TYPE_STRING,
@@ -50,11 +50,13 @@ _contact_schema_types = {
 	"PostalCode": _TYPE_STRING,
 	"Country": _TYPE_STRING,
 
-	"Phone": _TYPE_DICT,
+	"Phone": _TYPE_DICTLIST,
+	"Number": _TYPE_STRING,
 	"Anniversary": _TYPE_STRING,
 	"Birthday": _TYPE_STRING,
 	
-	"Email": _TYPE_DICT,
+	"Email": _TYPE_DICTLIST,
+	"Address": _TYPE_DICT,
 
 	"Organization": _TYPE_DICT,
 	"Name": _TYPE_STRING,
@@ -63,7 +65,7 @@ _contact_schema_types = {
 
 	"Categories": _TYPE_STRLIST,
 
-	"Website": _TYPE_STRING,
+	"Website": _TYPE_DICT,
 
 	"Photo": _TYPE_DICT,
 	"Languages": _TYPE_STRLIST,
