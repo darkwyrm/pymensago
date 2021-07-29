@@ -175,8 +175,10 @@ class Contact:
 			return RetVal(ErrBadValue)
 		
 		parts = fieldname.split('.')
-		if len(parts) == 1 and parts[0] in self.fields:
-			del self.fields[parts[0]]
+		if len(parts) == 1:
+			if parts[0] in self.fields:
+				del self.fields[parts[0]]
+			return RetVal()
 		
 		elif len(parts) == 2:
 			if not isinstance(self.fields[parts[0]], str):

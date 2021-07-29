@@ -121,7 +121,53 @@ def test_contact_to_string():
 	assert out_string == expected_string, "to_string() output didn't match expected"
 
 
+def test_delete_user_field():
+	'''Tests the method delete_user_field'''
+	c = contacts.Contact({
+		'Header' : {
+			'Version': '1.0',
+			'EntityType': 'individual'
+		},
+		'GivenName': 'Richard',
+		'FamilyName': 'Brannan',
+		'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
+		'Gender': 'Male',
+		'Website': { 'Personal':'https://www.example.com',
+					'Mensago':'https://mensago.org' },
+		'Phone': [	{	'Label':'Mobile',
+						'Number':'555-555-1234',
+						'Preferred':'yes'
+					}
+				],
+		'Birthday': '19750415',
+		'Anniversary': '0714',
+		'Mensago': [
+			{	'Label':'Home',
+				'UserID':'cavs4life',
+				'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+				'Domain':'example.com'
+			},
+			{	'Label':'Work',
+				'UserID':'rbrannan',
+				'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+				'Domain':'contoso.com'
+			}
+		],
+		'Annotations': {}
+	})
+
+	# Subtest #1: Delete a top-level string field
+	status = c.delete_user_field('Anniversary')
+	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
+	assert 'Anniversary' not in c.fields, f"{funcname()}: subtest #1 failed to delete string field"
+
+	# Subtest #2: Try to delete a nonexistent field
+	status = c.delete_user_field('Anniversary')
+	assert not status.error(), f"{funcname()}: subtest #2 returned an error"
+
+
 if __name__ == '__main__':
-	test_contact_import()
-	test_contact_setphoto()
-	test_contact_to_string()
+	# test_contact_import()
+	# test_contact_setphoto()
+	# test_contact_to_string()
+	test_delete_user_field()
