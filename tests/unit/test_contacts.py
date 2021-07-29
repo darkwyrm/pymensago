@@ -165,6 +165,18 @@ def test_delete_user_field():
 	status = c.delete_user_field('Anniversary')
 	assert not status.error(), f"{funcname()}: subtest #2 returned an error"
 
+	# Subtest #3: Delete an element of a list field
+	status = c.delete_user_field('Nicknames.1')
+	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
+	assert c.fields['Nicknames'] == ['Rick','Rich'], \
+		f"{funcname()}: subtest #3 failed to delete a list field item"
+	
+	# Subtest #4: Delete an dictionary field element
+	status = c.delete_user_field('Website.Mensago')
+	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
+	assert len(c.fields['Website']) == 1 and 'Personal' in c.fields['Website'], \
+		f"{funcname()}: subtest #4 failed to correctly delete a dictionary field item"
+
 
 if __name__ == '__main__':
 	# test_contact_import()

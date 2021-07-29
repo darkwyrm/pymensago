@@ -181,7 +181,7 @@ class Contact:
 			return RetVal()
 		
 		elif len(parts) == 2:
-			if not isinstance(self.fields[parts[0]], str):
+			if isinstance(self.fields[parts[0]], str):
 				return RetVal(ErrBadType, f"{parts[0]} is not a container")
 			
 			if isinstance(self.fields[parts[0]], list):
@@ -198,7 +198,7 @@ class Contact:
 							
 			if isinstance(self.fields[parts[0]], dict) and parts[0] in self.fields:
 				# Field is a dictionary of string values
-				del self.fields[parts[0]]
+				del self.fields[parts[0]][parts[1]]
 				return RetVal()
 		
 		elif len(parts) == 3:
