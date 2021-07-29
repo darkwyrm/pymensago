@@ -177,6 +177,12 @@ def test_delete_user_field():
 	assert len(c.fields['Website']) == 1 and 'Personal' in c.fields['Website'], \
 		f"{funcname()}: subtest #4 failed to correctly delete a dictionary field item"
 
+	# Subtest #5: Delete a field inside a dictionary list
+	status = c.delete_user_field('Phone.0.Preferred')
+	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
+	assert len(c.fields['Phone']) == 1 and 'Preferred' not in c.fields['Phone'][0], \
+		f"{funcname()}: subtest #5 failed to correctly delete a field from a dictionary list item"
+
 
 if __name__ == '__main__':
 	# test_contact_import()

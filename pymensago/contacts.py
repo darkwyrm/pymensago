@@ -203,7 +203,7 @@ class Contact:
 		
 		elif len(parts) == 3:
 			# This applies to deleting a field within a list of dictionaries
-			if not isinstance(self.fields[parts[0]], str):
+			if isinstance(self.fields[parts[0]], str):
 				return RetVal(ErrBadType, f"{parts[0]} is not a container")
 			
 			# Field is a list of dictionaries. No other usage for lists exists in the schema
