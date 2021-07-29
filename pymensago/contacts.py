@@ -166,7 +166,68 @@ class Contact:
 	def set_user_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
 		# TODO: Implement set_user_field()
-		pass
+		
+		if not fieldname or not value:
+			return RetVal(ErrBadValue)
+		
+		parts = fieldname.split('.')
+		for part in parts:
+			if not part:
+				return RetVal(ErrBadValue, 'bad field name')
+		
+		if len(parts) == 1:
+			self.fields[parts[0]] = value
+			return RetVal()
+		
+		elif len(parts) == 2:
+			# This section handles top-level fields which are dictionaries or lists of strings
+			# Adding an empty container as a field is not supported because empty data containers
+			# are not supported.
+
+			# Based on the values in parts, determined whether or not the first level needs to be
+			# a list or a dictionary
+
+			# keys have to either be an integer index (for a list) or a string
+			keytype = 'i'
+			try:
+				key = int(parts[1])
+			except:
+				keytype = 's'
+			
+			if not (isinstance(key, int) or isinstance(key, str)):
+				return RetVal(ErrBadType, 'second level key must be an integer or string')
+			
+			# If the top-level container exists, make sure the its type matches the key type
+			if parts[0] in self.fields:
+				if not (keytype == 'i' and isinstance(self.fields[parts[0]], list) 
+						or (keytype == 's' and isinstance(self.fields[parts[0], dict]))):
+					return RetVal(ErrBadType, 'second level key does not match container type')
+			else:
+				if keytype == 'i':
+					self.fields[parts[0]] = list()
+				else:
+					self.fields[parts[0]] = dict()
+
+				if keytype == 'i':
+					if key < 0 or key >= len(self.fields[parts[0]]):
+						self.fields[parts[0]].append(value)
+					else:
+						self.fields[parts[0]] = value
+				else:
+					self.fields[parts[0]] = value
+
+			return RetVal()
+		
+		elif len(parts) == 3:
+			# As of this writing, the schema only utilizes top-level fields which are lists of
+			# dictionaries, but we will write this code to handle lists or dictionaries nested
+			# inside a list or dictionary in case the schema changes at some point.
+			return RetVal(ErrUnimplemented)
+			
+			
+			
+		return RetVal(ErrUnimplemented)
+
 
 	def delete_user_field(self, fieldname: str) -> RetVal:
 		'''Deletes the specified contact information field for the user'''
