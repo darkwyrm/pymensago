@@ -184,8 +184,34 @@ def test_delete_user_field():
 		f"{funcname()}: subtest #5 failed to correctly delete a field from a dictionary list item"
 
 
+
+def test_set_user_field():
+	'''Tests the method set_user_field'''
+	c = contacts.Contact({
+		'Header' : {
+			'Version': '1.0',
+			'EntityType': 'individual'
+		},
+		'GivenName': 'Bob',
+		'Annotations': {}
+	})
+
+	# Subtest #1: Set a top-level string field
+	status = c.set_user_field('GivenName', 'Richard')
+	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
+	assert 'GivenName' in c.fields, f"{funcname()}: subtest #1 failed to set string field"
+	assert c.fields['GivenName'] == 'Richard', f"{funcname()}: subtest #1 field has wrong value"
+
+	# Subtest #2: Try to set a nonexistent field
+	status = c.set_user_field('FamilyName', 'Brannan')
+	assert not status.error(), f"{funcname()}: subtest #2 returned an error"
+	assert 'FamilyName' in c.fields, f"{funcname()}: subtest #2 failed to add a string field"
+	assert c.fields['FamilyName'] == 'Brannan', f"{funcname()}: subtest #1 field has wrong value"
+
+
 if __name__ == '__main__':
 	# test_contact_import()
 	# test_contact_setphoto()
 	# test_contact_to_string()
-	test_delete_user_field()
+	# test_delete_user_field()
+	test_set_user_field()

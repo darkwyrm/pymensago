@@ -165,8 +165,6 @@ class Contact:
 
 	def set_user_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
-		# TODO: Implement set_user_field()
-		
 		if not fieldname or not value:
 			return RetVal(ErrBadValue)
 		
@@ -222,11 +220,60 @@ class Contact:
 			# As of this writing, the schema only utilizes top-level fields which are lists of
 			# dictionaries, but we will write this code to handle lists or dictionaries nested
 			# inside a list or dictionary in case the schema changes at some point.
-			return RetVal(ErrUnimplemented)
+			# keys have to either be an integer index (for a list) or a string
+			keytype = 'i'
+			try:
+				key = int(parts[1])
+			except:
+				keytype = 's'
 			
+			if not (isinstance(key, int) or isinstance(key, str)):
+				return RetVal(ErrBadType, 'second level key must be an integer or string')
+
+			keytype2 = 'i'
+			try:
+				key2 = int(parts[2])
+			except:
+				keytype2 = 's'
 			
+			if not (isinstance(key2, int) or isinstance(key2, str)):
+				return RetVal(ErrBadType, 'third level key must be an integer or string')
+
+			# If the top-level container exists, make sure the its type matches the key type
+			if parts[0] in self.fields:
+				if not (keytype == 'i' and isinstance(self.fields[parts[0]], list) 
+						or (keytype == 's' and isinstance(self.fields[parts[0], dict]))):
+					return RetVal(ErrBadType, 'second level key does not match container type')
+			else:
+				if keytype == 'i':
+					self.fields[parts[0]] = list()
+				else:
+					self.fields[parts[0]] = dict()
+
+			# If the second-level container exists, make sure the its type matches that of the
+			# third-level key
+			if parts[1] in self.fields[parts[0]]:
+				if not (keytype2 == 'i' and isinstance(self.fields[parts[0]][parts[1]], list) 
+						or (keytype2 == 's' and isinstance(self.fields[parts[0][parts[1]], dict]))):
+					return RetVal(ErrBadType, 'third level key does not match container type')
+			else:
+				if keytype2 == 'i':
+					self.fields[parts[0]][parts[1]] = list()
+				else:
+					self.fields[parts[0]][parts[1]] = dict()
+
+
+			if keytype2 == 'i':
+				if key2 < 0 or key2 >= len(self.fields[parts[0]][parts[1]]):
+					self.fields[parts[0]][parts[1]].append(value)
+				else:
+					self.fields[parts[0]][parts[1]] = value
+			else:
+				self.fields[parts[0]][parts[1]] = value
+
+			return RetVal()
 			
-		return RetVal(ErrUnimplemented)
+		return RetVal(ErrBadValue, "bad field name")
 
 
 	def delete_user_field(self, fieldname: str) -> RetVal:
@@ -267,8 +314,6 @@ class Contact:
 			if isinstance(self.fields[parts[0]], str):
 				return RetVal(ErrBadType, f"{parts[0]} is not a container")
 			
-			# Field is a list of dictionaries. No other usage for lists exists in the schema
-			# for contacts
 			if not isinstance(self.fields[parts[0]], list):
 				return RetVal(ErrBadData, f"schema expects a {'.'.join(parts[0:2])} to be a list")
 			
@@ -286,7 +331,6 @@ class Contact:
 				# Field is a dictionary of string values
 				del self.fields[parts[0]][index][parts[2]]
 				return RetVal()
-			
 			
 		return RetVal(ErrBadValue, "bad field name")
 
