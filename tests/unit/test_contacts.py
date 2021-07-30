@@ -208,6 +208,19 @@ def test_set_user_field():
 	assert 'FamilyName' in c.fields, f"{funcname()}: subtest #2 failed to add a string field"
 	assert c.fields['FamilyName'] == 'Brannan', f"{funcname()}: subtest #1 field has wrong value"
 
+	# Subtest #3: Create a second-level list containing one string
+	status = c.set_user_field('Categories.0', 'Friends')
+	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
+	assert 'Categories' in c.fields and len(c.fields['Categories']) == 1, \
+		f"{funcname()}: subtest #3 failed to add a string list"
+	assert c.fields['Categories'][0] == 'Friends', f"{funcname()}: subtest #3 field has wrong value"
+
+	# Subtest #4: Append an item to a second-level list
+	status = c.set_user_field('Categories.-1', 'Chess')
+	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
+	assert 'Categories' in c.fields and len(c.fields['Categories']) == 2, \
+		f"{funcname()}: subtest #4 failed to append to a string list"
+	assert c.fields['Categories'][1] == 'Chess', f"{funcname()}: subtest #4 field has wrong value"
 
 if __name__ == '__main__':
 	# test_contact_import()

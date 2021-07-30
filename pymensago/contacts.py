@@ -206,13 +206,13 @@ class Contact:
 				else:
 					self.fields[parts[0]] = dict()
 
-				if keytype == 'i':
-					if key < 0 or key >= len(self.fields[parts[0]]):
-						self.fields[parts[0]].append(value)
-					else:
-						self.fields[parts[0]] = value
+			if keytype == 'i':
+				if key < 0 or key >= len(self.fields[parts[0]]):
+					self.fields[parts[0]].append(value)
 				else:
 					self.fields[parts[0]] = value
+			else:
+				self.fields[parts[0]] = value
 
 			return RetVal()
 		
