@@ -81,9 +81,9 @@ _db_setup_cmds = [ '''
 	);''', '''
 	CREATE TABLE "photos" (
 		"id" TEXT NOT NULL,
-		"source" TEXT NOT NULL,
 		"type" TEXT NOT NULL,
 		"photodata" BLOB,
+		"isannotation" TEXT NOT NULL,
 		"group" TEXT
 	);''', '''
 	CREATE TABLE "notes" (
