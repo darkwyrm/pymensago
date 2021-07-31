@@ -222,6 +222,26 @@ def test_set_user_field():
 		f"{funcname()}: subtest #4 failed to append to a string list"
 	assert c.fields['Categories'][1] == 'Chess', f"{funcname()}: subtest #4 field has wrong value"
 
+	# Subtest #5: Create a dictionary containing one string
+	status = c.set_user_field('Websites.Example', 'https://www.example.com/')
+	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
+	assert 'Websites' in c.fields and len(c.fields['Websites']) == 1, \
+		f"{funcname()}: subtest #5 failed to add a dictionary"
+	assert 'Example' in c.fields['Websites'] \
+		and c.fields['Websites']['Example'] == 'https://www.example.com/', \
+		f"{funcname()}: subtest #5 field has wrong value"
+
+	# Subtest #6: Add an item to a dictionary
+	status = c.set_user_field('Websites.Example2', 'https://www.example.net/')
+	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
+	assert 'Websites' in c.fields and len(c.fields['Websites']) == 2, \
+		f"{funcname()}: subtest #5 failed to add to an existing dictionary"
+	assert 'Example2' in c.fields['Websites'] \
+		and c.fields['Websites']['Example2'] == 'https://www.example.net/', \
+		f"{funcname()}: subtest #6 field has wrong value"
+
+
+
 if __name__ == '__main__':
 	# test_contact_import()
 	# test_contact_setphoto()

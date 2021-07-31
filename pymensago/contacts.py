@@ -191,6 +191,7 @@ class Contact:
 				key = int(parts[1])
 			except:
 				keytype = 's'
+				key = parts[1]
 			
 			if not (isinstance(key, int) or isinstance(key, str)):
 				return RetVal(ErrBadType, 'second level key must be an integer or string')
@@ -198,7 +199,7 @@ class Contact:
 			# If the top-level container exists, make sure the its type matches the key type
 			if parts[0] in self.fields:
 				if not (keytype == 'i' and isinstance(self.fields[parts[0]], list) 
-						or (keytype == 's' and isinstance(self.fields[parts[0], dict]))):
+						or (keytype == 's' and isinstance(self.fields[parts[0]], dict))):
 					return RetVal(ErrBadType, 'second level key does not match container type')
 			else:
 				if keytype == 'i':
@@ -210,9 +211,9 @@ class Contact:
 				if key < 0 or key >= len(self.fields[parts[0]]):
 					self.fields[parts[0]].append(value)
 				else:
-					self.fields[parts[0]] = value
+					self.fields[parts[0]][parts[1]] = value
 			else:
-				self.fields[parts[0]] = value
+				self.fields[parts[0]][parts[1]] = value
 
 			return RetVal()
 		
