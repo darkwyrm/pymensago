@@ -300,7 +300,7 @@ class Contact:
 				if subkey >=0 and subkey < len(self.fields[field][index]):
 					self.fields[field][index][subkey] = value
 				else:
-					self.fields[field][index][subkey].append(value)
+					self.fields[field][index].append(value)
 			else:
 				self.fields[field][index][subkey] = value
 			

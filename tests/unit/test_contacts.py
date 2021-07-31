@@ -264,17 +264,39 @@ def test_set_user_field():
 
 	# Subtest #9: Create a dictionary of strings inside a dictionary
 	# This isn't part of the schema, but exists should the schema change to need this type
-	status = c.set_user_field('Subtest9.Dict.Test', 'Foobar')
+	status = c.set_user_field('Subtest9.Dict.Test', 'Value9')
 	assert not status.error(), f"{funcname()}: subtest #9 returned an error"
 	assert 'Subtest9' in c.fields and len(c.fields['Subtest9']) == 1, \
 		f"{funcname()}: subtest #9 failed to add a dictionary inside a dictionary"
 	assert isinstance(c.fields['Subtest9']['Dict'], dict), \
 		f"{funcname()}: subtest #9 added the wrong type to a dictionary"
 	assert 'Test' in c.fields['Subtest9']['Dict'] \
-		and c.fields['Subtest9']['Dict']['Test'] == 'Foobar', \
+		and c.fields['Subtest9']['Dict']['Test'] == 'Value9', \
 		f"{funcname()}: subtest #9 field has wrong value"
 	
+	# Subtest #10: Create a list of strings inside a list
+	# This isn't part of the schema, but exists should the schema change to need this type
+	status = c.set_user_field('Subtest10.-1.-1', 'Value10')
+	assert not status.error(), f"{funcname()}: subtest #10 returned an error"
+	assert 'Subtest10' in c.fields and len(c.fields['Subtest10']) == 1, \
+		f"{funcname()}: subtest #10 failed to add a dictionary inside a dictionary"
+	assert isinstance(c.fields['Subtest10'][0], list), \
+		f"{funcname()}: subtest #10 added the wrong type to a list"
+	assert len(c.fields['Subtest10'][0]) == 1 \
+		and c.fields['Subtest10'][0][0] == 'Value10', \
+		f"{funcname()}: subtest #10 field has wrong value"
 
+	# Subtest #11: Create a list of strings inside a dictionary
+	# This isn't part of the schema, but exists should the schema change to need this type
+	status = c.set_user_field('Subtest11.Dict.-1', 'Value11')
+	assert not status.error(), f"{funcname()}: subtest #11 returned an error"
+	assert 'Subtest11' in c.fields and len(c.fields['Subtest11']) == 1, \
+		f"{funcname()}: subtest #11 failed to add a list inside a dictionary"
+	assert isinstance(c.fields['Subtest11']['Dict'], list), \
+		f"{funcname()}: subtest #11 added the wrong type to a list"
+	assert len(c.fields['Subtest11']['Dict']) == 1 \
+		and c.fields['Subtest11']['Dict'][0] == 'Value11', \
+		f"{funcname()}: subtest #11 field has wrong value"
 
 
 
