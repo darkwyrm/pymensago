@@ -288,7 +288,7 @@ class Contact:
 					else:
 						newitem = dict()
 					
-					self.fields[field] = newitem
+					self.fields[field][index] = newitem
 
 			# Having gotten this far, we know the following:
 			# 1) Contact[field] exists and `index` matches the type of Contact[field]

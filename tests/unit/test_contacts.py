@@ -250,6 +250,30 @@ def test_set_user_field():
 	assert 'Label' in c.fields['MailingAddresses'][0] \
 		and c.fields['MailingAddresses'][0]['Label'] == 'Home', \
 		f"{funcname()}: subtest #7 field has wrong value"
+	
+	# Subtest #8: Add a value to a dictionary of strings inside a list
+	status = c.set_user_field('MailingAddresses.0.Country', 'United States')
+	assert not status.error(), f"{funcname()}: subtest #9 returned an error"
+	assert 'MailingAddresses' in c.fields and len(c.fields['MailingAddresses']) == 1, \
+		f"{funcname()}: subtest #8 failed to find the dictionary inside a list"
+	assert isinstance(c.fields['MailingAddresses'][0], dict), \
+		f"{funcname()}: subtest #8 found a non-dictionary inside the list"
+	assert 'Country' in c.fields['MailingAddresses'][0] \
+		and c.fields['MailingAddresses'][0]['Country'] == 'United States', \
+		f"{funcname()}: subtest #8 field has wrong value"
+
+	# Subtest #9: Create a dictionary of strings inside a dictionary
+	# This isn't part of the schema, but exists should the schema change to need this type
+	status = c.set_user_field('Subtest9.Dict.Test', 'Foobar')
+	assert not status.error(), f"{funcname()}: subtest #9 returned an error"
+	assert 'Subtest9' in c.fields and len(c.fields['Subtest9']) == 1, \
+		f"{funcname()}: subtest #9 failed to add a dictionary inside a dictionary"
+	assert isinstance(c.fields['Subtest9']['Dict'], dict), \
+		f"{funcname()}: subtest #9 added the wrong type to a dictionary"
+	assert 'Test' in c.fields['Subtest9']['Dict'] \
+		and c.fields['Subtest9']['Dict']['Test'] == 'Foobar', \
+		f"{funcname()}: subtest #9 field has wrong value"
+	
 
 
 
