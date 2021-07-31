@@ -109,60 +109,6 @@ class Contact:
 		
 		return RetVal(ErrBadType, 'bad contact type')
 	
-	def setphoto(self, path: str) -> RetVal:
-		'''Given a file path, encode and store the data in the contact structure'''
-
-		if path == '' and 'Photo' in self:
-			del self['Photo']
-			return RetVal()
-			
-		try:
-			fileinfo = os.stat(path)
-		except Exception as e:
-			return RetVal().wrap_exception(e)
-		
-		if fileinfo.st_size > 512_000:
-			return RetVal(ErrBadData, 'file too large')
-		
-		try:
-			img = Image.open(path)
-		except Exception as e:
-			return RetVal().wrap_exception(e)
-		
-		# Now that we have the image opened, let's make sure it uses one of the three formats:
-		# WEBP, JPEG, or PNG. If it isn't one of these three, convert it to WEBP. Then again, we'll
-		# also convert PNG to save on file size. ;-)
-		temppath = ''
-		filetype = img.get_format_mimetype()
-		if filetype not in ['image/jpeg', 'image/webp']:
-			temphandle, temppath = tempfile.mkstemp(suffix='.webp')
-			os.close(temphandle)
-			try:
-				img.save(temppath, 'WEBP', lossless=True, quality=3)
-			except Exception as e:
-				os.remove(temppath)
-				return RetVal().wrap_exception(e)
-			filetype = 'image/webp'
-		img.close()
-
-		fhandle = None
-		if temppath:
-			fhandle = open(temppath, 'rb')
-		else:
-			fhandle = open(path, 'rb')
-		
-		rawdata = fhandle.read()
-		fhandle.close()
-		self.fields['Photo'] = {
-			'Mime': filetype,
-			'Data': b85encode(rawdata).decode()
-		}
-
-		if temppath:
-			os.remove(temppath)
-
-		return RetVal()
-
 	def set_user_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
 		return self._set_field(self.fields, fieldname, value)
@@ -171,20 +117,20 @@ class Contact:
 		'''Deletes the specified contact information field for the user'''
 		return self._delete_field(self.fields, fieldname)
 
-	def annotate(self, wid: UUID, fieldname: str) -> RetVal:
+	def annotate(self, fieldname: str, value: str) -> RetVal:
 		'''Adds an annotation'''
 		
 		if 'Annotations' not in self.fields:
 			self.fields['Annotations'] = dict()
-		return self._set_field(self.fields['Annotations'])
+		return self._set_field(self.fields['Annotations'], fieldname, value)
 
-	def delete_annotation(self, wid: UUID, fieldname: str) -> RetVal:
+	def delete_annotation(self, fieldname: str) -> RetVal:
 		'''Deletes an annotation for a contact'''
 		
 		if 'Annotations' not in self.fields:
 			self.fields['Annotations'] = dict()
 			return RetVal(ErrNotFound)
-		return self._delete_field(self.fields['Annotations'])
+		return self._delete_field(self.fields['Annotations'], fieldname)
 
 	def _set_field(self, target: dict, fieldname: str, value: str) -> RetVal:
 		'''Internal method which sets a field in a dictionary. This does all the heavy lifting 
@@ -192,6 +138,9 @@ class Contact:
 		if not fieldname or not value:
 			return RetVal(ErrBadValue)
 		
+		if fieldname == 'Photo':
+			return self._setphoto(target, value)
+
 		parts = fieldname.split('.')
 		for part in parts:
 			if not part:
@@ -332,7 +281,7 @@ class Contact:
 			
 		return RetVal(ErrBadValue, "bad field name")
 
-	def _delete_field(self, target: dict, fieldname: str, value: str) -> RetVal:
+	def _delete_field(self, target: dict, fieldname: str) -> RetVal:
 		'''Internal method which does all the heavy lifting for delete_user_field() and 
 		delete_annotation()'''
 
@@ -390,6 +339,61 @@ class Contact:
 				return RetVal()
 			
 		return RetVal(ErrBadValue, "bad field name")
+
+	def _setphoto(self, target: dict, path: str) -> RetVal:
+		'''Given a file path, encode and store the data in the contact structure'''
+
+		if path == '' and 'Photo' in self:
+			del target['Photo']
+			return RetVal()
+			
+		try:
+			fileinfo = os.stat(path)
+		except Exception as e:
+			return RetVal().wrap_exception(e)
+		
+		if fileinfo.st_size > 512_000:
+			return RetVal(ErrBadData, 'file too large')
+		
+		try:
+			img = Image.open(path)
+		except Exception as e:
+			return RetVal().wrap_exception(e)
+		
+		# Now that we have the image opened, let's make sure it uses one of the three formats:
+		# WEBP, JPEG, or PNG. If it isn't one of these three, convert it to WEBP. Then again, we'll
+		# also convert PNG to save on file size. ;-)
+		temppath = ''
+		filetype = img.get_format_mimetype()
+		if filetype not in ['image/jpeg', 'image/webp']:
+			temphandle, temppath = tempfile.mkstemp(suffix='.webp')
+			os.close(temphandle)
+			try:
+				img.save(temppath, 'WEBP', lossless=True, quality=3)
+			except Exception as e:
+				os.remove(temppath)
+				return RetVal().wrap_exception(e)
+			filetype = 'image/webp'
+		img.close()
+
+		fhandle = None
+		if temppath:
+			fhandle = open(temppath, 'rb')
+		else:
+			fhandle = open(path, 'rb')
+		
+		rawdata = fhandle.read()
+		fhandle.close()
+		target['Photo'] = {
+			'Mime': filetype,
+			'Data': b85encode(rawdata).decode()
+		}
+
+		if temppath:
+			os.remove(temppath)
+
+		return RetVal()
+
 
 
 def _dumps(c: Contact) -> str:

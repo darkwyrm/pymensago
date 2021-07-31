@@ -68,19 +68,19 @@ def test_contact_import():
 
 
 def test_contact_setphoto():
-	'''Tests the Contact class' setphoto capabilities'''
+	'''Tests the Contact class' photo setting capabilities'''
 	imgfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
 	
 	contact1 = contacts.Contact()
-	status = contact1.setphoto(os.path.join(imgfolder, 'toolarge.png'))
+	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'toolarge.png'))
 	assert status.error() == ErrBadData, 'contact_setphoto failed to handle a too-large photo'
 
-	status = contact1.setphoto(os.path.join(imgfolder, 'toconvert.gif'))
+	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'toconvert.gif'))
 	assert not status.error(), 'contact_setphoto failed to handle a GIF'
 	assert contact1['Photo']['Mime'] == 'image/webp', \
 		'contact_setphoto failed to convert a GIF'
 
-	status = contact1.setphoto(os.path.join(imgfolder, 'testpic.jpg'))
+	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'testpic.jpg'))
 	assert not status.error(), 'contact_setphoto failed to handle a JPEG'
 	assert contact1['Photo']['Mime'] == 'image/jpeg', \
 		'contact_setphoto failed to set a JPEG'
