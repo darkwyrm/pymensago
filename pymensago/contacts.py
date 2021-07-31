@@ -165,6 +165,30 @@ class Contact:
 
 	def set_user_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
+		return self._set_field(self.fields, fieldname, value)
+
+	def delete_user_field(self, fieldname: str) -> RetVal:
+		'''Deletes the specified contact information field for the user'''
+		return self._delete_field(self.fields, fieldname)
+
+	def annotate(self, wid: UUID, fieldname: str) -> RetVal:
+		'''Adds an annotation'''
+		
+		if 'Annotations' not in self.fields:
+			self.fields['Annotations'] = dict()
+		return self._set_field(self.fields['Annotations'])
+
+	def delete_annotation(self, wid: UUID, fieldname: str) -> RetVal:
+		'''Deletes an annotation for a contact'''
+		
+		if 'Annotations' not in self.fields:
+			self.fields['Annotations'] = dict()
+			return RetVal(ErrNotFound)
+		return self._delete_field(self.fields['Annotations'])
+
+	def _set_field(self, target: dict, fieldname: str, value: str) -> RetVal:
+		'''Internal method which sets a field in a dictionary. This does all the heavy lifting 
+		when working with set_user_field() or annotate()'''
 		if not fieldname or not value:
 			return RetVal(ErrBadValue)
 		
@@ -174,7 +198,7 @@ class Contact:
 				return RetVal(ErrBadValue, 'bad field name')
 		
 		if len(parts) == 1:
-			self.fields[parts[0]] = value
+			target[parts[0]] = value
 			return RetVal()
 		
 		elif len(parts) == 2:
@@ -197,25 +221,25 @@ class Contact:
 				return RetVal(ErrBadType, 'second level key must be an integer or string')
 			
 			# If the top-level container exists, make sure the its type matches the key type
-			if parts[0] in self.fields:
-				if not (keytype == 'i' and isinstance(self.fields[parts[0]], list) 
-						or (keytype == 's' and isinstance(self.fields[parts[0]], dict))):
+			if parts[0] in target:
+				if not (keytype == 'i' and isinstance(target[parts[0]], list) 
+						or (keytype == 's' and isinstance(target[parts[0]], dict))):
 					return RetVal(ErrBadType, 'second level key does not match container type')
 			else:
 				if keytype == 'i':
-					self.fields[parts[0]] = list()
+					target[parts[0]] = list()
 				else:
-					self.fields[parts[0]] = dict()
+					target[parts[0]] = dict()
 
 			if keytype == 'i':
 				if key < 0:
-					self.fields[parts[0]].append(value)
-				elif key >= len(self.fields[parts[0]]):
+					target[parts[0]].append(value)
+				elif key >= len(target[parts[0]]):
 					return RetVal(ErrOutOfRange)
 				else:
-					self.fields[parts[0]][key] = value
+					target[parts[0]][key] = value
 			else:
-				self.fields[parts[0]][key] = value
+				target[parts[0]][key] = value
 
 			return RetVal()
 		
@@ -245,28 +269,28 @@ class Contact:
 				subkey = parts[2]
 
 			# Now that we have the middle index, check that the field exists
-			if field in self.fields:
+			if field in target:
 				# Field exists, does the index match its type?
-				if indextype == 'i' and type(self.fields[field]).__name__ != 'list' \
-					or indextype == 's' and type(self.fields[field]).__name__ != 'dict':
+				if indextype == 'i' and type(target[field]).__name__ != 'list' \
+					or indextype == 's' and type(target[field]).__name__ != 'dict':
 					return RetVal(ErrBadType, "second level index doesn't match container type")
 			else:
 				# Field doesn't exist. Create a container based on the index's type
 				if indextype == 'i':
-					self.fields[field] = list()
+					target[field] = list()
 				else:
-					self.fields[field] = dict()
+					target[field] = dict()
 			
 			# Here's where it gets complicated. `field` always refers to a dictionary item. `index`,
 			# however, can be a list *or* dictionary item, which makes checking to see if `subkey`
 			# is in the second level container much trickier. We will break this down into dealing
 			# with lists and dictionaries separately so that the code is easier to follow
 			if indextype == 'i':
-				if index >=0 and index < len(self.fields[field]):
+				if index >=0 and index < len(target[field]):
 					# Index refers to an item which exists. Check to make sure that the subkey's
 					# type matches
-					if subkeytype == 'i' and type(self.fields[field][index]).__name__ != 'list' \
-						or subkeytype == 's' and type(self.fields[field][index]).__name__ != 'dict':
+					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
 						return RetVal(ErrBadType, "third level index doesn't match container type")
 				else:
 					if subkeytype == 'i':
@@ -274,13 +298,13 @@ class Contact:
 					else:
 						newitem = dict()
 					
-					self.fields[field].append(newitem)
+					target[field].append(newitem)
 			else:
-				if index in self.fields[field]:
+				if index in target[field]:
 					# Index refers to an item which exists. Check to make sure that the subkey's
 					# type matches
-					if subkeytype == 'i' and type(self.fields[field][index]).__name__ != 'list' \
-						or subkeytype == 's' and type(self.fields[field][index]).__name__ != 'dict':
+					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
 						return RetVal(ErrBadType, "third level index doesn't match container type")
 				else:
 					if subkeytype == 'i':
@@ -288,7 +312,7 @@ class Contact:
 					else:
 						newitem = dict()
 					
-					self.fields[field][index] = newitem
+					target[field][index] = newitem
 
 			# Having gotten this far, we know the following:
 			# 1) Contact[field] exists and `index` matches the type of Contact[field]
@@ -297,21 +321,21 @@ class Contact:
 			# Now we just need to check if Contact[field][index][subkey] exists and either set it
 			# or add it
 			if subkeytype == 'i':
-				if subkey >=0 and subkey < len(self.fields[field][index]):
-					self.fields[field][index][subkey] = value
+				if subkey >=0 and subkey < len(target[field][index]):
+					target[field][index][subkey] = value
 				else:
-					self.fields[field][index].append(value)
+					target[field][index].append(value)
 			else:
-				self.fields[field][index][subkey] = value
+				target[field][index][subkey] = value
 			
 			return RetVal()
 			
 		return RetVal(ErrBadValue, "bad field name")
 
+	def _delete_field(self, target: dict, fieldname: str, value: str) -> RetVal:
+		'''Internal method which does all the heavy lifting for delete_user_field() and 
+		delete_annotation()'''
 
-	def delete_user_field(self, fieldname: str) -> RetVal:
-		'''Deletes the specified contact information field for the user'''
-		
 		if not fieldname:
 			return RetVal(ErrBadValue)
 		
@@ -366,16 +390,6 @@ class Contact:
 				return RetVal()
 			
 		return RetVal(ErrBadValue, "bad field name")
-
-	def annotate(self, wid: UUID, fieldname: str) -> RetVal:
-		'''Adds an annotation for a contact'''
-		# TODO: Implement annotate()
-		pass
-
-	def delete_annotation(self, wid: UUID, fieldname: str) -> RetVal:
-		'''Deletes an annotation for a contact'''
-		# TODO: Implement delete_annotation()
-		pass
 
 
 def _dumps(c: Contact) -> str:
