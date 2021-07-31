@@ -209,7 +209,7 @@ def test_set_user_field():
 	assert c.fields['FamilyName'] == 'Brannan', f"{funcname()}: subtest #1 field has wrong value"
 
 	# Subtest #3: Create a list containing one string
-	status = c.set_user_field('Categories.0', 'Friends')
+	status = c.set_user_field('Categories.-1', 'Friends')
 	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
 	assert 'Categories' in c.fields and len(c.fields['Categories']) == 1, \
 		f"{funcname()}: subtest #3 failed to add a string list"
@@ -239,6 +239,18 @@ def test_set_user_field():
 	assert 'Example2' in c.fields['Websites'] \
 		and c.fields['Websites']['Example2'] == 'https://www.example.net/', \
 		f"{funcname()}: subtest #6 field has wrong value"
+	
+	# Subtest #7: Create a dictionary of strings inside a list
+	status = c.set_user_field('MailingAddresses.0.Label', 'Home')
+	assert not status.error(), f"{funcname()}: subtest #7 returned an error"
+	assert 'MailingAddresses' in c.fields and len(c.fields['MailingAddresses']) == 1, \
+		f"{funcname()}: subtest #7 failed to add a dictionary inside a list"
+	assert isinstance(c.fields['MailingAddresses'][0], dict), \
+		f"{funcname()}: subtest #7 added the wrong type to a list"
+	assert 'Label' in c.fields['MailingAddresses'][0] \
+		and c.fields['MailingAddresses'][0]['Label'] == 'Home', \
+		f"{funcname()}: subtest #7 field has wrong value"
+
 
 
 

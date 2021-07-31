@@ -7,7 +7,7 @@ import re
 import tempfile
 import time
 
-from retval import ErrBadType, ErrBadValue, ErrNotFound, ErrUnimplemented, RetVal, ErrBadData 
+from retval import ErrBadType, ErrBadValue, ErrNotFound, ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadData 
 from PIL import Image
 from pymensago.utils import UUID
 
@@ -208,12 +208,14 @@ class Contact:
 					self.fields[parts[0]] = dict()
 
 			if keytype == 'i':
-				if key < 0 or key >= len(self.fields[parts[0]]):
+				if key < 0:
 					self.fields[parts[0]].append(value)
+				elif key >= len(self.fields[parts[0]]):
+					return RetVal(ErrOutOfRange)
 				else:
-					self.fields[parts[0]][parts[1]] = value
+					self.fields[parts[0]][key] = value
 			else:
-				self.fields[parts[0]][parts[1]] = value
+				self.fields[parts[0]][key] = value
 
 			return RetVal()
 		
@@ -222,56 +224,86 @@ class Contact:
 			# dictionaries, but we will write this code to handle lists or dictionaries nested
 			# inside a list or dictionary in case the schema changes at some point.
 			# keys have to either be an integer index (for a list) or a string
-			keytype = 'i'
+
+			# This variable isn't absolutely necessary, but it makes the code clearer
+			field = parts[0]
+
+			# Set the type and value of the middle field index
+			indextype = 'i'
 			try:
-				key = int(parts[1])
+				index = int(parts[1])
 			except:
-				keytype = 's'
-			
-			if not (isinstance(key, int) or isinstance(key, str)):
-				return RetVal(ErrBadType, 'second level key must be an integer or string')
+				indextype = 's'
+				index = parts[1]
 
-			keytype2 = 'i'
+			# Set the type and value of the third field index
+			subkeytype = 'i'
 			try:
-				key2 = int(parts[2])
+				subkey = int(parts[2])
 			except:
-				keytype2 = 's'
+				subkeytype = 's'
+				subkey = parts[2]
+
+			# Now that we have the middle index, check that the field exists
+			if field in self.fields:
+				# Field exists, does the index match its type?
+				if indextype == 'i' and type(self.fields[field]).__name__ != 'list' \
+					or indextype == 's' and type(self.fields[field]).__name__ != 'dict':
+					return RetVal(ErrBadType, "second level index doesn't match container type")
+			else:
+				# Field doesn't exist. Create a container based on the index's type
+				if indextype == 'i':
+					self.fields[field] = list()
+				else:
+					self.fields[field] = dict()
 			
-			if not (isinstance(key2, int) or isinstance(key2, str)):
-				return RetVal(ErrBadType, 'third level key must be an integer or string')
-
-			# If the top-level container exists, make sure the its type matches the key type
-			if parts[0] in self.fields:
-				if not (keytype == 'i' and isinstance(self.fields[parts[0]], list) 
-						or (keytype == 's' and isinstance(self.fields[parts[0], dict]))):
-					return RetVal(ErrBadType, 'second level key does not match container type')
-			else:
-				if keytype == 'i':
-					self.fields[parts[0]] = list()
+			# Here's where it gets complicated. `field` always refers to a dictionary item. `index`,
+			# however, can be a list *or* dictionary item, which makes checking to see if `subkey`
+			# is in the second level container much trickier. We will break this down into dealing
+			# with lists and dictionaries separately so that the code is easier to follow
+			if indextype == 'i':
+				if index >=0 and index < len(self.fields[field]):
+					# Index refers to an item which exists. Check to make sure that the subkey's
+					# type matches
+					if subkeytype == 'i' and type(self.fields[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(self.fields[field][index]).__name__ != 'dict':
+						return RetVal(ErrBadType, "third level index doesn't match container type")
 				else:
-					self.fields[parts[0]] = dict()
-
-			# If the second-level container exists, make sure the its type matches that of the
-			# third-level key
-			if parts[1] in self.fields[parts[0]]:
-				if not (keytype2 == 'i' and isinstance(self.fields[parts[0]][parts[1]], list) 
-						or (keytype2 == 's' and isinstance(self.fields[parts[0][parts[1]], dict]))):
-					return RetVal(ErrBadType, 'third level key does not match container type')
+					if subkeytype == 'i':
+						newitem = list()
+					else:
+						newitem = dict()
+					
+					self.fields[field].append(newitem)
 			else:
-				if keytype2 == 'i':
-					self.fields[parts[0]][parts[1]] = list()
+				if index in self.fields[field]:
+					# Index refers to an item which exists. Check to make sure that the subkey's
+					# type matches
+					if subkeytype == 'i' and type(self.fields[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(self.fields[field][index]).__name__ != 'dict':
+						return RetVal(ErrBadType, "third level index doesn't match container type")
 				else:
-					self.fields[parts[0]][parts[1]] = dict()
+					if subkeytype == 'i':
+						newitem = list()
+					else:
+						newitem = dict()
+					
+					self.fields[field] = newitem
 
-
-			if keytype2 == 'i':
-				if key2 < 0 or key2 >= len(self.fields[parts[0]][parts[1]]):
-					self.fields[parts[0]][parts[1]].append(value)
+			# Having gotten this far, we know the following:
+			# 1) Contact[field] exists and `index` matches the type of Contact[field]
+			# 2) Contact[field][index] exists and `subkey` matches the type of Contact[field][index]
+			
+			# Now we just need to check if Contact[field][index][subkey] exists and either set it
+			# or add it
+			if subkeytype == 'i':
+				if subkey >=0 and subkey < len(self.fields[field][index]):
+					self.fields[field][index][subkey] = value
 				else:
-					self.fields[parts[0]][parts[1]] = value
+					self.fields[field][index][subkey].append(value)
 			else:
-				self.fields[parts[0]][parts[1]] = value
-
+				self.fields[field][index][subkey] = value
+			
 			return RetVal()
 			
 		return RetVal(ErrBadValue, "bad field name")
