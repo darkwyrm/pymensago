@@ -299,10 +299,16 @@ def test_set_user_field():
 		f"{funcname()}: subtest #11 field has wrong value"
 
 
+def test_get_user_field():
+	'''Tests get_user_field()'''
+	# TODO: Implement get_user_field() tests
+
 
 if __name__ == '__main__':
 	# test_contact_import()
 	# test_contact_setphoto()
 	# test_contact_to_string()
 	# test_delete_user_field()
-	test_set_user_field()
+	# test_set_user_field()
+	test_get_user_field()
+

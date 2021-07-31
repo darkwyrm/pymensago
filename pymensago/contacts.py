@@ -109,6 +109,10 @@ class Contact:
 		
 		return RetVal(ErrBadType, 'bad contact type')
 	
+	def get_user_field(self, fieldname: str, value: str) -> RetVal:
+		'''Gets the value of the contact information field specified.'''
+		return self._get_field(self.fields, fieldname)
+
 	def set_user_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
 		return self._set_field(self.fields, fieldname, value)
@@ -116,6 +120,14 @@ class Contact:
 	def delete_user_field(self, fieldname: str) -> RetVal:
 		'''Deletes the specified contact information field for the user'''
 		return self._delete_field(self.fields, fieldname)
+
+	def get_annotation(self, fieldname: str) -> RetVal:
+		'''Gets the value of the annotation specified.'''
+
+		if 'Annotations' not in self.fields:
+			self.fields['Annotations'] = dict()
+			return RetVal(ErrNotFound)
+		return self._get_field(self.fields['Annotations'], fieldname)
 
 	def annotate(self, fieldname: str, value: str) -> RetVal:
 		'''Adds an annotation'''
@@ -337,6 +349,130 @@ class Contact:
 				# Field is a dictionary of string values
 				del self.fields[parts[0]][index][parts[2]]
 				return RetVal()
+			
+		return RetVal(ErrBadValue, "bad field name")
+
+	def _get_field(self, target: dict, fieldname: str) -> RetVal:
+		'''Gets the value for the specified field. Note that it is perfectly legal to obtain 
+		dictionaries or lists of values this way. The field 'type' will be populated with 
+		the value `str`, `dict`, or `list` based on the type of value. The field `value` will 
+		contain the returned data. Photos obtained via this method will be in the internal 
+		storage format and not as an image.'''
+
+		if not fieldname:
+			return RetVal(ErrBadValue)
+		
+		parts = fieldname.split('.')
+		for part in parts:
+			if not part:
+				return RetVal(ErrBadValue, 'bad field name')
+		
+		if len(parts) == 1:
+			return RetVal().set_values({
+				'value':target[parts[0]],
+				'type':type(target[parts[0]]).__name__
+			})
+		
+		elif len(parts) == 2:
+			# This section handles top-level fields which are dictionaries or lists of strings
+			# Adding an empty container as a field is not supported because empty data containers
+			# are not supported.
+
+			# Based on the values in parts, determined whether or not the first level needs to be
+			# a list or a dictionary
+
+			# keys have to either be an integer index (for a list) or a string
+			keytype = 'i'
+			try:
+				key = int(parts[1])
+			except:
+				keytype = 's'
+				key = parts[1]
+			
+			if not (isinstance(key, int) or isinstance(key, str)):
+				return RetVal(ErrBadType, 'second level key must be an integer or string')
+			
+			# If the top-level container exists, make sure the its type matches the key type
+			if parts[0] in target:
+				if not (keytype == 'i' and isinstance(target[parts[0]], list) 
+						or (keytype == 's' and isinstance(target[parts[0]], dict))):
+					return RetVal(ErrBadType, 'second level key does not match container type')
+			else:
+				return RetVal(ErrNotFound)
+
+			return RetVal().set_values({
+				'value':target[parts[0]][key],
+				'type':type(target[parts[0]][key]).__name__
+			})
+		
+		elif len(parts) == 3:
+			# As of this writing, the schema only utilizes top-level fields which are lists of
+			# dictionaries, but we will write this code to handle lists or dictionaries nested
+			# inside a list or dictionary in case the schema changes at some point.
+			# keys have to either be an integer index (for a list) or a string
+
+			# This variable isn't absolutely necessary, but it makes the code clearer
+			field = parts[0]
+
+			# Set the type and value of the middle field index
+			indextype = 'i'
+			try:
+				index = int(parts[1])
+			except:
+				indextype = 's'
+				index = parts[1]
+
+			# Set the type and value of the third field index
+			subkeytype = 'i'
+			try:
+				subkey = int(parts[2])
+			except:
+				subkeytype = 's'
+				subkey = parts[2]
+
+			# Now that we have the middle index, check that the field exists
+			if field in target:
+				# Field exists, does the index match its type?
+				if indextype == 'i' and type(target[field]).__name__ != 'list' \
+					or indextype == 's' and type(target[field]).__name__ != 'dict':
+					return RetVal(ErrBadType, "second level index doesn't match container type")
+			else:
+				return RetVal(ErrNotFound)
+			
+			# Here's where it gets complicated. `field` always refers to a dictionary item. `index`,
+			# however, can be a list *or* dictionary item, which makes checking to see if `subkey`
+			# is in the second level container much trickier. We will break this down into dealing
+			# with lists and dictionaries separately so that the code is easier to follow
+			if indextype == 'i':
+				if index >=0 and index < len(target[field]):
+					# Index refers to an item which exists. Check to make sure that the subkey's
+					# type matches
+					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
+						return RetVal(ErrBadType, "third level index doesn't match container type")
+				else:
+					return RetVal(ErrNotFound)
+			else:
+				if index in target[field]:
+					# Index refers to an item which exists. Check to make sure that the subkey's
+					# type matches
+					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
+						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
+						return RetVal(ErrBadType, "third level index doesn't match container type")
+				else:
+					return RetVal(ErrNotFound)
+
+			# Having gotten this far, we know the following:
+			# 1) Contact[field] exists and `index` matches the type of Contact[field]
+			# 2) Contact[field][index] exists and `subkey` matches the type of Contact[field][index]
+			
+			# Now we just need to check if Contact[field][index][subkey] exists and either set it
+			# or add it
+			
+			return RetVal().set_values({
+				'value':target[parts[0]][index][subkey],
+				'type':type(target[parts[0]][index][subkey]).__name__
+			})
 			
 		return RetVal(ErrBadValue, "bad field name")
 
