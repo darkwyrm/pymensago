@@ -109,15 +109,15 @@ class Contact:
 		
 		return RetVal(ErrBadType, 'bad contact type')
 	
-	def get_user_field(self, fieldname: str) -> RetVal:
+	def get_field(self, fieldname: str) -> RetVal:
 		'''Gets the value of the contact information field specified.'''
 		return self._get_field(self.fields, fieldname)
 
-	def set_user_field(self, fieldname: str, value: str) -> RetVal:
+	def set_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
 		return self._set_field(self.fields, fieldname, value)
 
-	def delete_user_field(self, fieldname: str) -> RetVal:
+	def delete_field(self, fieldname: str) -> RetVal:
 		'''Deletes the specified contact information field for the user'''
 		return self._delete_field(self.fields, fieldname)
 
@@ -146,7 +146,7 @@ class Contact:
 
 	def _set_field(self, target: dict, fieldname: str, value: str) -> RetVal:
 		'''Internal method which sets a field in a dictionary. This does all the heavy lifting 
-		when working with set_user_field() or annotate()'''
+		when working with set_field() or annotate()'''
 		if not fieldname or not value:
 			return RetVal(ErrBadValue)
 		
@@ -294,7 +294,7 @@ class Contact:
 		return RetVal(ErrBadValue, "bad field name")
 
 	def _delete_field(self, target: dict, fieldname: str) -> RetVal:
-		'''Internal method which does all the heavy lifting for delete_user_field() and 
+		'''Internal method which does all the heavy lifting for delete_field() and 
 		delete_annotation()'''
 
 		if not fieldname:
