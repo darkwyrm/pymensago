@@ -72,15 +72,15 @@ def test_contact_setphoto():
 	imgfolder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
 	
 	contact1 = contacts.Contact()
-	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'toolarge.png'))
+	status = contact1.set_field('Photo', os.path.join(imgfolder, 'toolarge.png'))
 	assert status.error() == ErrBadData, 'contact_setphoto failed to handle a too-large photo'
 
-	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'toconvert.gif'))
+	status = contact1.set_field('Photo', os.path.join(imgfolder, 'toconvert.gif'))
 	assert not status.error(), 'contact_setphoto failed to handle a GIF'
 	assert contact1['Photo']['Mime'] == 'image/webp', \
 		'contact_setphoto failed to convert a GIF'
 
-	status = contact1.set_user_field('Photo', os.path.join(imgfolder, 'testpic.jpg'))
+	status = contact1.set_field('Photo', os.path.join(imgfolder, 'testpic.jpg'))
 	assert not status.error(), 'contact_setphoto failed to handle a JPEG'
 	assert contact1['Photo']['Mime'] == 'image/jpeg', \
 		'contact_setphoto failed to set a JPEG'
@@ -121,8 +121,8 @@ def test_contact_to_string():
 	assert out_string == expected_string, "to_string() output didn't match expected"
 
 
-def test_delete_user_field():
-	'''Tests the method delete_user_field'''
+def test_delete_field():
+	'''Tests the method delete_field'''
 	c = contacts.Contact({
 		'Header' : {
 			'Version': '1.0',
@@ -157,36 +157,36 @@ def test_delete_user_field():
 	})
 
 	# Subtest #1: Delete a top-level string field
-	status = c.delete_user_field('Anniversary')
+	status = c.delete_field('Anniversary')
 	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
 	assert 'Anniversary' not in c.fields, f"{funcname()}: subtest #1 failed to delete string field"
 
 	# Subtest #2: Try to delete a nonexistent field
-	status = c.delete_user_field('Anniversary')
+	status = c.delete_field('Anniversary')
 	assert not status.error(), f"{funcname()}: subtest #2 returned an error"
 
 	# Subtest #3: Delete an element of a list field
-	status = c.delete_user_field('Nicknames.1')
+	status = c.delete_field('Nicknames.1')
 	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
 	assert c.fields['Nicknames'] == ['Rick','Rich'], \
 		f"{funcname()}: subtest #3 failed to delete a list field item"
 	
 	# Subtest #4: Delete a dictionary field element
-	status = c.delete_user_field('Website.Mensago')
+	status = c.delete_field('Website.Mensago')
 	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
 	assert len(c.fields['Website']) == 1 and 'Personal' in c.fields['Website'], \
 		f"{funcname()}: subtest #4 failed to correctly delete a dictionary field item"
 
 	# Subtest #5: Delete a field inside a dictionary list
-	status = c.delete_user_field('Phone.0.Preferred')
+	status = c.delete_field('Phone.0.Preferred')
 	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
 	assert len(c.fields['Phone']) == 1 and 'Preferred' not in c.fields['Phone'][0], \
 		f"{funcname()}: subtest #5 failed to correctly delete a field from a dictionary list item"
 
 
 
-def test_set_user_field():
-	'''Tests the method set_user_field'''
+def test_set_field():
+	'''Tests the method set_field'''
 	c = contacts.Contact({
 		'Header' : {
 			'Version': '1.0',
@@ -197,33 +197,33 @@ def test_set_user_field():
 	})
 
 	# Subtest #1: Set a top-level string field
-	status = c.set_user_field('GivenName', 'Richard')
+	status = c.set_field('GivenName', 'Richard')
 	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
 	assert 'GivenName' in c.fields, f"{funcname()}: subtest #1 failed to set string field"
 	assert c.fields['GivenName'] == 'Richard', f"{funcname()}: subtest #1 field has wrong value"
 
 	# Subtest #2: Try to set a nonexistent field
-	status = c.set_user_field('FamilyName', 'Brannan')
+	status = c.set_field('FamilyName', 'Brannan')
 	assert not status.error(), f"{funcname()}: subtest #2 returned an error"
 	assert 'FamilyName' in c.fields, f"{funcname()}: subtest #2 failed to add a string field"
 	assert c.fields['FamilyName'] == 'Brannan', f"{funcname()}: subtest #1 field has wrong value"
 
 	# Subtest #3: Create a list containing one string
-	status = c.set_user_field('Categories.-1', 'Friends')
+	status = c.set_field('Categories.-1', 'Friends')
 	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
 	assert 'Categories' in c.fields and len(c.fields['Categories']) == 1, \
 		f"{funcname()}: subtest #3 failed to add a string list"
 	assert c.fields['Categories'][0] == 'Friends', f"{funcname()}: subtest #3 field has wrong value"
 
 	# Subtest #4: Append an item to a list
-	status = c.set_user_field('Categories.-1', 'Chess')
+	status = c.set_field('Categories.-1', 'Chess')
 	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
 	assert 'Categories' in c.fields and len(c.fields['Categories']) == 2, \
 		f"{funcname()}: subtest #4 failed to append to a string list"
 	assert c.fields['Categories'][1] == 'Chess', f"{funcname()}: subtest #4 field has wrong value"
 
 	# Subtest #5: Create a dictionary containing one string
-	status = c.set_user_field('Websites.Example', 'https://www.example.com/')
+	status = c.set_field('Websites.Example', 'https://www.example.com/')
 	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
 	assert 'Websites' in c.fields and len(c.fields['Websites']) == 1, \
 		f"{funcname()}: subtest #5 failed to add a dictionary"
@@ -232,7 +232,7 @@ def test_set_user_field():
 		f"{funcname()}: subtest #5 field has wrong value"
 
 	# Subtest #6: Add an item to a dictionary
-	status = c.set_user_field('Websites.Example2', 'https://www.example.net/')
+	status = c.set_field('Websites.Example2', 'https://www.example.net/')
 	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
 	assert 'Websites' in c.fields and len(c.fields['Websites']) == 2, \
 		f"{funcname()}: subtest #5 failed to add to an existing dictionary"
@@ -241,7 +241,7 @@ def test_set_user_field():
 		f"{funcname()}: subtest #6 field has wrong value"
 	
 	# Subtest #7: Create a dictionary of strings inside a list
-	status = c.set_user_field('MailingAddresses.0.Label', 'Home')
+	status = c.set_field('MailingAddresses.0.Label', 'Home')
 	assert not status.error(), f"{funcname()}: subtest #7 returned an error"
 	assert 'MailingAddresses' in c.fields and len(c.fields['MailingAddresses']) == 1, \
 		f"{funcname()}: subtest #7 failed to add a dictionary inside a list"
@@ -252,7 +252,7 @@ def test_set_user_field():
 		f"{funcname()}: subtest #7 field has wrong value"
 	
 	# Subtest #8: Add a value to a dictionary of strings inside a list
-	status = c.set_user_field('MailingAddresses.0.Country', 'United States')
+	status = c.set_field('MailingAddresses.0.Country', 'United States')
 	assert not status.error(), f"{funcname()}: subtest #9 returned an error"
 	assert 'MailingAddresses' in c.fields and len(c.fields['MailingAddresses']) == 1, \
 		f"{funcname()}: subtest #8 failed to find the dictionary inside a list"
@@ -264,7 +264,7 @@ def test_set_user_field():
 
 	# Subtest #9: Create a dictionary of strings inside a dictionary
 	# This isn't part of the schema, but exists should the schema change to need this type
-	status = c.set_user_field('Subtest9.Dict.Test', 'Value9')
+	status = c.set_field('Subtest9.Dict.Test', 'Value9')
 	assert not status.error(), f"{funcname()}: subtest #9 returned an error"
 	assert 'Subtest9' in c.fields and len(c.fields['Subtest9']) == 1, \
 		f"{funcname()}: subtest #9 failed to add a dictionary inside a dictionary"
@@ -276,7 +276,7 @@ def test_set_user_field():
 	
 	# Subtest #10: Create a list of strings inside a list
 	# This isn't part of the schema, but exists should the schema change to need this type
-	status = c.set_user_field('Subtest10.-1.-1', 'Value10')
+	status = c.set_field('Subtest10.-1.-1', 'Value10')
 	assert not status.error(), f"{funcname()}: subtest #10 returned an error"
 	assert 'Subtest10' in c.fields and len(c.fields['Subtest10']) == 1, \
 		f"{funcname()}: subtest #10 failed to add a dictionary inside a dictionary"
@@ -288,7 +288,7 @@ def test_set_user_field():
 
 	# Subtest #11: Create a list of strings inside a dictionary
 	# This isn't part of the schema, but exists should the schema change to need this type
-	status = c.set_user_field('Subtest11.Dict.-1', 'Value11')
+	status = c.set_field('Subtest11.Dict.-1', 'Value11')
 	assert not status.error(), f"{funcname()}: subtest #11 returned an error"
 	assert 'Subtest11' in c.fields and len(c.fields['Subtest11']) == 1, \
 		f"{funcname()}: subtest #11 failed to add a list inside a dictionary"
@@ -299,8 +299,8 @@ def test_set_user_field():
 		f"{funcname()}: subtest #11 field has wrong value"
 
 
-def test_get_user_field():
-	'''Tests get_user_field()'''
+def test_get_field():
+	'''Tests get_field()'''
 	c = contacts.Contact({
 		'Header' : {
 			'Version': '1.0',
@@ -335,40 +335,40 @@ def test_get_user_field():
 	})
 
 	# Subtest #1: get a top-level string field
-	status = c.get_user_field('Anniversary')
+	status = c.get_field('Anniversary')
 	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
 	assert status['type'] == 'str' and status['value'] == '0714', \
 		f"{funcname()}: subtest #1 failed to get string field"
 
 	# Subtest #2: try to get a nonexistent field
-	status = c.get_user_field('ThisFieldDoesntExist')
+	status = c.get_field('ThisFieldDoesntExist')
 	assert status.error(), f"{funcname()}: subtest #2 status OK for a nonexistent field"
 
 	# Subtest #3: get an element of a list field
-	status = c.get_user_field('Nicknames.1')
+	status = c.get_field('Nicknames.1')
 	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
 	assert status['type'] == 'str' and status['value'] == 'Ricky', \
 		f"{funcname()}: subtest #3 failed to get list element"
 	
 	# Subtest #4: get a dictionary field element
-	status = c.get_user_field('Website.Mensago')
+	status = c.get_field('Website.Mensago')
 	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
 	assert status['type'] == 'str' and status['value'] == 'https://mensago.org', \
 		f"{funcname()}: subtest #4 failed to get dictionary element"
 
 	# Subtest #5: get a field inside a dictionary list
-	status = c.get_user_field('Phone.0.Preferred')
+	status = c.get_field('Phone.0.Preferred')
 	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
 	assert status['type'] == 'str' and status['value'] == 'yes', \
 		f"{funcname()}: subtest #5 failed to get dictionary element"
 
 	# Subtest #6: get a list 
-	status = c.get_user_field('Nicknames')
+	status = c.get_field('Nicknames')
 	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
 	assert status['type'] == 'list' and status['value'] == [ 'Rick', 'Ricky', 'Rich'], \
 		f"{funcname()}: subtest #6 failed to get dictionary element"
 
-	status = c.get_user_field('Phone.0')
+	status = c.get_field('Phone.0')
 	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
 	assert status['type'] == 'dict' and status['value'] == \
 		{ 'Label':'Mobile','Number':'555-555-1234','Preferred':'yes' }, \
@@ -380,7 +380,7 @@ if __name__ == '__main__':
 	# test_contact_import()
 	# test_contact_setphoto()
 	# test_contact_to_string()
-	# test_delete_user_field()
-	# test_set_user_field()
-	test_get_user_field()
+	# test_delete_field()
+	# test_set_field()
+	test_get_field()
 
