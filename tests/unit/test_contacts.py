@@ -301,8 +301,6 @@ def test_set_user_field():
 
 def test_get_user_field():
 	'''Tests get_user_field()'''
-	# TODO: Implement get_user_field() tests
-	
 	c = contacts.Contact({
 		'Header' : {
 			'Version': '1.0',
