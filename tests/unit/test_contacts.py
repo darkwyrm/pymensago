@@ -171,7 +171,7 @@ def test_delete_user_field():
 	assert c.fields['Nicknames'] == ['Rick','Rich'], \
 		f"{funcname()}: subtest #3 failed to delete a list field item"
 	
-	# Subtest #4: Delete an dictionary field element
+	# Subtest #4: Delete a dictionary field element
 	status = c.delete_user_field('Website.Mensago')
 	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
 	assert len(c.fields['Website']) == 1 and 'Personal' in c.fields['Website'], \
@@ -302,6 +302,80 @@ def test_set_user_field():
 def test_get_user_field():
 	'''Tests get_user_field()'''
 	# TODO: Implement get_user_field() tests
+	
+	c = contacts.Contact({
+		'Header' : {
+			'Version': '1.0',
+			'EntityType': 'individual'
+		},
+		'GivenName': 'Richard',
+		'FamilyName': 'Brannan',
+		'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
+		'Gender': 'Male',
+		'Website': { 'Personal':'https://www.example.com',
+					'Mensago':'https://mensago.org' },
+		'Phone': [	{	'Label':'Mobile',
+						'Number':'555-555-1234',
+						'Preferred':'yes'
+					}
+				],
+		'Birthday': '19750415',
+		'Anniversary': '0714',
+		'Mensago': [
+			{	'Label':'Home',
+				'UserID':'cavs4life',
+				'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+				'Domain':'example.com'
+			},
+			{	'Label':'Work',
+				'UserID':'rbrannan',
+				'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+				'Domain':'contoso.com'
+			}
+		],
+		'Annotations': {}
+	})
+
+	# Subtest #1: get a top-level string field
+	status = c.get_user_field('Anniversary')
+	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
+	assert status['type'] == 'str' and status['value'] == '0714', \
+		f"{funcname()}: subtest #1 failed to get string field"
+
+	# Subtest #2: try to get a nonexistent field
+	status = c.get_user_field('ThisFieldDoesntExist')
+	assert status.error(), f"{funcname()}: subtest #2 status OK for a nonexistent field"
+
+	# Subtest #3: get an element of a list field
+	status = c.get_user_field('Nicknames.1')
+	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
+	assert status['type'] == 'str' and status['value'] == 'Ricky', \
+		f"{funcname()}: subtest #3 failed to get list element"
+	
+	# Subtest #4: get a dictionary field element
+	status = c.get_user_field('Website.Mensago')
+	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
+	assert status['type'] == 'str' and status['value'] == 'https://mensago.org', \
+		f"{funcname()}: subtest #4 failed to get dictionary element"
+
+	# Subtest #5: get a field inside a dictionary list
+	status = c.get_user_field('Phone.0.Preferred')
+	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
+	assert status['type'] == 'str' and status['value'] == 'yes', \
+		f"{funcname()}: subtest #5 failed to get dictionary element"
+
+	# Subtest #6: get a list 
+	status = c.get_user_field('Nicknames')
+	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
+	assert status['type'] == 'list' and status['value'] == [ 'Rick', 'Ricky', 'Rich'], \
+		f"{funcname()}: subtest #6 failed to get dictionary element"
+
+	status = c.get_user_field('Phone.0')
+	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
+	assert status['type'] == 'dict' and status['value'] == \
+		{ 'Label':'Mobile','Number':'555-555-1234','Preferred':'yes' }, \
+		f"{funcname()}: subtest #6 failed to get dictionary element"
+		
 
 
 if __name__ == '__main__':

@@ -109,7 +109,7 @@ class Contact:
 		
 		return RetVal(ErrBadType, 'bad contact type')
 	
-	def get_user_field(self, fieldname: str, value: str) -> RetVal:
+	def get_user_field(self, fieldname: str) -> RetVal:
 		'''Gets the value of the contact information field specified.'''
 		return self._get_field(self.fields, fieldname)
 
@@ -368,10 +368,12 @@ class Contact:
 				return RetVal(ErrBadValue, 'bad field name')
 		
 		if len(parts) == 1:
-			return RetVal().set_values({
-				'value':target[parts[0]],
-				'type':type(target[parts[0]]).__name__
-			})
+			if parts[0] in target:
+				return RetVal().set_values({
+					'value':target[parts[0]],
+					'type':type(target[parts[0]]).__name__
+				})
+			return RetVal(ErrNotFound)
 		
 		elif len(parts) == 2:
 			# This section handles top-level fields which are dictionaries or lists of strings
