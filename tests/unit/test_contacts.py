@@ -337,8 +337,7 @@ def test_get_field():
 	# Subtest #1: get a top-level string field
 	status = c.get_field('Anniversary')
 	assert not status.error(), f"{funcname()}: subtest #1 returned an error"
-	assert status['type'] == 'str' and status['value'] == '0714', \
-		f"{funcname()}: subtest #1 failed to get string field"
+	assert status['value'] == '0714', f"{funcname()}: subtest #1 failed to get string field"
 
 	# Subtest #2: try to get a nonexistent field
 	status = c.get_field('ThisFieldDoesntExist')
@@ -347,32 +346,18 @@ def test_get_field():
 	# Subtest #3: get an element of a list field
 	status = c.get_field('Nicknames.1')
 	assert not status.error(), f"{funcname()}: subtest #3 returned an error"
-	assert status['type'] == 'str' and status['value'] == 'Ricky', \
-		f"{funcname()}: subtest #3 failed to get list element"
+	assert status['value'] == 'Ricky', f"{funcname()}: subtest #3 failed to get list element"
 	
 	# Subtest #4: get a dictionary field element
 	status = c.get_field('Website.Mensago')
 	assert not status.error(), f"{funcname()}: subtest #4 returned an error"
-	assert status['type'] == 'str' and status['value'] == 'https://mensago.org', \
+	assert status['value'] == 'https://mensago.org', \
 		f"{funcname()}: subtest #4 failed to get dictionary element"
 
 	# Subtest #5: get a field inside a dictionary list
 	status = c.get_field('Phone.0.Preferred')
 	assert not status.error(), f"{funcname()}: subtest #5 returned an error"
-	assert status['type'] == 'str' and status['value'] == 'yes', \
-		f"{funcname()}: subtest #5 failed to get dictionary element"
-
-	# Subtest #6: get a list 
-	status = c.get_field('Nicknames')
-	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
-	assert status['type'] == 'list' and status['value'] == [ 'Rick', 'Ricky', 'Rich'], \
-		f"{funcname()}: subtest #6 failed to get dictionary element"
-
-	status = c.get_field('Phone.0')
-	assert not status.error(), f"{funcname()}: subtest #6 returned an error"
-	assert status['type'] == 'dict' and status['value'] == \
-		{ 'Label':'Mobile','Number':'555-555-1234','Preferred':'yes' }, \
-		f"{funcname()}: subtest #6 failed to get dictionary element"
+	assert status['value'] == 'yes', f"{funcname()}: subtest #5 failed to get dictionary element"
 		
 
 
