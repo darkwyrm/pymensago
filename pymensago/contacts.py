@@ -113,7 +113,7 @@ class Contact:
 	
 	def get_field(self, fieldname: str) -> RetVal:
 		'''Gets the value of the contact information field specified.'''
-		return _process_field(self.fields, fieldname, _return_field)
+		return _read_field(self.fields, fieldname, _return_field)
 
 	def set_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
@@ -129,7 +129,7 @@ class Contact:
 		if 'Annotations' not in self.fields:
 			self.fields['Annotations'] = dict()
 			return RetVal(ErrNotFound)
-		return _process_field(self.fields['Annotations'], fieldname, _return_field)
+		return _read_field(self.fields['Annotations'], fieldname, _return_field)
 
 	def annotate(self, fieldname: str, value: str) -> RetVal:
 		'''Adds an annotation'''
@@ -571,7 +571,7 @@ def _dumps(c: Contact) -> str:
 	return '\n'.join(out)
 
 
-def _process_field(target: dict, fieldname: str, operator: typing.Callable) -> RetVal:
+def _read_field(target: dict, fieldname: str, operator: typing.Callable) -> RetVal:
 		'''This function handles all the processing of a field specifier and ensuring that the 
 		field exists in the target dictionary. The operator function passed to it will be given 
 		two string parameters, the first being the full name of the field specifier and the second 
