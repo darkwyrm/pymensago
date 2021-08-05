@@ -9,6 +9,7 @@ import time
 import typing
 
 from PIL import Image
+import pymensago.userprofile
 from pymensago.utils import UUID
 from retval import ErrBadType, ErrBadValue, ErrNotFound, ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadData 
 import sqlite3
@@ -409,7 +410,6 @@ class Contact:
 		return RetVal()
 
 
-
 def _dumps(c: Contact) -> str:
 	'''Creates a pretty-printed string from a contact'''
 
@@ -693,6 +693,36 @@ def _read_field(target: dict, fieldname: str, operator: typing.Callable) -> RetV
 def _return_field(name: str, value: str) -> RetVal:
 	'''Add-on function for returning the value of the field passed to it.'''
 	return RetVal().set_value('value', value)
+
+
+def load_field(db: sqlite3.Connection, id: UUID, fieldname: str):
+	'''Loads a field from the database. Fieldname is expected to be in dot-separated format.'''
+
+	if not id.is_valid() or not fieldname or not db:
+		return RetVal(ErrBadValue)
+	
+	cursor = db.cursor()
+	cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE id=? AND fieldname=?''',
+		(id.as_string(),fieldname))
+	results = cursor.fetchone()
+	if not results or not results[0]:
+		return RetVal(ErrNotFound)
+
+	return RetVal().set_values({ 'value':results[0], 'group':results[1] })
+
+
+def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str, group: str):
+	'''Saves a field to the database. Fieldname is expected to be in dot-separated format.'''
+
+	cursor = db.cursor()
+	cursor.execute('''DROP FROM contactinfo WHERE id=? AND fieldname=?''',
+		(id.as_string(),fieldname))
+	cursor.execute('''INSERT INTO contactinfo(id, fieldname, fieldvalue, group) 
+			VALUES(?,?,?,?)''',
+			(id.as_string(), fieldname, fieldvalue, group))
+	db.commit()
+
+	return RetVal()
 
 
 # TODO: Create JSON schemas for contacts and the contact request message type
