@@ -725,4 +725,21 @@ def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str
 	return RetVal()
 
 
+def load_contact(db: sqlite3.Connection, id: UUID) -> RetVal:
+	'''Loads a contact from the database, given an ID. The contact object is returned in the field 
+	'value' if successful.'''
+	return RetVal(ErrUnimplemented)
+
+def save_contact(db: sqlite3.Connection, id: UUID, clobber: bool) -> RetVal:
+	'''Saves a contact to the database. If clobber is false, fields that are in the contact object 
+	are updated or added. If clobber is true, all existing data for the contact is deleted first, 
+	ensuring that the database copy exactly matches that of the contact object.'''
+	return RetVal(ErrUnimplemented)
+
+def find_contact(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> RetVal:
+	'''Finds the ID for a contact with the specified dot-notated field name and value. If found, 
+	the application's internal ID -- not the contact's workspace ID -- is returned in the field 
+	'value'.'''
+	return RetVal(ErrUnimplemented)
+
 # TODO: Create JSON schemas for contacts and the contact request message type
