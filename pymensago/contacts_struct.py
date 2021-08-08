@@ -72,40 +72,146 @@ def _flatten_list(target: dict, levels: list, l: list) -> RetVal:
 
 
 
-foo = {
-	'Header' : {
-		'Version': '1.0',
-		'EntityType': 'individual'
-	},
+# foo = {
+# 	'Header' : {
+# 		'Version': '1.0',
+# 		'EntityType': 'individual'
+# 	},
+# 	'GivenName': 'Richard',
+# 	'FamilyName': 'Brannan',
+# 	'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
+# 	'Gender': 'Male',
+# 	'Website': { 'Personal':'https://www.example.com',
+# 				'Mensago':'https://mensago.org' },
+# 	'Phone': [	{	'Label':'Mobile',
+# 					'Number':'555-555-1234',
+# 					'Preferred':'yes'
+# 				}
+# 			],
+# 	'Birthday': '19750415',
+# 	'Anniversary': '0714',
+# 	'Mensago': [
+# 		{	'Label':'Home',
+# 			'UserID':'cavs4life',
+# 			'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+# 			'Domain':'example.com'
+# 		},
+# 		{	'Label':'Work',
+# 			'UserID':'rbrannan',
+# 			'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+# 			'Domain':'contoso.com'
+# 		}
+# 	],
+# 	'Annotations': {}
+# }
+
+# status = flatten(foo)
+# if not status.error():
+# 	print(status['value'])
+
+def unflatten(d: dict):
+	'''Unflattens a dictionary from the format described for flatten()'''
+	if not len(d):
+		return RetVal().set_value('value', dict())
+	
+	if not isinstance(d, dict):
+		return RetVal(ErrBadType)
+	
+	unflattened = dict()
+	for k,v in d.items():
+		if not isinstance(k, str):
+			return RetVal(ErrBadType, 'keys must be strings')
+		
+		if not len(k):
+			return RetVal(ErrBadValue, 'string keys may not be empty')
+		
+		if not isinstance(v, str):
+			return RetVal(ErrBadType, 'values must be strings')
+		
+		parts = k.split('.')
+		if len(parts) == 1:
+			unflattened[parts[0]] = v
+		else:
+			# The top-level item is a container. We need to find out the type of the container's
+			# index. From there, we ensure that the container exists and then call the appropriate
+			# unflatten call to unpack the container's values
+			index_is_int = True
+			try:
+				index = int(parts[1])
+			except:
+				index = parts[1]
+				index_is_int = False
+			
+			if index_is_int:
+				# Index is an integer. Container must be a list
+				if parts[0] not in unflattened:
+					unflattened[parts[0]] = list()
+				
+				if not isinstance(unflattened[parts[0]], list):
+					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
+
+				_unflatten_list(unflattened[parts[0]], parts, 1, v)
+
+			else:
+				# Index is a string. Container must be a dictionary
+				if parts[0] not in unflattened:
+					unflattened[parts[0]] = dict()
+				
+				if not isinstance(unflattened[parts[0]], dict):
+					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
+
+				_unflatten_dict(unflattened[parts[0]], parts, 1, v)
+			
+
+	return RetVal().set_value('value', unflattened)
+
+
+def _unflatten_dict(target: dict, levels: list, levelindex: int, value: str) -> RetVal:
+	'''This method continues to unpack a dot-notated string field. It is only called by itself or 
+	unflatten(), so we will assume that parameter values are correct.'''
+	if len(levels[levelindex:]) == 1:
+		target[levels[-1]] = value
+	else:
+		index_is_int = True
+		try:
+			index = int(levels[levelindex+1])
+		except:
+			index = levels[levelindex+1]
+			index_is_int = False
+
+
+
+def _unflatten_list(target: list, levels: list, levelindex: int, value: str) -> RetVal:
+	'''This method continues to unpack a dot-notated string field. It is only called by itself or 
+	unflatten(), so we will assume that parameter values are correct.'''
+
+
+bar = {
+	'Header.Version': '1.0',
+	'Header.EntityType': 'individual',
 	'GivenName': 'Richard',
 	'FamilyName': 'Brannan',
-	'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
+	'Nicknames.0': 'Rick',
+	'Nicknames.1': 'Ricky',
+	'Nicknames.2': 'Rich',
 	'Gender': 'Male',
-	'Website': { 'Personal':'https://www.example.com',
-				'Mensago':'https://mensago.org' },
-	'Phone': [	{	'Label':'Mobile',
-					'Number':'555-555-1234',
-					'Preferred':'yes'
-				}
-			],
+	'Website.Personal': 'https://www.example.com',
+	'Website.Mensago': 'https://mensago.org',
+	'Phone.0.Label': 'Mobile',
+	'Phone.0.Number': '555-555-1234',
+	'Phone.0.Preferred': 'yes',
 	'Birthday': '19750415',
 	'Anniversary': '0714',
-	'Mensago': [
-		{	'Label':'Home',
-			'UserID':'cavs4life',
-			'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
-			'Domain':'example.com'
-		},
-		{	'Label':'Work',
-			'UserID':'rbrannan',
-			'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
-			'Domain':'contoso.com'
-		}
-	],
-	'Annotations': {}
+	'Mensago.0.Label': 'Home',
+	'Mensago.0.UserID': 'cavs4life',
+	'Mensago.0.Workspace': 'f9ccb1f5-85e4-487d-9861-51d371101917',
+	'Mensago.0.Domain': 'example.com',
+	'Mensago.1.Label': 'Work',
+	'Mensago.1.UserID': 'rbrannan',
+	'Mensago.1.Workspace': '9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+	'Mensago.1.Domain': 'contoso.com'
 }
 
-status = flatten(foo)
+status = unflatten(bar)
 if not status.error():
 	print(status['value'])
-
