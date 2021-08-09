@@ -1,4 +1,6 @@
-from retval import RetVal, ErrBadType, ErrBadValue
+from typing import Union
+
+from retval import ErrOutOfRange, RetVal, ErrBadType, ErrBadValue
 
 # Dot-notation turns a nested dictionary into a flat one. This makes database interactions MUCH
 # easier. For example:
@@ -150,7 +152,6 @@ def unflatten(d: dict):
 				if not isinstance(unflattened[parts[0]], list):
 					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
 
-				_unflatten_list(unflattened[parts[0]], parts, 1, v)
 
 			else:
 				# Index is a string. Container must be a dictionary
@@ -160,17 +161,37 @@ def unflatten(d: dict):
 				if not isinstance(unflattened[parts[0]], dict):
 					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
 
-				_unflatten_dict(unflattened[parts[0]], parts, 1, v)
+			_unflatten_recurse(unflattened[parts[0]], parts, 1, v)
 			
 
 	return RetVal().set_value('value', unflattened)
 
 
-def _unflatten_dict(target: dict, levels: list, levelindex: int, value: str) -> RetVal:
+def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, value: str) -> RetVal:
 	'''This method continues to unpack a dot-notated string field. It is only called by itself or 
 	unflatten(), so we will assume that parameter values are correct.'''
+
+	if isinstance(target, list):
+		target_is_list = True
+		targetindex = int(levels[levelindex])
+	else:
+		target_is_list = False
+		targetindex = levels[levelindex]
+
 	if len(levels[levelindex:]) == 1:
-		target[levels[-1]] = value
+		if target_is_list:
+			target[levels[-1]] = value
+		else:
+			value_index = int(levels[-1])
+			
+			if value_index == len(target):
+				target.append(value)
+			elif value_index < 0:
+				return RetVal(ErrBadValue, f"negative list index for f{'.'.join(levels)}")
+			elif value_index < len(target):
+				target[value_index] = value
+			elif value_index > len(target):
+				return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
 	else:
 		index_is_int = True
 		try:
@@ -179,11 +200,29 @@ def _unflatten_dict(target: dict, levels: list, levelindex: int, value: str) -> 
 			index = levels[levelindex+1]
 			index_is_int = False
 
+		if index_is_int:
+			# Index is an integer. Container must be a list
+			if index not in target:
+				if isinstance(target, list):
+					target.append(list())
+				else:
+					target[index] = list()
+			
+			if not isinstance(target[index], list):
+				return RetVal(ErrBadType, f"Type mismatch: {index}")
 
+		else:
+			# Index is a string. Container must be a dictionary
+			if index not in target:
+				if isinstance(target, list):
+					target.append(dict())
+				else:
+					target[index] = dict()
+			elseL			
+			if not isinstance(target[index], dict):
+				return RetVal(ErrBadType, f"Type mismatch: {index}")
 
-def _unflatten_list(target: list, levels: list, levelindex: int, value: str) -> RetVal:
-	'''This method continues to unpack a dot-notated string field. It is only called by itself or 
-	unflatten(), so we will assume that parameter values are correct.'''
+			_unflatten_recurse(target[index], levels, levelindex+1, value)
 
 
 bar = {
