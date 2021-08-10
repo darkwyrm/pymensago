@@ -180,8 +180,6 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 
 	if len(levels[levelindex:]) == 1:
 		if target_is_list:
-			target[levels[-1]] = value
-		else:
 			value_index = int(levels[-1])
 			
 			if value_index == len(target):
@@ -192,37 +190,51 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 				target[value_index] = value
 			elif value_index > len(target):
 				return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
+		else:
+			target[levels[-1]] = value
 	else:
-		index_is_int = True
+		value_index_is_int = True
 		try:
-			index = int(levels[levelindex+1])
+			value_index = int(levels[levelindex+1])
 		except:
-			index = levels[levelindex+1]
-			index_is_int = False
+			value_index = levels[levelindex+1]
+			value_index_is_int = False
 
-		if index_is_int:
-			# Index is an integer. Container must be a list
-			if index not in target:
-				if isinstance(target, list):
+		if target_is_list:
+			# Check to see if item is already in the list
+			# if it exists, check index type against list. If not, add new container to list
+			if value_index == len(target):
+				if value_index_is_int:
 					target.append(list())
 				else:
-					target[index] = list()
-			
-			if not isinstance(target[index], list):
-				return RetVal(ErrBadType, f"Type mismatch: {index}")
-
-		else:
-			# Index is a string. Container must be a dictionary
-			if index not in target:
-				if isinstance(target, list):
 					target.append(dict())
+			elif value_index < 0:
+				return RetVal(ErrBadValue, f"negative list index for f{'.'.join(levels)}")
+			elif value_index > len(target):
+				return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
+			
+			# Recurse into list as target
+			return _unflatten_recurse(target[value_index], levels, levelindex+1, value)
+		else:
+			# Check to see if item is already in the dictionary
+			# if it exists, check index type against dictionary. If not, add new container
+			# Recurse into new list as target
+			if value_index not in target:
+				if isinstance(target, list):
+					if value_index_is_int:
+						target.append(list())
+					else:
+						target.append(dict())
 				else:
-					target[index] = dict()
-			elseL			
-			if not isinstance(target[index], dict):
-				return RetVal(ErrBadType, f"Type mismatch: {index}")
+					if value_index_is_int:
+						target[value_index] = list()
+					else:
+						target[value_index] = dict()
+			
+			# Recurse into dict as target
+			return _unflatten_recurse(target[value_index], levels, levelindex+1, value)
 
-			_unflatten_recurse(target[index], levels, levelindex+1, value)
+	return RetVal()
 
 
 bar = {
