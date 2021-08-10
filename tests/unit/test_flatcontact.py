@@ -8,7 +8,7 @@ def funcname() -> str:
 	frames = inspect.getouterframes(inspect.currentframe())
 	return frames[1].function
 
-def test_flatten():
+def test_flatten_unflatten():
 	'''Tests the flatten() function'''
 
 	unflat_data = {
