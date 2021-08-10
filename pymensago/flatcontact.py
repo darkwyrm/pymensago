@@ -142,53 +142,14 @@ def unflatten(d: dict):
 	
 	unflattened = dict()
 	for k,v in d.items():
-		if not isinstance(k, str):
-			return RetVal(ErrBadType, 'keys must be strings')
-		
-		if not len(k):
-			return RetVal(ErrBadValue, 'string keys may not be empty')
-		
-		if not isinstance(v, str):
-			return RetVal(ErrBadType, 'values must be strings')
-		
-		parts = k.split('.')
-		if len(parts) == 1:
-			unflattened[parts[0]] = v
-		else:
-			# The top-level item is a container. We need to find out the type of the container's
-			# index. From there, we ensure that the container exists and then call the appropriate
-			# unflatten call to unpack the container's values
-			index_is_int = True
-			try:
-				index = int(parts[1])
-			except:
-				index = parts[1]
-				index_is_int = False
-			
-			if index_is_int:
-				# Index is an integer. Container must be a list
-				if parts[0] not in unflattened:
-					unflattened[parts[0]] = list()
-				
-				if not isinstance(unflattened[parts[0]], list):
-					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
-
-
-			else:
-				# Index is a string. Container must be a dictionary
-				if parts[0] not in unflattened:
-					unflattened[parts[0]] = dict()
-				
-				if not isinstance(unflattened[parts[0]], dict):
-					return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
-
-			_unflatten_recurse(unflattened[parts[0]], parts, 1, v)
-			
+		status = unflatten_field(unflattened, k, v)
+		if status.error():
+			return status
 
 	return RetVal().set_value('value', unflattened)
 
 
-def unflatten_field(d: dict, fieldname: str, fieldvalue: str):
+def unflatten_field(d: dict, fieldname: str, fieldvalue: str) -> RetVal:
 	'''Unflattens a field into the target dictionary from the format described for flatten()'''
 	if not isinstance(d, dict):
 		return RetVal(ErrBadType)
