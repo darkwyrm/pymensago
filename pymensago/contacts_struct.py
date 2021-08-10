@@ -203,23 +203,23 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 		if target_is_list:
 			# Check to see if item is already in the list
 			# if it exists, check index type against list. If not, add new container to list
-			if value_index == len(target):
+			if targetindex == len(target):
 				if value_index_is_int:
 					target.append(list())
 				else:
 					target.append(dict())
-			elif value_index < 0:
+			elif targetindex < 0:
 				return RetVal(ErrBadValue, f"negative list index for f{'.'.join(levels)}")
-			elif value_index > len(target):
+			elif targetindex > len(target):
 				return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
 			
 			# Recurse into list as target
-			return _unflatten_recurse(target[value_index], levels, levelindex+1, value)
+			return _unflatten_recurse(target[targetindex], levels, levelindex+1, value)
 		else:
 			# Check to see if item is already in the dictionary
 			# if it exists, check index type against dictionary. If not, add new container
 			# Recurse into new list as target
-			if value_index not in target:
+			if targetindex not in target:
 				if isinstance(target, list):
 					if value_index_is_int:
 						target.append(list())
