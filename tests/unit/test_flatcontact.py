@@ -84,4 +84,4 @@ def test_flatten_unflatten():
 
 
 if __name__ == '__main__':
-	test_flatten()
+	test_flatten_unflatten()
