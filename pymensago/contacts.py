@@ -3,6 +3,7 @@
 from base64 import b85encode
 import datetime
 import os
+from pymensago.flatcontact import unflatten_field
 import re
 import tempfile
 import time
@@ -118,7 +119,7 @@ class Contact:
 
 	def set_field(self, fieldname: str, value: str) -> RetVal:
 		'''Sets the contact information field for the user to the specified value.'''
-		return self._set_field(self.fields, fieldname, value)
+		return unflatten_field(self.fields, fieldname, value)
 
 	def delete_field(self, fieldname: str) -> RetVal:
 		'''Deletes the specified contact information field for the user'''
@@ -146,155 +147,6 @@ class Contact:
 			self.fields['Annotations'] = dict()
 			return RetVal(ErrNotFound)
 		return self._delete_field(self.fields['Annotations'], fieldname)
-
-	def _set_field(self, target: dict, fieldname: str, value: str) -> RetVal:
-		'''Internal method which sets a field in a dictionary. This does all the heavy lifting 
-		when working with set_field() or annotate()'''
-		if not fieldname or not value:
-			return RetVal(ErrBadValue)
-		
-		if fieldname == 'Photo':
-			return self._setphoto(target, value)
-
-		parts = fieldname.split('.')
-		for part in parts:
-			if not part:
-				return RetVal(ErrBadValue, 'bad field name')
-		
-		if len(parts) == 1:
-			target[parts[0]] = value
-			return RetVal()
-		
-		elif len(parts) == 2:
-			# This section handles top-level fields which are dictionaries or lists of strings
-			# Adding an empty container as a field is not supported because empty data containers
-			# are not supported.
-
-			# Based on the values in parts, determined whether or not the first level needs to be
-			# a list or a dictionary
-
-			# keys have to either be an integer index (for a list) or a string
-			keytype = 'i'
-			try:
-				key = int(parts[1])
-			except:
-				keytype = 's'
-				key = parts[1]
-			
-			if not (isinstance(key, int) or isinstance(key, str)):
-				return RetVal(ErrBadType, 'second level key must be an integer or string')
-			
-			# If the top-level container exists, make sure the its type matches the key type
-			if parts[0] in target:
-				if not (keytype == 'i' and isinstance(target[parts[0]], list) 
-						or (keytype == 's' and isinstance(target[parts[0]], dict))):
-					return RetVal(ErrBadType, 'second level key does not match container type')
-			else:
-				if keytype == 'i':
-					target[parts[0]] = list()
-				else:
-					target[parts[0]] = dict()
-
-			if keytype == 'i':
-				if key < 0:
-					target[parts[0]].append(value)
-				elif key >= len(target[parts[0]]):
-					return RetVal(ErrOutOfRange)
-				else:
-					target[parts[0]][key] = value
-			else:
-				target[parts[0]][key] = value
-
-			return RetVal()
-		
-		elif len(parts) == 3:
-			# As of this writing, the schema only utilizes top-level fields which are lists of
-			# dictionaries, but we will write this code to handle lists or dictionaries nested
-			# inside a list or dictionary in case the schema changes at some point.
-			# keys have to either be an integer index (for a list) or a string
-
-			# This variable isn't absolutely necessary, but it makes the code clearer
-			field = parts[0]
-
-			# Set the type and value of the middle field index
-			indextype = 'i'
-			try:
-				index = int(parts[1])
-			except:
-				indextype = 's'
-				index = parts[1]
-
-			# Set the type and value of the third field index
-			subkeytype = 'i'
-			try:
-				subkey = int(parts[2])
-			except:
-				subkeytype = 's'
-				subkey = parts[2]
-
-			# Now that we have the middle index, check that the field exists
-			if field in target:
-				# Field exists, does the index match its type?
-				if indextype == 'i' and type(target[field]).__name__ != 'list' \
-					or indextype == 's' and type(target[field]).__name__ != 'dict':
-					return RetVal(ErrBadType, "second level index doesn't match container type")
-			else:
-				# Field doesn't exist. Create a container based on the index's type
-				if indextype == 'i':
-					target[field] = list()
-				else:
-					target[field] = dict()
-			
-			# Here's where it gets complicated. `field` always refers to a dictionary item. `index`,
-			# however, can be a list *or* dictionary item, which makes checking to see if `subkey`
-			# is in the second level container much trickier. We will break this down into dealing
-			# with lists and dictionaries separately so that the code is easier to follow
-			if indextype == 'i':
-				if index >=0 and index < len(target[field]):
-					# Index refers to an item which exists. Check to make sure that the subkey's
-					# type matches
-					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
-						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
-						return RetVal(ErrBadType, "third level index doesn't match container type")
-				else:
-					if subkeytype == 'i':
-						newitem = list()
-					else:
-						newitem = dict()
-					
-					target[field].append(newitem)
-			else:
-				if index in target[field]:
-					# Index refers to an item which exists. Check to make sure that the subkey's
-					# type matches
-					if subkeytype == 'i' and type(target[field][index]).__name__ != 'list' \
-						or subkeytype == 's' and type(target[field][index]).__name__ != 'dict':
-						return RetVal(ErrBadType, "third level index doesn't match container type")
-				else:
-					if subkeytype == 'i':
-						newitem = list()
-					else:
-						newitem = dict()
-					
-					target[field][index] = newitem
-
-			# Having gotten this far, we know the following:
-			# 1) Contact[field] exists and `index` matches the type of Contact[field]
-			# 2) Contact[field][index] exists and `subkey` matches the type of Contact[field][index]
-			
-			# Now we just need to check if Contact[field][index][subkey] exists and either set it
-			# or add it
-			if subkeytype == 'i':
-				if subkey >=0 and subkey < len(target[field][index]):
-					target[field][index][subkey] = value
-				else:
-					target[field][index].append(value)
-			else:
-				target[field][index][subkey] = value
-			
-			return RetVal()
-			
-		return RetVal(ErrBadValue, "bad field name")
 
 	def _delete_field(self, target: dict, fieldname: str) -> RetVal:
 		'''Internal method which does all the heavy lifting for delete_field() and 
