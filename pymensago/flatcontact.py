@@ -164,39 +164,8 @@ def unflatten_field(d: dict, fieldname: str, fieldvalue: str) -> RetVal:
 		return RetVal(ErrBadType, 'values must be strings')
 	
 	parts = fieldname.split('.')
-	if len(parts) == 1:
-		d[parts[0]] = fieldvalue
-	else:
-		# The top-level item is a container. We need to find out the type of the container's
-		# index. From there, we ensure that the container exists and then call the appropriate
-		# unflatten call to unpack the container's values
-		index_is_int = True
-		try:
-			_ = int(parts[1])
-		except:
-			index_is_int = False
-		
-		if index_is_int:
-			# Index is an integer. Container must be a list
-			if parts[0] not in d:
-				d[parts[0]] = list()
-			
-			if not isinstance(d[parts[0]], list):
-				return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
 
-
-		else:
-			# Index is a string. Container must be a dictionary
-			if parts[0] not in d:
-				d[parts[0]] = dict()
-			
-			if not isinstance(d[parts[0]], dict):
-				return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
-
-		_unflatten_recurse(d[parts[0]], parts, 1, fieldvalue)
-			
-
-	return RetVal()
+	return _unflatten_recurse(d, parts, 0, fieldvalue)
 
 
 def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, value: str) -> RetVal:
