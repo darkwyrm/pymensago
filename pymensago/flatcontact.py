@@ -1,6 +1,6 @@
 from typing import Union
 
-from retval import ErrOutOfRange, RetVal, ErrBadType, ErrBadValue
+from retval import RetVal, ErrOutOfRange, ErrBadType, ErrBadValue, ErrNotFound
 
 # This module implements the transformation of a contact dictionary between the official format
 # and the dot-notation format. An example of official format is as follows:
@@ -234,5 +234,61 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 			
 			# Recurse into dict as target
 			return _unflatten_recurse(target[targetindex], levels, levelindex+1, value)
+
+	return RetVal()
+
+
+def _get_recurse(target: Union[dict,list], levels: list, levelindex: int, pop_value: bool) -> RetVal:
+	'''This method walks an unflattened dictionary to obtain a field. If pop_value is True, the 
+	value is removed from the dictionary when it is returned.'''
+
+	if isinstance(target, list):
+		target_is_list = True
+		targetindex = int(levels[levelindex])
+	else:
+		target_is_list = False
+		targetindex = levels[levelindex]
+
+	if len(levels[levelindex:]) == 1:
+		if target_is_list:
+			value_index = int(levels[-1])
+			
+			if value_index > 0 and value_index < len(target) :
+				out = target[value_index]
+				if pop_value:
+					del target[value_index]
+				return RetVal().set_value('value', out)
+			
+			return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
+		else:
+			if levels[-1] not in target:
+				return RetVal(ErrNotFound, f"field f{'.'.join(levels)} not found")
+			
+			out = target[levels[-1]]
+			if pop_value:
+				del target[levels[-1]]
+			return RetVal().set_value('value', out)
+	else:
+		if target_is_list:
+			# Check to see if item is already in the list
+			# if it exists, check index type against list. If not, add new container to list
+			if targetindex > 0 and targetindex < len(target) :
+				status = _unflatten_recurse(target[targetindex], levels, levelindex+1, pop_value)
+				if not status.error() and pop_value and len(target[targetindex]) == 0:
+					del target[targetindex]
+				return status
+			else:
+				return RetVal(ErrOutOfRange, f"list index for f{'.'.join(levels)} out of bounds")
+		else:
+			# Check to see if item is already in the dictionary
+			# if it exists, check index type against dictionary. If not, add new container
+			# Recurse into new list as target
+			if targetindex not in target:
+				return RetVal(ErrNotFound, f"field f{'.'.join(levels)} not found")
+			
+			status = _unflatten_recurse(target[targetindex], levels, levelindex+1, pop_value)
+			if not status.error() and pop_value and len(target[targetindex]) == 0:
+				del target[targetindex]
+
 
 	return RetVal()
