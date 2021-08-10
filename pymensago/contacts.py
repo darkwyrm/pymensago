@@ -138,7 +138,7 @@ class Contact:
 		
 		if 'Annotations' not in self.fields:
 			self.fields['Annotations'] = dict()
-		return self._set_field(self.fields['Annotations'], fieldname, value)
+		return unflatten_field(self.fields['Annotations'], fieldname, value)
 
 	def delete_annotation(self, fieldname: str) -> RetVal:
 		'''Deletes an annotation for a contact'''
