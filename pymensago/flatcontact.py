@@ -298,11 +298,11 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 						target.append(dict())
 				else:
 					if value_index_is_int:
-						target[value_index] = list()
+						target[targetindex] = list()
 					else:
-						target[value_index] = dict()
+						target[targetindex] = dict()
 			
 			# Recurse into dict as target
-			return _unflatten_recurse(target[value_index], levels, levelindex+1, value)
+			return _unflatten_recurse(target[targetindex], levels, levelindex+1, value)
 
 	return RetVal()

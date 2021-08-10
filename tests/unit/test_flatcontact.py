@@ -2,7 +2,7 @@ import inspect
 
 from retval import ErrBadData
 
-from pymensago.flatcontact import flatten, unflatten
+from pymensago.flatcontact import flatten, unflatten, unflatten_field
 
 def funcname() -> str: 
 	frames = inspect.getouterframes(inspect.currentframe())
@@ -76,12 +76,48 @@ def test_flatten_unflatten():
 	assert 'value' in status and status['value'] == flat_data, \
 		f"{funcname()}: subtest #1 returned incorrect data"
 	
-	foo = dict()
 	status = unflatten(flat_data)
 	assert not status.error(), f"{funcname()}: subtest #2 returned an error: {status.info()}"
 	assert 'value' in status and status['value'] == unflat_data, \
 		f"{funcname()}: subtest #2 returned incorrect data"
 
 
+def test_unflatten_field():
+	'''Tests the unflatten_field function'''
+
+	unflat_data = {
+		'Top' : [ {	'Fieldname' : 'Value' } ]
+	}
+	target = dict()
+	status = unflatten_field(target, 'Top.0.Fieldname', 'Value')
+	assert not status.error(), f"{funcname()}: subtest #1 returned an error: {status.info()}"
+	assert target == unflat_data, f"{funcname()}: subtest #1 returned incorrect data"
+
+	unflat_data = {
+		'Top' : [ [ 'Value'] ]
+	}
+	target = dict()
+	status = unflatten_field(target, 'Top.0.0', 'Value')
+	assert not status.error(), f"{funcname()}: subtest #2 returned an error: {status.info()}"
+	assert target == unflat_data, f"{funcname()}: subtest #2 returned incorrect data"
+
+	unflat_data = {
+		'Top' : { 'FieldName' : { 'SecondFieldName' : 'Value'} }
+	}
+	target = dict()
+	status = unflatten_field(target, 'Top.FieldName.SecondFieldName', 'Value')
+	assert not status.error(), f"{funcname()}: subtest #3 returned an error: {status.info()}"
+	assert target == unflat_data, f"{funcname()}: subtest #3 returned incorrect data"
+
+	unflat_data = {
+		'Top' : { 'FieldName' : [ 'Value'] }
+	}
+	target = dict()
+	status = unflatten_field(target, 'Top.FieldName.0', 'Value')
+	assert not status.error(), f"{funcname()}: subtest #4 returned an error: {status.info()}"
+	assert target == unflat_data, f"{funcname()}: subtest #4 returned incorrect data"
+
+
 if __name__ == '__main__':
-	test_flatten_unflatten()
+	# test_flatten_unflatten()
+	test_unflatten_field()
