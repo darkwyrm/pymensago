@@ -2,14 +2,73 @@ from typing import Union
 
 from retval import ErrOutOfRange, RetVal, ErrBadType, ErrBadValue
 
-# Dot-notation turns a nested dictionary into a flat one. This makes database interactions MUCH
-# easier. For example:
+# This module implements the transformation of a contact dictionary between the official format
+# and the dot-notation format. An example of official format is as follows:
+#
 # {
-# 	Foo: [	
-# 		{ "Bar":"Baz" }
-# 	]
+# 	'Header' : {
+# 		'Version': '1.0',
+# 		'EntityType': 'individual'
+# 	},
+# 	'GivenName': 'Richard',
+# 	'FamilyName': 'Brannan',
+# 	'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
+# 	'Gender': 'Male',
+# 	'Website': { 'Personal':'https://www.example.com',
+# 				'Mensago':'https://mensago.org' },
+# 	'Phone': [	{	'Label':'Mobile',
+# 					'Number':'555-555-1234',
+# 					'Preferred':'yes'
+# 				}
+# 			],
+# 	'Birthday': '19750415',
+# 	'Anniversary': '0714',
+# 	'Mensago': [
+# 		{	'Label':'Home',
+# 			'UserID':'cavs4life',
+# 			'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
+# 			'Domain':'example.com'
+# 		},
+# 		{	'Label':'Work',
+# 			'UserID':'rbrannan',
+# 			'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+# 			'Domain':'contoso.com'
+# 		}
+# 	],
+# 	'Annotations': {}
 # }
-# flattens to { "Foo.0.Bar": "Baz" }
+#
+# When converted to a single-level dictionary, the field names and indices of nested values are
+# joined together by periods to denote the level of nesting. A flattened dictionary consists of
+# only string keys and string values, as shown below:
+#
+# bar = {
+# 	'Header.Version': '1.0',
+# 	'Header.EntityType': 'individual',
+# 	'GivenName': 'Richard',
+# 	'FamilyName': 'Brannan',
+# 	'Nicknames.0': 'Rick',
+# 	'Nicknames.1': 'Ricky',
+# 	'Nicknames.2': 'Rich',
+# 	'Gender': 'Male',
+# 	'Website.Personal': 'https://www.example.com',
+# 	'Website.Mensago': 'https://mensago.org',
+# 	'Phone.0.Label': 'Mobile',
+# 	'Phone.0.Number': '555-555-1234',
+# 	'Phone.0.Preferred': 'yes',
+# 	'Birthday': '19750415',
+# 	'Anniversary': '0714',
+# 	'Mensago.0.Label': 'Home',
+# 	'Mensago.0.UserID': 'cavs4life',
+# 	'Mensago.0.Workspace': 'f9ccb1f5-85e4-487d-9861-51d371101917',
+# 	'Mensago.0.Domain': 'example.com',
+# 	'Mensago.1.Label': 'Work',
+# 	'Mensago.1.UserID': 'rbrannan',
+# 	'Mensago.1.Workspace': '9015c2ea-2d02-491b-aa1f-4d536cfc4878',
+# 	'Mensago.1.Domain': 'contoso.com'
+# }
+
+
 def flatten(d: dict) -> RetVal:
 	'''Flattens a dictionary in Contact format into a single-level dot-notated dictionary. All 
 	fields are expected to be dictionaries, lists, or strings. The flattened result is returned 
@@ -73,44 +132,6 @@ def _flatten_list(target: dict, levels: list, l: list) -> RetVal:
 	return RetVal()
 
 
-
-# foo = {
-# 	'Header' : {
-# 		'Version': '1.0',
-# 		'EntityType': 'individual'
-# 	},
-# 	'GivenName': 'Richard',
-# 	'FamilyName': 'Brannan',
-# 	'Nicknames' : [ 'Rick', 'Ricky', 'Rich'],
-# 	'Gender': 'Male',
-# 	'Website': { 'Personal':'https://www.example.com',
-# 				'Mensago':'https://mensago.org' },
-# 	'Phone': [	{	'Label':'Mobile',
-# 					'Number':'555-555-1234',
-# 					'Preferred':'yes'
-# 				}
-# 			],
-# 	'Birthday': '19750415',
-# 	'Anniversary': '0714',
-# 	'Mensago': [
-# 		{	'Label':'Home',
-# 			'UserID':'cavs4life',
-# 			'Workspace':'f9ccb1f5-85e4-487d-9861-51d371101917',
-# 			'Domain':'example.com'
-# 		},
-# 		{	'Label':'Work',
-# 			'UserID':'rbrannan',
-# 			'Workspace':'9015c2ea-2d02-491b-aa1f-4d536cfc4878',
-# 			'Domain':'contoso.com'
-# 		}
-# 	],
-# 	'Annotations': {}
-# }
-
-# status = flatten(foo)
-# if not status.error():
-# 	print(status['value'])
-
 def unflatten(d: dict):
 	'''Unflattens a dictionary from the format described for flatten()'''
 	if not len(d):
@@ -165,6 +186,56 @@ def unflatten(d: dict):
 			
 
 	return RetVal().set_value('value', unflattened)
+
+
+def unflatten_field(d: dict, fieldname: str, fieldvalue: str):
+	'''Unflattens a field into the target dictionary from the format described for flatten()'''
+	if not isinstance(d, dict):
+		return RetVal(ErrBadType)
+	
+	if not isinstance(fieldname, str):
+		return RetVal(ErrBadType, 'fieldname must be a string')
+	
+	if not fieldname:
+		return RetVal(ErrBadValue, "fieldname may not be empty")
+	
+	if not isinstance(fieldname, str):
+		return RetVal(ErrBadType, 'values must be strings')
+	
+	parts = fieldname.split('.')
+	if len(parts) == 1:
+		d[parts[0]] = fieldvalue
+	else:
+		# The top-level item is a container. We need to find out the type of the container's
+		# index. From there, we ensure that the container exists and then call the appropriate
+		# unflatten call to unpack the container's values
+		index_is_int = True
+		try:
+			_ = int(parts[1])
+		except:
+			index_is_int = False
+		
+		if index_is_int:
+			# Index is an integer. Container must be a list
+			if parts[0] not in d:
+				d[parts[0]] = list()
+			
+			if not isinstance(d[parts[0]], list):
+				return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
+
+
+		else:
+			# Index is a string. Container must be a dictionary
+			if parts[0] not in d:
+				d[parts[0]] = dict()
+			
+			if not isinstance(d[parts[0]], dict):
+				return RetVal(ErrBadType, f"Type mismatch: {parts[0]}")
+
+		_unflatten_recurse(d[parts[0]], parts, 1, fieldvalue)
+			
+
+	return RetVal()
 
 
 def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, value: str) -> RetVal:
@@ -235,34 +306,3 @@ def _unflatten_recurse(target: Union[dict,list], levels: list, levelindex: int, 
 			return _unflatten_recurse(target[value_index], levels, levelindex+1, value)
 
 	return RetVal()
-
-
-bar = {
-	'Header.Version': '1.0',
-	'Header.EntityType': 'individual',
-	'GivenName': 'Richard',
-	'FamilyName': 'Brannan',
-	'Nicknames.0': 'Rick',
-	'Nicknames.1': 'Ricky',
-	'Nicknames.2': 'Rich',
-	'Gender': 'Male',
-	'Website.Personal': 'https://www.example.com',
-	'Website.Mensago': 'https://mensago.org',
-	'Phone.0.Label': 'Mobile',
-	'Phone.0.Number': '555-555-1234',
-	'Phone.0.Preferred': 'yes',
-	'Birthday': '19750415',
-	'Anniversary': '0714',
-	'Mensago.0.Label': 'Home',
-	'Mensago.0.UserID': 'cavs4life',
-	'Mensago.0.Workspace': 'f9ccb1f5-85e4-487d-9861-51d371101917',
-	'Mensago.0.Domain': 'example.com',
-	'Mensago.1.Label': 'Work',
-	'Mensago.1.UserID': 'rbrannan',
-	'Mensago.1.Workspace': '9015c2ea-2d02-491b-aa1f-4d536cfc4878',
-	'Mensago.1.Domain': 'contoso.com'
-}
-
-status = unflatten(bar)
-if not status.error():
-	print(status['value'])
