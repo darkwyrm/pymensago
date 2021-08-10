@@ -2,7 +2,7 @@ import inspect
 
 from retval import ErrBadData
 
-from pymensago.flatcontact import flatten
+from pymensago.flatcontact import flatten, unflatten
 
 def funcname() -> str: 
 	frames = inspect.getouterframes(inspect.currentframe())
@@ -11,7 +11,7 @@ def funcname() -> str:
 def test_flatten():
 	'''Tests the flatten() function'''
 
-	testdata = {
+	unflat_data = {
 		'Header' : {
 			'Version': '1.0',
 			'EntityType': 'individual'
@@ -45,7 +45,7 @@ def test_flatten():
 		}
 	}
 
-	expected_data = {
+	flat_data = {
 		'Header.Version': '1.0',
 		'Header.EntityType': 'individual',
 		'GivenName': 'Richard',
@@ -71,10 +71,17 @@ def test_flatten():
 		'Annotations.Anniversary': '0714',
 	}
 
-	status = flatten(testdata)
-	assert not status.error(), f"{funcname()} returned an error: {status.info()}"
-	assert 'value' in status and status['value'] == expected_data, \
-		f"{funcname()} returned incorrect data"
+	status = flatten(unflat_data)
+	assert not status.error(), f"{funcname()}: subtest #1 returned an error: {status.info()}"
+	assert 'value' in status and status['value'] == flat_data, \
+		f"{funcname()}: subtest #1 returned incorrect data"
+	
+	foo = dict()
+	status = unflatten(flat_data)
+	assert not status.error(), f"{funcname()}: subtest #2 returned an error: {status.info()}"
+	assert 'value' in status and status['value'] == unflat_data, \
+		f"{funcname()}: subtest #2 returned incorrect data"
+
 
 if __name__ == '__main__':
 	test_flatten()
