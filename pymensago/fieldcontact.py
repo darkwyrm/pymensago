@@ -2,6 +2,8 @@
 # JSON is an object notation format, so why not actually *use* objects instead of just lists
 # and dictionaries?
 
+import json
+
 FIELD_VALUE = 0
 FIELD_LIST = 1
 FIELD_DICT = 2
@@ -79,7 +81,7 @@ class FieldList (FieldContainer):
 	
 	def __str__(self) -> str:
 		if len(self.values):
-			return "[%s]" % ','.join([ str(v) for v in self.values ])
+			return json.dumps(self.values)
 
 		return '[]'
 	
@@ -147,7 +149,7 @@ class FieldDict (FieldContainer):
 	
 	def __str__(self) -> str:
 		if len(self.values):
-			return "{%s}" % ','.join(self.values)
+			return json.dumps(self.values)
 
 		return '{}'
 	
