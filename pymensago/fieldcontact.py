@@ -6,9 +6,6 @@ FIELD_VALUE = 0
 FIELD_LIST = 1
 FIELD_DICT = 2
 
-# TODO: Fix __add__ to return a FieldList/FieldDict and also to handle adding both lists (or dicts)
-# along with FieldLists (or FieldDicts)
-
 # TODO: Fix FieldDict.__str__ to return proper JSON
 
 class Field:
@@ -67,8 +64,12 @@ class FieldList (FieldContainer):
 	def __add__(self, o: object):
 		if isinstance(o, list):
 			return self.values + o
+		elif isinstance(self, FieldList):
+			return self.values + o.values
 		
-		raise TypeError(f"Adding a {type(o)} to a FieldList is not supported")
+		out = self.values
+		out.append(o)
+		return out
 	
 	def __eq__(self, o: object) -> bool:
 		return self.values == o
@@ -128,6 +129,11 @@ class FieldDict (FieldContainer):
 		if isinstance(o, dict):
 			out = self
 			for k,v in o.items():
+				out.values[k] = v
+			return out
+		elif isinstance(o, FieldDict):
+			out = self
+			for k,v in o.values.items():
 				out.values[k] = v
 			return out
 		
