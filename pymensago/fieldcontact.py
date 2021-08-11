@@ -15,6 +15,9 @@ class Field:
 	
 	def __str__(self) -> str:
 		return f"{self.name}:{self.value}"
+	
+	def as_string(self) -> str:
+		return str(self)
 
 
 class FieldContainer (Field):
@@ -67,6 +70,15 @@ class FieldList (FieldContainer):
 	
 	def __ne__(self, o: object) -> bool:
 		return self.values != o
+	
+	def __str__(self) -> str:
+		if len(self.values):
+			return f"[{','.join(self.values)}]"
+
+		return '[]'
+	
+	def as_string(self) -> str:
+		return str(self)
 	
 	def get_iterator(self):
 		'''Returns an iterator to the data in the field container'''
@@ -121,6 +133,15 @@ class FieldDict (FieldContainer):
 	
 	def __ne__(self, o: object) -> bool:
 		return self.values != o
+	
+	def __str__(self) -> str:
+		if len(self.values):
+			return "{%s}" % ','.join(self.values)
+
+		return '{}'
+	
+	def as_string(self) -> str:
+		return str(self)
 	
 	def get_iterator(self):
 		'''Returns an iterator to the data in the field container'''
