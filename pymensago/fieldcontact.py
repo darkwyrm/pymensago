@@ -74,16 +74,57 @@ class FieldList (FieldContainer):
 			self.values.extend(o.values)
 		else:
 			self.values.append(o)
+		return True
 
 
 class FieldDict (FieldContainer):
 	def __init__(self, name) -> None:
 		super().__init__(name)
+		self.values = list()
 	
-	# [] operator
-	# == operator
-	# merge()
-	# __str__()
+	def __contains__(self, key):
+		return key in self.values
+
+	def __delitem__(self, key):
+		del self.values[key]
+
+	def __getitem__(self, key):
+		return self.values[key]
+	
+	def __iter__(self):
+		return self.values.__iter__()
+	
+	def __setitem__(self, key, value):
+		self.values[key] = value
+	
+	def __add__(self, o: object):
+		if isinstance(o, dict):
+			out = self
+			for k,v in o.items():
+				out.values[k] = v
+			return out
+		
+		raise TypeError(f"Adding a {type(o)} to a FieldDict is not supported")
+	
+	def __eq__(self, o: object) -> bool:
+		return self.values == o
+	
+	def __ne__(self, o: object) -> bool:
+		return self.values != o
+	
+	def merge(self, o: object) -> bool:
+		if isinstance(o, dict):
+			for k,v in o.items():
+				self.values[k] = v
+			return True
+		elif isinstance(o, FieldList):
+			for k,v in o.values.items():
+				self.values[k] = v
+			return True
+		else:
+			self.values.append(o)
+		
+		raise TypeError(f"Merging a {type(o)} into a FieldDict is not supported")
 
 
 class Contact:
