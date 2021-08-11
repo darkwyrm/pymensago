@@ -9,6 +9,8 @@ FIELD_DICT = 2
 # TODO: Fix __add__ to return a FieldList/FieldDict and also to handle adding both lists (or dicts)
 # along with FieldLists (or FieldDicts)
 
+# TODO: Fix FieldDict.__str__ to return proper JSON
+
 class Field:
 	def __init__(self, name = '') -> None:
 		self.name = ''
