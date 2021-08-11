@@ -22,11 +22,11 @@ class FieldContainer (Field):
 		super().__init__(name=name)
 		self.is_container = True
 	
-	def get_iterator():
+	def get_iterator(self):
 		'''Returns an iterator to the data in the field container'''
 		return None
 
-	def count() -> int:
+	def count(self) -> int:
 		'''Returns the number of items in the container'''
 		return 0
 	
@@ -66,6 +66,14 @@ class FieldList (FieldContainer):
 	
 	def __ne__(self, o: object) -> bool:
 		return self.values != o
+	
+	def get_iterator(self):
+		'''Returns an iterator to the data in the field container'''
+		return self.values.__iter__()
+
+	def count(self) -> int:
+		'''Returns the number of items in the container'''
+		return len(self.values)
 	
 	def merge(self, o: object) -> bool:
 		if isinstance(o, list):
@@ -111,6 +119,14 @@ class FieldDict (FieldContainer):
 	
 	def __ne__(self, o: object) -> bool:
 		return self.values != o
+	
+	def get_iterator(self):
+		'''Returns an iterator to the data in the field container'''
+		return self.values.__iter__()
+
+	def count(self) -> int:
+		'''Returns the number of items in the container'''
+		return len(self.values)
 	
 	def merge(self, o: object) -> bool:
 		if isinstance(o, dict):
