@@ -6,6 +6,9 @@ FIELD_VALUE = 0
 FIELD_LIST = 1
 FIELD_DICT = 2
 
+# TODO: Fix __add__ to return a FieldList/FieldDict and also to handle adding both lists (or dicts)
+# along with FieldLists (or FieldDicts)
+
 class Field:
 	def __init__(self, name = '') -> None:
 		self.name = ''
@@ -172,3 +175,4 @@ class Contact:
 		self.annotations = FieldDict()
 	# save()
 	# load()
+
