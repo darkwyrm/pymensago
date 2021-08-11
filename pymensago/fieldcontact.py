@@ -73,7 +73,7 @@ class FieldList (FieldContainer):
 	
 	def __str__(self) -> str:
 		if len(self.values):
-			return f"[{','.join(self.values)}]"
+			return "{%s}" % ','.join([ str(v) for v in self.values ])
 
 		return '[]'
 	
