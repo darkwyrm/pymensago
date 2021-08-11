@@ -38,6 +38,7 @@ class FieldContainer (Field):
 class FieldList (FieldContainer):
 	def __init__(self, name) -> None:
 		super().__init__(name)
+		self.type = FIELD_LIST
 		self.values = list()
 	
 	def __contains__(self, key):
@@ -88,6 +89,7 @@ class FieldList (FieldContainer):
 class FieldDict (FieldContainer):
 	def __init__(self, name) -> None:
 		super().__init__(name)
+		self.type = FIELD_DICT
 		self.values = list()
 	
 	def __contains__(self, key):
