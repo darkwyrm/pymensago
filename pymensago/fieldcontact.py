@@ -2,23 +2,25 @@
 # JSON is an object notation format, so why not actually *use* objects instead of just lists
 # and dictionaries?
 
+import copy
 import json
 
 FIELD_VALUE = 0
 FIELD_LIST = 1
 FIELD_DICT = 2
 
-# TODO: Fix FieldDict.__str__ to return proper JSON
 
 class Field:
 	def __init__(self, name = '') -> None:
-		self.name = ''
+		self.name = name
 		self.value = ''
 		self.type = FIELD_VALUE
 		self.is_container = False
 	
 	def __str__(self) -> str:
-		return f"{self.name}:{self.value}"
+		if self.name:
+			return f'{json.dumps(str(self.name))}:{json.dumps(str(self.value))}'
+		return json.dumps(str(self.value))
 	
 	def as_string(self) -> str:
 		return str(self)
@@ -28,6 +30,10 @@ class FieldContainer (Field):
 	def __init__(self, name) -> None:
 		super().__init__(name=name)
 		self.is_container = True
+	
+	def set(self, o: object):
+		'''Sets the container to the specified value'''
+		pass
 	
 	def get_iterator(self):
 		'''Returns an iterator to the data in the field container'''
@@ -65,12 +71,16 @@ class FieldList (FieldContainer):
 	
 	def __add__(self, o: object):
 		if isinstance(o, list):
-			return self.values + o
-		elif isinstance(self, FieldList):
-			return self.values + o.values
+			out = copy.deepcopy(self)
+			out.values.extend(o)
+			return out
+		elif isinstance(o, FieldList):
+			out = copy.deepcopy(self)
+			out.values.extend(o.values)
+			return out
 		
-		out = self.values
-		out.append(o)
+		out = copy.deepcopy(self)
+		out.values.append(o)
 		return out
 	
 	def __eq__(self, o: object) -> bool:
@@ -81,9 +91,18 @@ class FieldList (FieldContainer):
 	
 	def __str__(self) -> str:
 		if len(self.values):
-			return json.dumps(self.values)
+			return json.dumps(self.values, separators=(',',':'))
 
 		return '[]'
+	
+	def set(self, o: object):
+		'''Sets the value of the list to contain the contents of the value passed to it'''
+		if isinstance(o, list):
+			self.values = o
+		elif isinstance(o, FieldList):
+			self.values = o.values
+		else:
+			self.values = [ str(o) ]
 	
 	def as_string(self) -> str:
 		return str(self)
@@ -149,9 +168,18 @@ class FieldDict (FieldContainer):
 	
 	def __str__(self) -> str:
 		if len(self.values):
-			return json.dumps(self.values)
+			return json.dumps(self.values,separators=(',',':'))
 
 		return '{}'
+	
+	def set(self, o: object):
+		'''Sets the value of the list to contain the contents of the value passed to it'''
+		if isinstance(o, dict):
+			self.values = o
+		elif isinstance(o, FieldDict):
+			self.values = o.values
+		
+		raise TypeError(f"Setting a FieldDict to a {type(o)} is not supported")
 	
 	def as_string(self) -> str:
 		return str(self)
