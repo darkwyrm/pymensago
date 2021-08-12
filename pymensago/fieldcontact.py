@@ -128,7 +128,7 @@ class FieldDict (FieldContainer):
 	def __init__(self, name) -> None:
 		super().__init__(name)
 		self.type = FIELD_DICT
-		self.values = list()
+		self.values = dict()
 	
 	def __contains__(self, key):
 		return key in self.values
@@ -147,14 +147,14 @@ class FieldDict (FieldContainer):
 	
 	def __add__(self, o: object):
 		if isinstance(o, dict):
-			out = self
+			out = copy.deepcopy(self)
 			for k,v in o.items():
-				out.values[k] = v
+				out.values[k] = copy.deepcopy(v)
 			return out
 		elif isinstance(o, FieldDict):
-			out = self
+			out = copy.deepcopy(self)
 			for k,v in o.values.items():
-				out.values[k] = v
+				out.values[k] = copy.deepcopy(v)
 			return out
 		
 		raise TypeError(f"Adding a {type(o)} to a FieldDict is not supported")
@@ -172,7 +172,7 @@ class FieldDict (FieldContainer):
 		return '{}'
 	
 	def set(self, o: object):
-		'''Sets the value of the list to contain the contents of the value passed to it'''
+		'''Sets the value of the dictionary to contain the contents of the value passed to it'''
 		if isinstance(o, dict):
 			self.values = o
 		elif isinstance(o, FieldDict):
@@ -194,14 +194,12 @@ class FieldDict (FieldContainer):
 	def merge(self, o: object) -> bool:
 		if isinstance(o, dict):
 			for k,v in o.items():
-				self.values[k] = v
+				self.values[k] = copy.deepcopy(v)
 			return True
 		elif isinstance(o, FieldList):
 			for k,v in o.values.items():
-				self.values[k] = v
+				self.values[k] = copy.deepcopy(v)
 			return True
-		else:
-			self.values.append(o)
 		
 		raise TypeError(f"Merging a {type(o)} into a FieldDict is not supported")
 
