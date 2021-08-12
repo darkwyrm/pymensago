@@ -69,33 +69,28 @@ def test_fielddict():
 	assert teststr == '{"a":1,"b":2,"c":3}', f"{funcname()}: JSON output didn't match"
 	
 
-	testval = f+{ 'd': 4, 'e': 5 }
+	testval = f + { 'd': 4, 'e': 5 }
 	assert testval.values == {'a':1,'b':2,'c':3,'d':4,'e':5}, \
 		f"{funcname()}: + operator +dict subtest failed"
 	f2 = FieldDict('TestDict2')
 	f2.values = { 'd': 4, 'e': 5 }
-	testval = f+f2
+	testval = f + f2
 	assert testval.values == {'a':1,'b':2,'c':3,'d':4,'e':5}, \
 		f"{funcname()}: + operator +fielddict subtest failed"
 
-	# testval.values = { 'a': 1, 'b': 2, 'c': 3 }
-	# assert testval == f, f"{funcname()}: == operator == subtest failed"
-	# testval = f+'d'
-	# assert testval != f, f"{funcname()}: == operator != subtest failed"
-	# assert testval.count() == 4, f"{funcname()}: count subtest failed"
+	testval.values = { 'a': 1, 'b': 2, 'c': 3 }
+	assert testval == f, f"{funcname()}: == operator == subtest failed"
+	testval = f + { 'd': 4, 'e': 5 }
+	assert testval != f, f"{funcname()}: == operator != subtest failed"
+	assert testval.count() == 5, f"{funcname()}: count subtest failed"
 
-	# testval = FieldList('TestList')
-	# testval.merge(f)
-	# assert testval.values == ['a','b','c'], f"{funcname()}: merge FieldList subtest failed"
-	# testval = copy.deepcopy(f)
-	# testval.merge('d')
-	# assert testval.values == ['a','b','c','d'], f"{funcname()}: merge +str subtest failed"
-	# testval = copy.deepcopy(f)
-	# testval.merge(['d','e'])
-	# assert testval.values == ['a','b','c','d','e'], f"{funcname()}: merge +list subtest failed"
-	# testval = copy.deepcopy(f)
-	# testval.merge(1)
-	# assert testval.values == ['a','b','c',1], f"{funcname()}: merge +int subtest failed"
+	testval = FieldDict('TestDict')
+	testval.merge(f)
+	assert testval.values == {'a':1,'b':2,'c':3}, f"{funcname()}: merge FieldDict subtest failed"
+	testval = copy.deepcopy(f)
+	testval.merge({ 'd': 4, 'e': 5 })
+	assert testval.values == {'a':1,'b':2,'c':3,'d':4,'e':5}, \
+		f"{funcname()}: merge dict subtest failed"
 
 
 if __name__ == '__main__':

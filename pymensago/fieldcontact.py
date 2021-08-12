@@ -196,7 +196,7 @@ class FieldDict (FieldContainer):
 			for k,v in o.items():
 				self.values[k] = copy.deepcopy(v)
 			return True
-		elif isinstance(o, FieldList):
+		elif isinstance(o, FieldDict):
 			for k,v in o.values.items():
 				self.values[k] = copy.deepcopy(v)
 			return True
