@@ -115,14 +115,13 @@ class FieldList (FieldContainer):
 		'''Returns the number of items in the container'''
 		return len(self.values)
 	
-	def merge(self, o: object) -> bool:
+	def merge(self, o: object):
 		if isinstance(o, list):
 			self.values.extend(o)
 		elif isinstance(o, FieldList):
 			self.values.extend(o.values)
 		else:
-			self.values.append(o)
-		return True
+			self.values.append(copy.deepcopy(o))
 
 
 class FieldDict (FieldContainer):
