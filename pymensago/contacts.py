@@ -577,6 +577,19 @@ def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str
 	return RetVal()
 
 
+def delete_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
+	'''Deletes a field from the database. Fieldname is expected to be in dot-separated format.'''
+
+	if not id.is_valid() or not fieldname or not db:
+		return RetVal(ErrBadValue)
+	
+	cursor = db.cursor()
+	cursor.execute('''DROP FROM contactinfo WHERE id=? AND fieldname=?''',
+		(id.as_string(),fieldname))
+
+	return RetVal()
+
+
 def load_contact(db: sqlite3.Connection, id: UUID) -> RetVal:
 	'''Loads a contact from the database, given an ID. The contact object is returned in the field 
 	'value' if successful.'''
