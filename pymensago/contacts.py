@@ -583,9 +583,9 @@ def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str
 	'''Saves a field to the database. Fieldname is expected to be in dot-separated format.'''
 
 	cursor = db.cursor()
-	cursor.execute('''DROP FROM contactinfo WHERE id=? AND fieldname=?''',
+	cursor.execute('''DELETE FROM contactinfo WHERE id=? AND fieldname=?''',
 		(id.as_string(),fieldname))
-	cursor.execute('''INSERT INTO contactinfo(id, fieldname, fieldvalue, group) 
+	cursor.execute('''INSERT INTO contactinfo (id, fieldname, fieldvalue, 'group') 
 			VALUES(?,?,?,?)''',
 			(id.as_string(), fieldname, fieldvalue, group))
 	db.commit()
