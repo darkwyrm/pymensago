@@ -71,20 +71,20 @@ _db_setup_cmds = [ '''
 		"id" TEXT NOT NULL,
 		"fieldname" TEXT NOT NULL,
 		"fieldvalue" TEXT,
-		"group" TEXT
+		"contactgroup" TEXT
 	);''', '''
 	CREATE TABLE "annotations" (
 		"id" TEXT NOT NULL,
 		"fieldname" TEXT NOT NULL,
 		"fieldvalue" TEXT,
-		"group" TEXT
+		"contactgroup" TEXT
 	);''', '''
 	CREATE TABLE "photos" (
 		"id" TEXT NOT NULL,
 		"type" TEXT NOT NULL,
 		"photodata" BLOB,
 		"isannotation" TEXT NOT NULL,
-		"group" TEXT
+		"contactgroup" TEXT
 	);''', '''
 	CREATE TABLE "notes" (
 		"id"	TEXT NOT NULL UNIQUE,

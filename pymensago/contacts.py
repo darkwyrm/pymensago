@@ -556,7 +556,7 @@ def load_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	
 	cursor = db.cursor()
 	if fieldname == '*':
-		cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE fieldname=?''',
+		cursor.execute('''SELECT fieldvalue,contactgroup FROM contactinfo WHERE fieldname=?''',
 			(id.as_string(),))
 		results = cursor.fetchall()
 		if not results or not results[0][0]:
@@ -569,7 +569,8 @@ def load_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 			outgroups.append(result[1])
 		return RetVal().set_values({'value':out, 'group':outgroups})
 	else:
-		cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE id=? AND fieldname=?''',
+		cursor.execute(
+			'''SELECT fieldvalue,contactgroup FROM contactinfo WHERE id=? AND fieldname=?''',
 			(id.as_string(),fieldname))
 		results = cursor.fetchone()
 		if not results or not results[0]:
@@ -585,7 +586,7 @@ def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str
 	cursor = db.cursor()
 	cursor.execute('''DELETE FROM contactinfo WHERE id=? AND fieldname=?''',
 		(id.as_string(),fieldname))
-	cursor.execute('''INSERT INTO contactinfo (id, fieldname, fieldvalue, 'group') 
+	cursor.execute('''INSERT INTO contactinfo (id, fieldname, fieldvalue, contactgroup) 
 			VALUES(?,?,?,?)''',
 			(id.as_string(), fieldname, fieldvalue, group))
 	db.commit()
