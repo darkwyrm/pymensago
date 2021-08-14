@@ -548,17 +548,32 @@ def _return_field(name: str, value: str) -> RetVal:
 
 
 def load_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
-	'''Loads a field from the database. Fieldname is expected to be in dot-separated format.'''
+	'''Loads a field from the database. Fieldname is expected to be in dot-separated format. If the 
+	fieldname is an asterisk (*), all fields are loaded and value is a list, not a string'''
 
 	if not id.is_valid() or not fieldname or not db:
 		return RetVal(ErrBadValue)
 	
 	cursor = db.cursor()
-	cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE id=? AND fieldname=?''',
-		(id.as_string(),fieldname))
-	results = cursor.fetchone()
-	if not results or not results[0]:
-		return RetVal(ErrNotFound)
+	if fieldname == '*':
+		cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE fieldname=?''',
+			(id.as_string(),))
+		results = cursor.fetchall()
+		if not results or not results[0][0]:
+			return RetVal(ErrNotFound)
+		
+		out = list()
+		outgroups = list()
+		for result in results():
+			out.append(result[0])			
+			outgroups.append(result[1])
+		return RetVal().set_values({'value':out, 'group':outgroups})
+	else:
+		cursor.execute('''SELECT fieldvalue,group FROM contactinfo WHERE id=? AND fieldname=?''',
+			(id.as_string(),fieldname))
+		results = cursor.fetchone()
+		if not results or not results[0]:
+			return RetVal(ErrNotFound)
 
 	return RetVal().set_values({ 'value':results[0], 'group':results[1] })
 
