@@ -547,7 +547,7 @@ def _return_field(name: str, value: str) -> RetVal:
 	return RetVal().set_value('value', value)
 
 
-def load_field(db: sqlite3.Connection, id: UUID, fieldname: str):
+def load_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	'''Loads a field from the database. Fieldname is expected to be in dot-separated format.'''
 
 	if not id.is_valid() or not fieldname or not db:
@@ -563,7 +563,8 @@ def load_field(db: sqlite3.Connection, id: UUID, fieldname: str):
 	return RetVal().set_values({ 'value':results[0], 'group':results[1] })
 
 
-def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str, group: str):
+def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str, 
+	group: str) -> RetVal:
 	'''Saves a field to the database. Fieldname is expected to be in dot-separated format.'''
 
 	cursor = db.cursor()
