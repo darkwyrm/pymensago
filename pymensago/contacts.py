@@ -556,15 +556,14 @@ def load_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	
 	cursor = db.cursor()
 	if fieldname == '*':
-		cursor.execute('''SELECT fieldvalue,contactgroup FROM contactinfo WHERE fieldname=?''',
-			(id.as_string(),))
+		cursor.execute('''SELECT fieldvalue,contactgroup FROM contactinfo''')
 		results = cursor.fetchall()
 		if not results or not results[0][0]:
 			return RetVal(ErrNotFound)
 		
 		out = list()
 		outgroups = list()
-		for result in results():
+		for result in results:
 			out.append(result[0])			
 			outgroups.append(result[1])
 		return RetVal().set_values({'value':out, 'group':outgroups})
