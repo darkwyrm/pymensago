@@ -132,7 +132,7 @@ def _flatten_list(target: dict, levels: list, l: list) -> RetVal:
 	return RetVal()
 
 
-def unflatten(d: dict):
+def unflatten(d: dict) -> RetVal:
 	'''Unflattens a dictionary from the format described for flatten()'''
 	if not len(d):
 		return RetVal().set_value('value', dict())
