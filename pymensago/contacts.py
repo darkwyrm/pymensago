@@ -601,7 +601,7 @@ def delete_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 		return RetVal(ErrBadValue)
 	
 	cursor = db.cursor()
-	cursor.execute('''DROP FROM contactinfo WHERE id=? AND fieldname=?''',
+	cursor.execute('''DELETE FROM contactinfo WHERE id=? AND fieldname=?''',
 		(id.as_string(),fieldname))
 
 	return RetVal()
