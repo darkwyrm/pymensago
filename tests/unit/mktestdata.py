@@ -1,4 +1,3 @@
-from pymensago.contacts import save_field
 
 test_contacts = [
 	{	'FormattedName': 					'Charlene Manley',
@@ -17,7 +16,7 @@ test_contacts = [
 		'Mensago.0.UserID':					'charlene.manley',
 		'Mensago.0.Workspace':				'0c147b47-36c5-4aff-8b6b-6916cc616eba',
 		'Mensago.0.Domain':					'example.com',
-		'Photo':							'avatars/female1.webp',
+		'Photo':							'images/female1.webp',
 	},
 	{	'FormattedName': 					'Alan Ortiz',
 		'Gender': 							'Male',
@@ -36,7 +35,7 @@ test_contacts = [
 		'Mensago.0.UserID':					'alan.ortiz',
 		'Mensago.0.Workspace':				'9f59e70a-0606-4725-9da1-c7850d66cef2',
 		'Mensago.0.Domain':					'example.com',
-		'Photo':							'avatars/male1.webp',
+		'Photo':							'images/male1.webp',
 	},
 	{	'FormattedName': 					'Stan Burbach',
 		'Gender': 							'Male',
@@ -54,7 +53,7 @@ test_contacts = [
 		'Mensago.0.UserID':					'stan.burbach',
 		'Mensago.0.Workspace':				'da329fe1-d4bd-4a0d-80a4-8db879a83729',
 		'Mensago.0.Domain':					'example.com',
-		'Photo':							'avatars/male2.webp',
+		'Photo':							'images/male2.webp',
 	},
 	{	'FormattedName': 					'Lisa Behr',
 		'Gender': 							'Female',
@@ -72,7 +71,7 @@ test_contacts = [
 		'Mensago.0.UserID':					'lisa.behr',
 		'Mensago.0.Workspace':				'75fff6ee-1162-4ee6-b94a-aa4a10b67221',
 		'Mensago.0.Domain':					'example.com',
-		'Photo':							'avatars/female2.webp',
+		'Photo':							'images/female2.webp',
 	},
 	{	'FormattedName': 					'Rob Porter',
 		'Gender': 							'Male',
@@ -95,3 +94,4 @@ test_contacts = [
 
 def mkcontacts():
 	'''Generates test contacts'''
+	
