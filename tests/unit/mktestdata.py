@@ -1,3 +1,8 @@
+from pymensago.utils import UUID
+from retval import RetVal
+
+import pymensago.contacts as contacts
+from pymensago.userprofile import profman
 
 test_contacts = [
 	{	'FormattedName': 					'Charlene Manley',
@@ -92,6 +97,21 @@ test_contacts = [
 	},
 ]
 
-def mkcontacts():
+def mkcontacts() -> RetVal:
 	'''Generates test contacts'''
+	status = profman.get_active_profile()
+	if status.error():
+		return status
+	profile = status['profile']
 	
+	for item in test_contacts:
+		conid = UUID()
+		conid.generate()
+		for k,v in item.items():
+			status = contacts.save_field(profile.db, conid, k, v, 'test')
+			if status.error():
+				return status.set_values({ 'key':k, 'value':v })
+
+if __name__ == '__main__':
+	profman.load_profiles()
+	mkcontacts()
