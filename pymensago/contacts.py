@@ -608,6 +608,18 @@ def delete_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	return RetVal()
 
 
+def clear_contacts(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> RetVal:
+	'''Deletes all contacts from the database.'''
+	if not id.is_valid() or not fieldname or not db:
+		return RetVal(ErrBadValue)
+	
+	cursor = db.cursor()
+	cursor.execute('''DELETE FROM contactinfo WHERE contactgroup!='self' ''',
+		(id.as_string(),fieldname))
+
+	return RetVal()
+	
+
 def load_contact(db: sqlite3.Connection, id: UUID) -> RetVal:
 	'''Loads a contact from the database, given an ID. The contact object is returned in the field 
 	'value' if successful.'''
