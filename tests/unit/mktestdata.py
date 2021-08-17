@@ -104,13 +104,21 @@ def mkcontacts() -> RetVal:
 		return status
 	profile = status['profile']
 	
+	conids = [	'3e15877f-28ce-46e5-924f-ea9b52c6c55e',
+				'8a58af4c-15f6-4899-b630-65e257892c1d',
+				'8a0067b7-fb16-44a3-8bfb-a8323008134c',
+				'22029b1a-ada3-45d8-8038-861d98f1b24b',
+				'7e3fdb59-14f3-4c10-b185-40a535b62184',
+	]
+	conindex = 0
 	for item in test_contacts:
-		conid = UUID()
-		conid.generate()
+		conid = UUID(conids[conindex])
+		contacts.delete_field(profile.db, conid, '*')
 		for k,v in item.items():
 			status = contacts.save_field(profile.db, conid, k, v, 'test')
 			if status.error():
 				return status.set_values({ 'key':k, 'value':v })
+		conindex = conindex + 1
 
 if __name__ == '__main__':
 	profman.load_profiles()
