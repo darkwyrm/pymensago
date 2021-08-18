@@ -235,3 +235,7 @@ def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
 
 	return _domain_pattern.match(indata)
+
+def size_as_string(size: int) -> str:
+	'''Converts the integer to a string in SI units'''
+	# TODO: Implement size_as_string()
