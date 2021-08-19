@@ -231,11 +231,29 @@ class MAddress:
 		self.id_type = 1
 		return RetVal()
 
+
 def validate_domain(indata: str) -> bool:
 	'''Validates a string as being a valid domain'''
 
 	return _domain_pattern.match(indata)
 
+
 def size_as_string(size: int) -> str:
 	'''Converts the integer to a string in SI units'''
-	# TODO: Implement size_as_string()
+	
+	if size < 0:
+		size = 0
+	
+	size_list = [
+		(1_000_000_000_000_000, 'PB'),
+		(1_000_000_000_000, 'TB'),
+		(1_000_000_000, 'GB'),
+		(1_000_000, 'MB'),
+		(1_000, 'KB'),
+	]
+
+	for size_pair in size_list:
+		if size >= size_pair[0]:
+			return str(round(size / size_pair[0], 2)) + size_pair[1]
+	
+	return str(size) + ' bytes'
