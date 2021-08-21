@@ -11,7 +11,11 @@ class MDate:
 		self.year = year
 		self.month = month
 		self.day = day
-	
+
+	def is_valid(self) -> RetVal:
+		'''Returns an error if the object's values are invalid'''
+		return _validate_date(self.year, self.month, self.day)
+
 	def __str__(self):
 		return self.to_string()
 
@@ -79,31 +83,38 @@ class MDate:
 		else:
 			return RetVal(ErrBadValue, 'invalid date format')
 		
-		if y < 0 or m < 0 or d < 0:
-			return RetVal(ErrOutOfRange, 'date components may not be negative')
+		status = _validate_date(y, m, d)
+		if status.error():
+			return status
 		
-		# Values of zero are ignored.
-		
-		if m > 12:
-			return RetVal(ErrOutOfRange, 'month component out of range')
-		
-		if m in [ 1,3,5,7,8,10,12 ]:
-			if d > 31:
-				return RetVal(ErrOutOfRange, 'day component out of range')
-		elif m in [ 4,6,9,11 ]:
-			if d > 31:
-				return RetVal(ErrOutOfRange, 'day component out of range')
-		elif m == 2:
-			# It's annoying to handle leap year :/
-			febmax = 28
-			if m % 4 == 0 and m % 100 != 0:
-				febmax = 29
-
-			if d > febmax:
-				return RetVal(ErrOutOfRange, 'day component out of range')
-
 		self.year = y
 		self.month = m
 		self.day = d
 
 		return RetVal()
+
+	def add(days: int):
+		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
+
+
+def _validate_date(y: int, m: int, d: int) -> RetVal:
+	if y < 0 or m < 0 or d < 0:
+		return RetVal(ErrOutOfRange, 'date components may not be negative')
+	
+	if m > 12:
+		return RetVal(ErrOutOfRange, 'month component out of range')
+	
+	if m in [ 1,3,5,7,8,10,12 ]:
+		if d > 31:
+			return RetVal(ErrOutOfRange, 'day component out of range')
+	elif m in [ 4,6,9,11 ]:
+		if d > 31:
+			return RetVal(ErrOutOfRange, 'day component out of range')
+	elif m == 2:
+		# It's annoying to handle leap year :/
+		febmax = 28
+		if m % 4 == 0 and m % 100 != 0:
+			febmax = 29
+
+		if d > febmax:
+			return RetVal(ErrOutOfRange, 'day component out of range')
