@@ -14,6 +14,48 @@ MDATE_MMDD = 3
 MDATE_YYYY = 4
 MDATE_INVALID = -1
 
+def _validate_date(y: int, m: int, d: int) -> RetVal:
+	if y < 0 or m < 0 or d < 0:
+		return RetVal(ErrOutOfRange, 'date components may not be negative')
+	
+	if m > 12:
+		return RetVal(ErrOutOfRange, 'month component out of range')
+	
+	if m in [ 1,3,5,7,8,10,12 ]:
+		if d > 31:
+			return RetVal(ErrOutOfRange, 'day component out of range')
+	elif m in [ 4,6,9,11 ]:
+		if d > 31:
+			return RetVal(ErrOutOfRange, 'day component out of range')
+	elif m == 2:
+		# It's annoying to handle leap year :/
+		febmax = 28
+		if m % 4 == 0 and m % 100 != 0:
+			febmax = 29
+
+		if d > febmax:
+			return RetVal(ErrOutOfRange, 'day component out of range')
+
+
+def _get_format_type(year: int, month: int, day: int) -> int:
+	if year:
+		if month:
+			if day:
+				return MDATE_YYYYMMDD
+			else:
+				return MDATE_YYYYMM
+		else:
+			if day:
+				return MDATE_INVALID
+			else:
+				return MDATE_YYYY
+	else:
+		if month:
+			return MDATE_MMDD
+	
+	return MDATE_INVALID
+
+
 class MDate:
 	'''This class is for simple handling of dates, unlike datetime.'''
 	def __init__(self, year=0, month=0, day=0):
@@ -133,43 +175,3 @@ def today(self) -> MDate:
 	return MDate(cd.year, cd.month, cd.day)
 
 
-def _validate_date(y: int, m: int, d: int) -> RetVal:
-	if y < 0 or m < 0 or d < 0:
-		return RetVal(ErrOutOfRange, 'date components may not be negative')
-	
-	if m > 12:
-		return RetVal(ErrOutOfRange, 'month component out of range')
-	
-	if m in [ 1,3,5,7,8,10,12 ]:
-		if d > 31:
-			return RetVal(ErrOutOfRange, 'day component out of range')
-	elif m in [ 4,6,9,11 ]:
-		if d > 31:
-			return RetVal(ErrOutOfRange, 'day component out of range')
-	elif m == 2:
-		# It's annoying to handle leap year :/
-		febmax = 28
-		if m % 4 == 0 and m % 100 != 0:
-			febmax = 29
-
-		if d > febmax:
-			return RetVal(ErrOutOfRange, 'day component out of range')
-
-
-def _get_format_type(year: int, month: int, day: int) -> int:
-	if year:
-		if month:
-			if day:
-				return MDATE_YYYYMMDD
-			else:
-				return MDATE_YYYYMM
-		else:
-			if day:
-				return MDATE_INVALID
-			else:
-				return MDATE_YYYY
-	else:
-		if month:
-			return MDATE_MMDD
-	
-	return MDATE_INVALID
