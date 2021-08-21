@@ -84,10 +84,10 @@ class MDate:
 		'''Returns an error if the object's values are invalid'''
 		return _validate_date(self.year, self.month, self.day)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return self.as_string()
 
-	def as_string(self):
+	def as_string(self) -> str:
 		parts = []
 		if self.year:
 			parts.append(str(self.year))
