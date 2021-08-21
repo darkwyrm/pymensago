@@ -85,9 +85,9 @@ class MDate:
 		return _validate_date(self.year, self.month, self.day)
 
 	def __str__(self):
-		return self.to_string()
+		return self.as_string()
 
-	def to_string(self):
+	def as_string(self):
 		parts = []
 		if self.year:
 			parts.append(str(self.year))
