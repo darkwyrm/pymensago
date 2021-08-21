@@ -26,6 +26,18 @@ class MDate:
 		else:
 			self.format = _get_format_type(year, month, day)
 
+	def set(self, year, month, day) -> RetVal:
+		self.year = year
+		self.month = month
+		self.day = day
+
+		status = _validate_date(year, month, day).error()
+		if status.error():
+			self.format = MDATE_INVALID
+		else:
+			self.format = _get_format_type(year, month, day)
+		return status
+
 	def is_valid(self) -> RetVal:
 		'''Returns an error if the object's values are invalid'''
 		return _validate_date(self.year, self.month, self.day)
@@ -114,7 +126,6 @@ class MDate:
 
 	def add(days: int):
 		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
-
 
 def today(self) -> MDate:
 	'''Returns the current day in UTC time as an MDate object'''	
