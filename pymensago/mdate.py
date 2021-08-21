@@ -108,6 +108,10 @@ class MDate:
 		
 		return RetVal()
 
+	def unixtime(self) -> int:
+		'''Returns the '''
+		return int(dt.datetime(self.year, self.month, self.day, tzinfo=dt.timezone.utc).timestamp())
+
 	def add(days: int):
 		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
 
