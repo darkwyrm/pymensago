@@ -5,12 +5,24 @@ from retval import ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadValue, ErrBadT
 # to one of four groups of components: year, year-month, year-month-day, or month-day. All date
 # components are required to be padded by zeroes to ensure that the string is of the proper size.
 
+# Date formats
+MDATE_YYYYMMDD = 1
+MDATE_YYYYMM = 2
+MDATE_MMDD = 3
+MDATE_YYYY = 4
+MDATE_INVALID = -1
+
 class MDate:
 	'''This class is for simple handling of dates, unlike datetime.'''
 	def __init__(self, year=0, month=0, day=0):
 		self.year = year
 		self.month = month
 		self.day = day
+
+		if _validate_date(year, month, day).error():
+			self.format = MDATE_INVALID
+		else:
+			self.format = _get_format_type(year, month, day)
 
 	def is_valid(self) -> RetVal:
 		'''Returns an error if the object's values are invalid'''
@@ -90,11 +102,13 @@ class MDate:
 		self.year = y
 		self.month = m
 		self.day = d
-
+		self.format = _get_format_type(y,m,d)
+		
 		return RetVal()
 
 	def add(days: int):
 		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
+
 
 
 def _validate_date(y: int, m: int, d: int) -> RetVal:
@@ -118,3 +132,22 @@ def _validate_date(y: int, m: int, d: int) -> RetVal:
 
 		if d > febmax:
 			return RetVal(ErrOutOfRange, 'day component out of range')
+
+
+def _get_format_type(year: int, month: int, day: int) -> int:
+	if year:
+		if month:
+			if day:
+				return MDATE_YYYYMMDD
+			else:
+				return MDATE_YYYYMM
+		else:
+			if day:
+				return MDATE_INVALID
+			else:
+				return MDATE_YYYY
+	else:
+		if month:
+			return MDATE_MMDD
+	
+	return MDATE_INVALID
