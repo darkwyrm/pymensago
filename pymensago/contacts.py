@@ -595,6 +595,19 @@ def save_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str
 	return RetVal()
 
 
+def load_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
+	'''Loads a field which is a list and returns it as such'''
+	# TODO: implement load_list_field()
+	return RetVal(ErrUnimplemented)
+
+def save_list_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str, 
+	group: str) -> RetVal:
+	'''Saves a list object into the database as a list'''
+
+	# TODO: implement save_list_field()
+	return RetVal(ErrUnimplemented)
+
+
 def delete_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	'''Deletes a field from the database. Fieldname is expected to be in dot-separated format.'''
 
