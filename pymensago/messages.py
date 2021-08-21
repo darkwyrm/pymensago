@@ -1,12 +1,12 @@
 from pymensago.utils import UUID, WAddress, size_as_string
+from pymensago.mdate import MDate
 
 class Message:
 	def __init__(self):
 		self.id = UUID()
 		self.sender = WAddress()
 		self.recipient = WAddress()
-		# TODO: finish setup of Message class after date utility functions are complete
-		# self.date = 
+		self.date = MDate()
 		self.thread_id = UUID()
 		self.subject = ''
 		self.body = ''
@@ -17,7 +17,7 @@ class Message:
 		out = [	f"Message ID: {self.id.as_string()}",
 			f"Sender: {self.sender.as_string()}",
 			f"Recipient: {self.recipient.as_string()}",
-			# f"Date: f{self.date.as_string()}",
+			f"Date: f{self.date.as_string()}",
 			f"Thread ID: {self.thread_id.as_string()}",
 			f"Subject: {self.subject}",
 			"Body:",
