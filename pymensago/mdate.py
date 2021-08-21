@@ -166,9 +166,6 @@ class MDate:
 		'''Returns the '''
 		return int(dt.datetime(self.year, self.month, self.day, tzinfo=dt.timezone.utc).timestamp())
 
-	def add(days: int):
-		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
-
 def today(self) -> MDate:
 	'''Returns the current day in UTC time as an MDate object'''	
 	cd = dt.date.today()
