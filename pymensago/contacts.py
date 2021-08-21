@@ -600,7 +600,8 @@ def load_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	# TODO: implement load_list_field()
 	return RetVal(ErrUnimplemented)
 
-def save_list_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: str, 
+
+def save_list_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: list, 
 	group: str) -> RetVal:
 	'''Saves a list object into the database as a list'''
 
