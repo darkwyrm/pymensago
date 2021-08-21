@@ -1,3 +1,5 @@
+import datetime as dt
+
 from retval import ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadValue, ErrBadType
 
 # This module greatly simplifies working with dates and times within the Mensago codebase because
@@ -109,6 +111,11 @@ class MDate:
 	def add(days: int):
 		'''Adds the number of days given to the date. Subtraction is done via negative numbers'''
 
+
+def today(self) -> MDate:
+	'''Returns the current day in UTC time as an MDate object'''	
+	cd = dt.date.today()
+	return MDate(cd.year, cd.month, cd.day)
 
 
 def _validate_date(y: int, m: int, d: int) -> RetVal:
