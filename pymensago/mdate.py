@@ -12,6 +12,9 @@ class MDate:
 		self.month = month
 		self.day = day
 	
+	def __str__(self):
+		return self.to_string()
+
 	def to_string(self):
 		parts = []
 		if self.year:
@@ -30,7 +33,8 @@ class MDate:
 		return ''.join(parts)
 	
 	def from_string(self, date: str) -> RetVal:
-		
+		'''Assigns a value to the object from a string. The format must be one of the following: 
+		YYYY-MM-DD, YYYY-MM, MM-DD, or YYYY. The year may be from 1 to 9999.'''
 		y = 0
 		m = 0
 		d = 0
@@ -94,5 +98,5 @@ class MDate:
 		self.year = y
 		self.month = m
 		self.day = d
-		
+
 		return RetVal()
