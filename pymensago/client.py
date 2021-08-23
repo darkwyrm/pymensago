@@ -8,6 +8,7 @@ from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
 import pymensago.iscmds as iscmds
+import pymensago.keycard as keycard
 import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as userprofile
@@ -210,10 +211,12 @@ class MensagoClient:
 										regdata['devid'], devpair, socket.gethostname())
 		if status.error():
 			return status
+		
+		# TODO: create, cross-sign, and upload first keycard entry
 
 		return regdata
 	
-	def register_account(self, domain: Domain, userpass: str, userid=None) -> RetVal:
+	def register_account(self, domain: Domain, userpass: str, userid=None, name=None) -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
@@ -235,8 +238,9 @@ class MensagoClient:
 		# If the server returns an error, such as 304 REGISTRATION CLOSED, then return an error.
 		# If the server has returned anything else, including a 101 PENDING, begin the 
 		#	client-side workspace information to generate.
-		# Call storage.generate_profile_data()
-		# Add the device ID and session string to the profile
+		# Generate new workspace data, which includes the associated crypto keys
+		# Add the device ID and session to the profile and the server
+		# Create, upload, and cross-sign the first keycard entry
 		# Create the necessary client-side folders
 		# Generate the folder mappings
 
@@ -309,3 +313,64 @@ class MensagoClient:
 			return status
 
 		return regdata
+
+
+
+# def _setup_workspace(profile: userprofile.Profile, regdata: dict, pw: Password) -> RetVal:
+# 	'''This finishes all the profile and workspace setup common to both standard registration and 
+# 	registration via a code.'''
+	
+# 	w = Workspace(profile.db, profile.path)
+# 	status = w.generate(uid, domain, wid, pw)
+# 	if status.error():
+# 		return status
+	
+# 	status = profile.set_identity(w)
+# 	if status.error():
+# 		return status
+
+# 	address = utils.WAddress()
+# 	address.id = wid
+# 	address.domain = domain
+	
+# 	status = auth.add_device_session(profile.db, address, regdata['devid'], devpair,
+# 		socket.gethostname())
+# 	if status.error():
+# 		return status
+
+# 	card = keycard.UserEntry()
+# 	card.set_expiration()
+
+# 	status = auth.get_key_by_type('crencrypt')
+# 	if status.error():
+# 		return status
+# 	crepair = status['key']
+# 	card['Contact-Request-Encryption-Key'] = crepair.get_public_key()
+
+# 	status = auth.get_key_by_type('crsign')
+# 	if status.error():
+# 		return status
+# 	crspair = status['key']
+# 	card['Contact-Request-Verification-Key'] = crspair.get_public_key()
+
+# 	status = auth.get_key_by_type('encrypt')
+# 	if status.error():
+# 		return status
+# 	epair = status['key']
+# 	card['Encryption-Key'] = epair.get_public_key()
+
+# 	status = auth.get_key_by_type('sign')
+# 	if status.error():
+# 		return status
+# 	spair = status['key']
+# 	card['Verification-Key'] = spair.get_public_key()
+
+# 	card['Workspace-ID'] = profile.wid.as_string()
+# 	card['Domain'] = profile.domain.as_string()
+# 	if not uid.is_wid():
+# 		card['UserID'] = uid.as_string()
+	
+# 	if self.tokens[1].casefold() != 'none':
+# 		card['Name'] = self.tokens[1]
+
+
