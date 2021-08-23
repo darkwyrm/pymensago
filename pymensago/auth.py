@@ -211,3 +211,42 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 	
 
 	return RetVal(ErrBadValue, "Key must be 'asymmetric', 'symmetric', or 'signing'")
+
+
+def get_key_by_type(db: sqlite3.Connection, keytype: str) -> RetVal:
+	'''Gets the specified key.
+	Parameters:
+	keytype: str
+
+	Currently keytype can be crsign, crencrypt, encrypt, sign, storage, or folder.
+
+	Returns:
+	'error' : string
+	'key' : CryptoKey object
+	'''
+
+	cursor = db.cursor()
+	cursor.execute('SELECT address,type,private,public FROM keys WHERE category=?', (keytype,))
+	results = cursor.fetchone()
+	if not results or not results[0]:
+		return RetVal(ErrNotFound)
+	
+	if results[1] == 'asymmetric':
+		public = base64.b85decode(results[3])
+		private = base64.b85decode(results[2])
+		key = EncryptionPair(public,private)
+		return RetVal().set_value('key', key)
+	
+	if results[1] == 'symmetric':
+		private = base64.b85decode(results[2])
+		key = SecretKey(private)
+		return RetVal().set_value('key', key)
+
+	if results[1] == 'signing':
+		public = base64.b85decode(results[3])
+		private = base64.b85decode(results[2])
+		key = SigningPair(public,private)
+		return RetVal().set_value('key', key)
+	
+
+	return RetVal(ErrBadValue, "Key type not an official type")
