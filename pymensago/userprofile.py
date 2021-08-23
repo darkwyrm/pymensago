@@ -331,7 +331,7 @@ class Profile:
 	def save_list_field(self, fieldname: str, fieldvalue: list) -> RetVal:
 		'''Saves a list of values to the user's contact information. This call is mostly syntactic 
 		sugar that wraps around contacts.save_list_field()'''
-		return contacts.save_list_field(self.db, self.wid, fieldname, fieldvalue)
+		return contacts.save_list_field(self.db, self.wid, fieldname, fieldvalue, 'self')
 
 
 
