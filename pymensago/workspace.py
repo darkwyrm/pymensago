@@ -41,17 +41,17 @@ class Workspace:
 
 		# Generate user's encryption keys
 		keys = {
-			'crencryption' : encryption.EncryptionPair(),
-			'crsigning' : encryption.SigningPair(),
-			'encryption' : encryption.EncryptionPair(),
-			'signing' : encryption.SigningPair(),
-			'storage' : encryption.SecretKey(),
-			'folder' : encryption.SecretKey()
+			'crencryption' : (encryption.EncryptionPair(), 'crencrypt'),
+			'crsigning' : (encryption.SigningPair(), 'crsign'),
+			'encryption' : (encryption.EncryptionPair(), 'encrypt'),
+			'signing' : (encryption.SigningPair(), 'sign'),
+			'storage' : (encryption.SecretKey(), 'storage'),
+			'folder' : (encryption.SecretKey(), 'folder'),
 		}
 		
 		# Add encryption keys
-		for key in keys.values():
-			out = auth.add_key(self.db, key, address)
+		for keydata in keys.values():
+			out = auth.add_key(self.db, keydata[0], address, keydata[1])
 			if out.error():
 				status = self.remove_workspace_entry(wid, server)
 				if status.error():
@@ -72,7 +72,7 @@ class Workspace:
 
 		for folder in folderlist:
 			foldermap.MakeID()
-			foldermap.Set(address, keys['folder'].pubhash, folder, 'root')
+			foldermap.Set(address, keys['folder'][0].pubhash, folder, 'root')
 			self.add_folder(foldermap)
 
 		# Create the folders themselves
