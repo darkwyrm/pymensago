@@ -131,44 +131,6 @@ class Domain:
 		return self.value
 
 
-class WAddress:
-	'''Represents a workspace address'''
-
-	def __init__(self, addr='') -> None:
-		self.id = UUID()
-		self.domain = Domain()
-		if addr:
-			self.set(addr)
-	
-	def is_empty(self) -> bool:
-		return self.id.is_empty() and self.domain.is_empty()
-		
-	def set(self, addr: str) -> RetVal:
-		'''Validates input and assigns the address. If the given address is invalid, no change is 
-		made to the object'''
-		
-		parts = addr.split('/')
-		if len(parts) != 2 or not parts[0] or not parts[1]:
-			return RetVal(ErrBadValue, 'bad address given')
-		
-		if not self.id.set(parts[0]):
-			return RetVal(ErrBadValue, 'bad workspace ID')
-		
-		if not self.domain.set(parts[1]):
-			return RetVal(ErrBadValue, 'bad domain')
-
-		return RetVal()
-
-	def __str__(self) -> str:
-		return self.id.as_string() + '/' + self.domain.as_string
-	
-	def is_valid(self) -> bool:
-		return self.id and self.domain
-	
-	def as_string(self) -> str:
-		return self.id.as_string() + '/' + self.domain.as_string()
-
-
 class MAddress:
 	'''Represents a Mensago address'''
 	
@@ -230,6 +192,49 @@ class MAddress:
 		self.domain = domain
 		self.id_type = 1
 		return RetVal()
+
+
+class WAddress:
+	'''Represents a workspace address'''
+
+	def __init__(self, addr='') -> None:
+		self.id = UUID()
+		self.domain = Domain()
+		if addr:
+			self.set(addr)
+	
+	def is_empty(self) -> bool:
+		return self.id.is_empty() and self.domain.is_empty()
+		
+	def set(self, addr: str) -> RetVal:
+		'''Validates input and assigns the address. If the given address is invalid, no change is 
+		made to the object'''
+		
+		parts = addr.split('/')
+		if len(parts) != 2 or not parts[0] or not parts[1]:
+			return RetVal(ErrBadValue, 'bad address given')
+		
+		if not self.id.set(parts[0]):
+			return RetVal(ErrBadValue, 'bad workspace ID')
+		
+		if not self.domain.set(parts[1]):
+			return RetVal(ErrBadValue, 'bad domain')
+
+		return RetVal()
+
+	def __str__(self) -> str:
+		return self.id.as_string() + '/' + self.domain.as_string
+	
+	def is_valid(self) -> bool:
+		return self.id and self.domain
+	
+	def as_string(self) -> str:
+		return self.id.as_string() + '/' + self.domain.as_string()
+	
+	def as_maddress(self) -> MAddress:
+		out = MAddress()
+		out.set_from_wid(self.id, self.domain)
+		return out
 
 
 def validate_domain(indata: str) -> bool:
