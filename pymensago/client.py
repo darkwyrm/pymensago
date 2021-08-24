@@ -4,9 +4,10 @@ from pycryptostring import CryptoString
 from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
 import socket
 
-from retval import RetVal, ErrInternalError, ErrBadValue, ErrExists
+from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
+import pymensago.contacts as contacts
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
 import pymensago.kcresolver as kcresolver
@@ -216,7 +217,7 @@ class MensagoClient:
 
 		return regdata
 	
-	def register_account(self, domain: Domain, userpass: str, userid=None, name=None) -> RetVal:
+	def register_account(self, domain: Domain, userpass: str, userid=None, name='') -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
@@ -285,17 +286,103 @@ class MensagoClient:
 			regdata = iscmds.register(self.conn, utils.UserID(utils.UUID().generate()), 
 				pw.hashstring, profile.devid, devpair.public)
 
-		self.conn.disconnect()
-		if regdata.error():
-			return regdata
-
 		# Just a basic sanity check
 		if 'wid' not in regdata:
+			self.conn.disconnect()
 			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
+		regdata['name'] = name
+		regdata['password'] = pw
+		regdata['devpair'] = devpair
+		regdata['devid'] = profile.devid
+
+		status = self._setup_workspace(profile, regdata, self.conn)
+		self.conn.disconnect()
+		if status.error():
+			return status
+
+		return regdata
+
+	def update_keycard(self) -> RetVal:
+		'''Creates a new entry in the user's keycard. New keys are created and added to the database'''
+		# TODO: finish implementing client.update_keycard()
+		
+		# NOTE: The below code works only for the initial entry. This method needs to check for
+		# existing card entries and chain as needed and create a brand-new only if there isn't
+		# one in the profile database already.
+
+		status = self.pman.get_active_profile()
+		if status.error():
+			return status
+		
+		profile = status['profile']
+
+		# Create the user's first keycard entry. It's not valid until it's been cross-signed by both
+		# the client and the organization, though.
+		card = keycard.UserEntry()
+		card.set_expiration()
+
+		status = auth.get_key_by_type('crencrypt')
+		if status.error():
+			return status
+		crepair = status['key']
+		card['Contact-Request-Encryption-Key'] = crepair.get_public_key()
+
+		status = auth.get_key_by_type('crsign')
+		if status.error():
+			return status
+		crspair = status['key']
+		card['Contact-Request-Verification-Key'] = crspair.get_public_key()
+
+		status = auth.get_key_by_type('encrypt')
+		if status.error():
+			return status
+		epair = status['key']
+		card['Encryption-Key'] = epair.get_public_key()
+
+		status = auth.get_key_by_type('sign')
+		if status.error():
+			return status
+		spair = status['key']
+		card['Verification-Key'] = spair.get_public_key()
+
+		card['Workspace-ID'] = profile.wid.as_string()
+		card['Domain'] = profile.domain.as_string()
+		if profile.userid.is_valid() and not profile.userid.is_wid():
+			card['UserID'] = profile.userid.as_string()
+		
+		status = contacts.load_field(profile.db, profile.wid, 'FormattedName')
+		if status.error() and status.error() != ErrNotFound:
+			return status
+		
+		if not status.error():
+			card['Name'] = status['value']
+
+		# Keycard entry setup complete. Now we log in and handle signing. Although we still have the
+		# network connection to the server from registration, we are not logged in... yet.
+		
+		address = MAddress()
+		address.set_from_wid(profile.wid, profile.domain)
+		status = self.login(address)
+		if status.error():
+			return status
+
+		status = kcresolver.get_mgmt_record(profile.domain)
+		if status.error():
+			return status
+
+		ovkey = status['pvk']
+		status = iscmds.addentry(self.conn, card, ovkey,	spair)
+
+		return status
+
+	def _setup_workspace(self, profile: userprofile.Profile, regdata: dict) -> RetVal:
+		'''This finishes all the profile and workspace setup common to both standard registration 
+		and registration via a code.'''
+		
 		w = Workspace(profile.db, profile.path)
-		status = w.generate(userid, regdata['domain'], regdata['wid'], pw)
+		status = w.generate(regdata['uid'], regdata['domain'], regdata['wid'], regdata['password'])
 		if status.error():
 			return status
 		
@@ -307,70 +394,10 @@ class MensagoClient:
 		address.id = regdata['wid']
 		address.domain = regdata['domain']
 		
-		status = auth.add_device_session(profile.db, address, regdata['devid'], devpair,
+		status = auth.add_device_session(profile.db, address, regdata['devid'], regdata['devpair'],
 			socket.gethostname())
 		if status.error():
 			return status
-
-		return regdata
-
-
-
-# def _setup_workspace(profile: userprofile.Profile, regdata: dict, pw: Password) -> RetVal:
-# 	'''This finishes all the profile and workspace setup common to both standard registration and 
-# 	registration via a code.'''
-	
-# 	w = Workspace(profile.db, profile.path)
-# 	status = w.generate(uid, domain, wid, pw)
-# 	if status.error():
-# 		return status
-	
-# 	status = profile.set_identity(w)
-# 	if status.error():
-# 		return status
-
-# 	address = utils.WAddress()
-# 	address.id = wid
-# 	address.domain = domain
-	
-# 	status = auth.add_device_session(profile.db, address, regdata['devid'], devpair,
-# 		socket.gethostname())
-# 	if status.error():
-# 		return status
-
-# 	card = keycard.UserEntry()
-# 	card.set_expiration()
-
-# 	status = auth.get_key_by_type('crencrypt')
-# 	if status.error():
-# 		return status
-# 	crepair = status['key']
-# 	card['Contact-Request-Encryption-Key'] = crepair.get_public_key()
-
-# 	status = auth.get_key_by_type('crsign')
-# 	if status.error():
-# 		return status
-# 	crspair = status['key']
-# 	card['Contact-Request-Verification-Key'] = crspair.get_public_key()
-
-# 	status = auth.get_key_by_type('encrypt')
-# 	if status.error():
-# 		return status
-# 	epair = status['key']
-# 	card['Encryption-Key'] = epair.get_public_key()
-
-# 	status = auth.get_key_by_type('sign')
-# 	if status.error():
-# 		return status
-# 	spair = status['key']
-# 	card['Verification-Key'] = spair.get_public_key()
-
-# 	card['Workspace-ID'] = profile.wid.as_string()
-# 	card['Domain'] = profile.domain.as_string()
-# 	if not uid.is_wid():
-# 		card['UserID'] = uid.as_string()
-	
-# 	if self.tokens[1].casefold() != 'none':
-# 		card['Name'] = self.tokens[1]
-
+		
+		return self.update_keycard()
 
