@@ -53,9 +53,12 @@ _db_setup_cmds = [ '''
 		"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,
 		"owner" TEXT NOT NULL,
 		"index" INTEGER,
-		"entry" TEXT NOT NULL,
-		"fingerprint" TEXT NOT NULL,
-		"expires" TEXT NOT NULL
+		"type" TEXT NOT NULL,
+		"entry" BLOB NOT NULL,
+		"textentry" TEXT NOT NULL,
+		"hash" TEXT NOT NULL,
+		"expires" TEXT NOT NULL,
+		"timestamp" TEXT NOT NULL
 	);''', '''
 	CREATE table "messages"(
 		"id" TEXT NOT NULL UNIQUE,

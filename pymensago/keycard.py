@@ -7,13 +7,14 @@ import datetime
 import hashlib
 import os
 import re
+import sqlite3
 import time
 
 import blake3
 import nacl.public
 import nacl.signing
 from pycryptostring import CryptoString, is_cryptostring
-from retval import RetVal, ErrBadData, ErrBadValue, ErrExists, ErrNotFound
+from retval import ErrBadType, RetVal, ErrBadData, ErrBadValue, ErrExists, ErrNotFound
 
 from pymensago.encryption import EncryptionPair, SigningPair, Base85Encoder
 from pymensago.hash import blake2hash
@@ -547,7 +548,6 @@ class EntryBase:
 		
 		return RetVal()
 
-
 	def verify_signature(self, verify_key: CryptoString, sigtype: str) -> RetVal:
 		'''Verifies a signature, given a verification key'''
 	
@@ -986,3 +986,45 @@ class Keycard:
 				return status
 
 		return RetVal()
+
+
+def db_add_entry(self, db: sqlite3.Connection, entry: EntryBase):
+	'''Adds an entry to the database, ensuring no duplicates'''
+	cursor = db.cursor()
+
+	if entry.type == 'User':
+		owner = f"{entry['Workspace-ID']}/{entry['Domain']}"
+	else:
+		owner = entry['Domain']
+	cursor.execute("DELETE FROM keycards WHERE owner=? AND index=?", (owner,entry['Index']))
+
+	entry_bytes = entry.make_bytestring(-1)
+	cursor.execute('''
+		INSERT INTO keycards(owner,index,type,entry,textentry,hash,expires,timestamp)
+		VALUES(?,?,?,?,?,?,?,?)''',
+		(owner, entry['Index'], entry.type, entry_bytes, str(entry_bytes), entry['Hash'], 
+			entry['Expires'], entry['Timestamp']))
+	db.commit()
+
+
+def db_get_last_entry(self, db: sqlite3.Connection, owner: str) -> RetVal:
+	'''Gets the most recent entry from the database'''
+	
+	cursor = db.cursor()
+	cursor.execute('''SELECT type,entry FROM keycards WHERE owner=? ORDER BY 'index' DESC LIMIT 1''',
+		(owner,))
+	results = cursor.fetchone()
+	if not results or not results[0] or not results[1]:
+		return RetVal(ErrNotFound)
+
+	if results[0].casefold() == 'organization':
+		entry = OrgEntry()
+	elif results[0].casefold() == 'user':
+		entry = UserEntry()
+	else:
+		return RetVal(ErrBadType, f"bad entry type '{results[0]}' found in database")
+
+	status = entry.set(results[1])
+	if status.error():
+		return status
+	return RetVal().set_value('entry', entry)

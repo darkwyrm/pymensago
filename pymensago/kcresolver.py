@@ -10,6 +10,8 @@ import pymensago.keycard as keycard
 from pymensago.serverconn import ServerConnection
 from pymensago.utils import Domain, validate_domain, MAddress
 
+# TODO: Update KCResolver to handle new schema and to utilize the db methods in keycard.py
+
 class KCResolver:
 	'''A caching keycard resolver class'''
 
