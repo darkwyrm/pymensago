@@ -1011,7 +1011,7 @@ def db_get_last_entry(self, db: sqlite3.Connection, owner: str) -> RetVal:
 	'''Gets the most recent entry from the database'''
 	
 	cursor = db.cursor()
-	cursor.execute('''SELECT type,entry FROM keycards WHERE owner=? ORDER BY 'index' DESC LIMIT 1''',
+	cursor.execute("SELECT type,entry FROM keycards WHERE owner=? ORDER BY 'index' DESC LIMIT 1",
 		(owner,))
 	results = cursor.fetchone()
 	if not results or not results[0] or not results[1]:
@@ -1028,3 +1028,30 @@ def db_get_last_entry(self, db: sqlite3.Connection, owner: str) -> RetVal:
 	if status.error():
 		return status
 	return RetVal().set_value('entry', entry)
+
+
+def db_get_card(self, db: sqlite3.Connection, owner: str) -> RetVal:
+	'''Obtains the entire keycard for the requested owner from the database'''
+	cursor = db.cursor()
+	cursor.execute("SELECT type,entry FROM keycards WHERE owner=? ORDER BY 'index'",
+		(owner,))
+	results = cursor.fetchone()
+	if not results or not results[0] or not results[1]:
+		return RetVal(ErrNotFound)
+	
+	if results[0].casefold() == 'organization':
+		entry = OrgEntry()
+	elif results[0].casefold() == 'user':
+		entry = UserEntry()
+	else:
+		return RetVal(ErrBadType, f"bad entry type '{results[0]}' found in database")
+
+	card = Keycard(entry.type)
+	while results:
+		status = entry.set(results[1])
+		if status.error():
+			return status
+		card.entries.append(entry)
+		results = cursor.fetchone()
+
+	return RetVal().set_value('card', card)
