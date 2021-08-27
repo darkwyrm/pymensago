@@ -14,7 +14,7 @@ import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as userprofile
 import pymensago.utils as utils
-from pymensago.encryption import Password, EncryptionPair
+from pymensago.encryption import Password, EncryptionPair, SigningPair
 from pymensago.workspace import Workspace
 
 ErrNotLoggedIn = 'ErrNotLoggedIn'
@@ -306,58 +306,84 @@ class MensagoClient:
 
 	def update_keycard(self) -> RetVal:
 		'''Creates a new entry in the user's keycard. New keys are created and added to the database'''
-		# TODO: finish implementing client.update_keycard()
 		
-		# NOTE: The below code works only for the initial entry. This method needs to check for
-		# existing card entries and chain as needed and create a brand-new only if there isn't
-		# one in the profile database already.
-
 		status = self.pman.get_active_profile()
 		if status.error():
 			return status
 		
 		profile = status['profile']
 
-		# Create the user's first keycard entry. It's not valid until it's been cross-signed by both
-		# the client and the organization, though.
-		card = keycard.UserEntry()
-		card.set_expiration()
-
-		status = auth.get_key_by_type('crencrypt')
-		if status.error():
-			return status
-		crepair = status['key']
-		card['Contact-Request-Encryption-Key'] = crepair.get_public_key()
-
-		status = auth.get_key_by_type('crsign')
-		if status.error():
-			return status
-		crspair = status['key']
-		card['Contact-Request-Verification-Key'] = crspair.get_public_key()
-
-		status = auth.get_key_by_type('encrypt')
-		if status.error():
-			return status
-		epair = status['key']
-		card['Encryption-Key'] = epair.get_public_key()
-
-		status = auth.get_key_by_type('sign')
-		if status.error():
-			return status
-		spair = status['key']
-		card['Verification-Key'] = spair.get_public_key()
-
-		card['Workspace-ID'] = profile.wid.as_string()
-		card['Domain'] = profile.domain.as_string()
-		if profile.userid.is_valid() and not profile.userid.is_wid():
-			card['UserID'] = profile.userid.as_string()
+		entry = keycard.UserEntry()
+		entry.set_expiration()
 		
-		status = contacts.load_field(profile.db, profile.wid, 'FormattedName')
-		if status.error() and status.error() != ErrNotFound:
-			return status
-		
-		if not status.error():
-			card['Name'] = status['value']
+		crepair = None
+		crspair = None
+		epair = None
+		spair = None
+		status = keycard.db_get_card(profile.db, profile.wid)
+		if status.error():
+			if status.error() != ErrNotFound:
+				return status
+			
+			# Create the user's first keycard entry. It's not valid until it's been cross-signed by both
+			# the client and the organization, though.
+
+			# The keys in the database we
+			status = auth.get_key_by_type('crencrypt')
+			if status.error():
+				return status
+			crepair = status['key']
+			entry['Contact-Request-Encryption-Key'] = crepair.get_public_key()
+
+			status = auth.get_key_by_type('crsign')
+			if status.error():
+				return status
+			crspair = status['key']
+			entry['Contact-Request-Verification-Key'] = crspair.get_public_key()
+
+			status = auth.get_key_by_type('encrypt')
+			if status.error():
+				return status
+			epair = status['key']
+			entry['Encryption-Key'] = epair.get_public_key()
+
+			status = auth.get_key_by_type('sign')
+			if status.error():
+				return status
+			spair = status['key']
+			entry['Verification-Key'] = spair.get_public_key()
+
+			entry['Workspace-ID'] = profile.wid.as_string()
+			entry['Domain'] = profile.domain.as_string()
+			if profile.userid.is_valid() and not profile.userid.is_wid():
+				entry['UserID'] = profile.userid.as_string()
+			
+			status = contacts.load_field(profile.db, profile.wid, 'FormattedName')
+			if status.error() and status.error() != ErrNotFound:
+				return status
+			
+			if not status.error():
+				entry['Name'] = status['value']
+		else:
+			card = status['card']
+			status = card.verify()
+			if status.error():
+				return status
+			
+			status = auth.get_key_by_type('crsign')
+			if status.error():
+				return status
+			crspair = status['key']
+
+			status = card.chain(crspair.private, True)
+			if status.error():
+				return status
+			entry = card.entries[-1]
+			crspair = SigningPair()
+
+			# TODO: finish implementing client.update_keycard()
+			return RetVal(ErrUnimplemented)
+
 
 		# Keycard entry setup complete. Now we log in and handle signing. Although we still have the
 		# network connection to the server from registration, we are not logged in... yet.
@@ -373,7 +399,7 @@ class MensagoClient:
 			return status
 
 		ovkey = status['pvk']
-		status = iscmds.addentry(self.conn, card, ovkey,	spair)
+		status = iscmds.addentry(self.conn, entry, ovkey, spair)
 
 		return status
 
