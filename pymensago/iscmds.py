@@ -490,7 +490,9 @@ def regcode(conn: ServerConnection, address: utils.MAddress, code: str, pwhash: 
 	
 	return RetVal().set_values({
 		'devid': devid,
-		'wid': utils.UUID(response['Data']['Workspace-ID'])
+		'wid': utils.UUID(response['Data']['Workspace-ID']),
+		'uid': utils.UserID(response['Data']['User-ID']),
+		'domain': utils.Domain(response['Data']['Domain'])
 	})
 	
 
