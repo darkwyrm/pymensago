@@ -634,6 +634,13 @@ class OrgEntry(EntryBase):
 		encrypt.public / encrypt.private -- general-purpose public encryption keypair
 		encrypt.pubhash / encrypt.privhash -- hashes of the corresponding keys
 
+		Full SigningPair / EncryptionPair objects can be found in
+		sign
+		encrypt
+
+		Because the alternate signing private key is not available, a full Pair field is not
+		available, either.
+
 		For organization entries, rotating optional keys works a little differently: the primary 
 		signing key becomes the secondary signing key in the new entry. When rotation is False, 
 		which is recommended only in instances of revocation, the secondary key is removed. Only 
@@ -782,6 +789,12 @@ class UserEntry(EntryBase):
 		crencrypt.public / crencrypt.private -- contact request encryption keypair
 		encrypt.public / encrypt.private -- general-purpose public encryption keypair
 		sign.public / sign.private -- general-purpose primary signing keypair
+
+		Full SigningPair / EncryptionPair objects can be found in
+		crsign
+		crencrypt
+		sign
+		encrypt
 		'''
 
 		if key.prefix != 'ED25519':
