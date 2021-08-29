@@ -2,7 +2,7 @@ import inspect
 
 from retval import ErrBadData
 
-from pymensago.contact import flatten, unflatten, unflatten_field
+from pymensago.contact import flatten, unflatten, unflatten_field, Name
 
 def funcname() -> str: 
 	frames = inspect.getouterframes(inspect.currentframe())
@@ -118,6 +118,20 @@ def test_unflatten_field():
 	assert target == unflat_data, f"{funcname()}: subtest #4 returned incorrect data"
 
 
+def test_name():
+	'''Tests the Name class methods'''
+
+	name = Name('Corbin', 'Simons', 'Dr.', 'MD', ['James', 'Alexander'])
+
+	assert name.formatted == 'Dr. Corbin James Alexander Simons, MD', \
+		f'test_name: full name formatting test failed: {name.formatted}'
+	
+	name.set('Fred', 'Kingsley', suffixes=['CCNA', 'MCSE'], family_first=True)
+	assert name.formatted == 'Kingsley Fred, CCNA, MCSE', \
+		f'test_name: family first formatting test failed: {name.formatted}'
+
+
 if __name__ == '__main__':
 	# test_flatten_unflatten()
 	test_unflatten_field()
+	# test_name()

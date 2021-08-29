@@ -7,6 +7,7 @@ import socket
 from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
+import pymensago.contact as contact
 from pymensago.contactdb import load_field
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
@@ -219,7 +220,7 @@ class MensagoClient:
 		return regdata
 	
 	def register_account(self, domain: Domain, userpass: str, userid=None, 
-		name: utils.Name=None) -> RetVal:
+		name: contact.Name=None) -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:

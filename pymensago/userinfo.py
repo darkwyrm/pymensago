@@ -2,7 +2,8 @@
 
 import sqlite3
 
-from pymensago.utils import UUID, Name
+from pymensago.utils import UUID
+from pymensago.contact import Name
 from retval import RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 
 
