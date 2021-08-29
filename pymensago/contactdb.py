@@ -4,8 +4,8 @@ import datetime
 import re
 import time
 
-from pymensago.utils import UUID, Name
-from retval import RetVal, ErrBadType, ErrBadValue, ErrNotFound, ErrUnimplemented, ErrBadData 
+from pymensago.utils import UUID
+from retval import RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 import sqlite3
 
 _long_date_pattern = re.compile(r'([1-3]\d{3})([0-1]\d)([0-3]\d)')
@@ -123,43 +123,6 @@ def find_contact(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> Ret
 	the application's internal ID -- not the contact's workspace ID -- is returned in the field 
 	'value'.'''
 	return RetVal(ErrUnimplemented)
-
-
-def save_name(db: sqlite3.Connection, id: UUID, name: Name) -> RetVal:
-	'''Saves the name passed into the database. Note that all name-related fields will be 
-	synchronized with the values in the object passed, so empty name fields will be deleted and 
-	missing name fields will be added. Thus all name information will be deleted if this function 
-	is passed an empty Name object. Note that this call does not affect the Nicknames field.'''
-
-	single_fields = {
-		'GivenName' : name.given,
-		'FamilyName' : name.family,
-		'Prefix' : name.prefix,
-		'FormattedName': name.formatted
-	}
-	for fieldname, fieldvalue in single_fields.items():
-		status = delete_field(db, id, fieldname)
-		if status.error():
-			return status
-		
-		if fieldvalue:
-			status = save_field(db, id, fieldname, fieldvalue)
-			if status.error():
-				return status
-	
-	list_fields = {
-		'Suffixes' : name.suffixes,
-		'AdditionalNames' : name.additional
-	}
-	for fieldname, fieldvalue in list_fields.items():
-		status = delete_list_field(db, id, fieldname)
-		if status.error():
-			return status
-
-		if fieldvalue:
-			status = save_list_field(db, id, fieldname, fieldvalue)
-			if status.error():
-				return status
 
 
 def _date_to_str(date: str) -> str:

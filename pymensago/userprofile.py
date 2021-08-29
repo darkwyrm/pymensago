@@ -78,6 +78,10 @@ _db_setup_cmds = [ '''
 		"fieldvalue" TEXT,
 		"contactgroup" TEXT
 	);''', '''
+	CREATE TABLE "userinfo" (
+		"fieldname" TEXT NOT NULL,
+		"fieldvalue" TEXT
+	);''', '''
 	CREATE TABLE "annotations" (
 		"id" TEXT NOT NULL,
 		"fieldname" TEXT NOT NULL,
