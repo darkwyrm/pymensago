@@ -87,7 +87,7 @@ def delete_user_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> 
 	return RetVal(ErrUnimplemented)
 
 
-def save_name(db: sqlite3.Connection, id: UUID, name: Name) -> RetVal:
+def save_name(db: sqlite3.Connection, name: Name) -> RetVal:
 	'''Saves the name passed into the database. Note that all name-related fields will be 
 	synchronized with the values in the object passed, so empty name fields will be deleted and 
 	missing name fields will be added. Thus all name information will be deleted if this function 
