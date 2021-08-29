@@ -63,29 +63,63 @@ def delete_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 	
 	cursor = db.cursor()
 	cursor.execute('DELETE FROM userinfo WHERE fieldname=?', (id.as_string(),fieldname))
+	db.commit()
 
 	return RetVal()
 
 
-def load_user_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
+def load_user_list_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 	'''Loads a field which is a list and returns it as such'''
-	# TODO: implement load_user_list_field()
-	return RetVal(ErrUnimplemented)
+	if not fieldname:
+		return ErrBadValue
+	
+	cursor = db.cursor()
+	cursor.execute("""SELECT fieldname,fieldvalue FROM userinfo WHERE fieldname LIKE ? 
+		ORDER BY fieldname""", (fieldname + '.%',))
+	results = cursor.fetchone()
+	if not results or not results[0]:
+		return RetVal(ErrNotFound)
+	
+	out = list()
+	while results and results[0]:
+		out.append(results[1])
+		results = cursor.fetchone()
+		
+	return RetVal().set_value('values', out)
 
 
-def save_user_list_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue: list, 
-	group: str) -> RetVal:
+def save_user_list_field(db: sqlite3.Connection, fieldname: str, fieldvalues: list) -> RetVal:
 	'''Saves a list object into the database as a list'''
 
-	# TODO: implement save_user_list_field()
-	return RetVal(ErrUnimplemented)
+	if not fieldname:
+		return ErrBadValue
+	
+	cursor = db.cursor()
+	cursor.execute("""DELETE FROM userinfo WHERE fieldname LIKE ?""", (fieldname + '.%',))
+
+	if not fieldvalues:
+		db.commit()
+		return RetVal()
+
+	for i in range(len(fieldvalues)):
+		cursor.execute('INSERT INTO userinfo (fieldname, fieldvalue) VALUES(?,?)',
+				(f"{fieldname}.{str(i)}", fieldvalues[i]))
+	
+	db.commit()
+		
+	return RetVal()
 
 
-def delete_user_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
+def delete_user_list_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 	'''Deletes a field which is a list'''
 	
-	# TODO: implement delete_user_list_field()
-	return RetVal(ErrUnimplemented)
+	if not fieldname:
+		return ErrBadValue
+	
+	cursor = db.cursor()
+	cursor.execute("""DELETE FROM userinfo WHERE fieldname LIKE ?""", (fieldname + '.%',))
+	db.commit()
+	return RetVal()
 
 
 def save_name(db: sqlite3.Connection, name: Name) -> RetVal:
