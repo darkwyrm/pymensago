@@ -114,6 +114,10 @@ def test_name():
 
 	assert name.formatted == 'Dr. Corbin James Alexander Simons, MD', \
 		f'test_name: full name formatting test failed: {name.formatted}'
+	
+	name.set('Fred', 'Kingsley', suffixes=['CCNA', 'MCSE'], family_first=True)
+	assert name.formatted == 'Kingsley Fred, CCNA, MCSE', \
+		f'test_name: family first formatting test failed: {name.formatted}'
 
 
 
