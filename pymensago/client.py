@@ -355,7 +355,7 @@ class MensagoClient:
 			entry['Workspace-ID'] = profile.wid.as_string()
 			entry['Domain'] = profile.domain.as_string()
 			if profile.userid.is_valid() and not profile.userid.is_wid():
-				entry['UserID'] = profile.userid.as_string()
+				entry['User-ID'] = profile.userid.as_string()
 			
 			status = load_field(profile.db, profile.wid, 'FormattedName')
 			if status.error() and status.error() != ErrNotFound:
