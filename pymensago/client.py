@@ -217,7 +217,8 @@ class MensagoClient:
 
 		return regdata
 	
-	def register_account(self, domain: Domain, userpass: str, userid=None, name='') -> RetVal:
+	def register_account(self, domain: Domain, userpass: str, userid=None, 
+		name: utils.Name=None) -> RetVal:
 		'''Create a new account on the specified server.'''
 		
 		# Process for registration of a new account:
