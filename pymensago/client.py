@@ -421,7 +421,7 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		if regdata['name']:
+		if 'name' in regdata and regdata['name']:
 			save_name(profile.db, regdata['name'])
 
 		address = utils.WAddress()
