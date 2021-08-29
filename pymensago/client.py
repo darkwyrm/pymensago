@@ -14,7 +14,8 @@ import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as userprofile
 import pymensago.utils as utils
-from pymensago.encryption import Password, EncryptionPair, SigningPair
+from pymensago.encryption import Password, EncryptionPair
+from pymensago.userinfo import save_name
 from pymensago.workspace import Workspace
 
 ErrNotLoggedIn = 'ErrNotLoggedIn'
@@ -293,7 +294,8 @@ class MensagoClient:
 			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
-		regdata['name'] = name
+		if name:
+			regdata['name'] = name
 		regdata['password'] = pw
 		regdata['devpair'] = devpair
 		regdata['devid'] = profile.devid
@@ -417,6 +419,9 @@ class MensagoClient:
 		status = profile.set_identity(w)
 		if status.error():
 			return status
+		
+		if regdata['name']:
+			save_name(profile.db, regdata['name'])
 
 		address = utils.WAddress()
 		address.id = regdata['wid']
