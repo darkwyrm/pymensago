@@ -1,6 +1,7 @@
 '''Houses just some different utility functions'''
 
 import re
+from typing import Type
 import uuid
 
 from retval import RetVal, ErrBadValue
@@ -235,6 +236,86 @@ class WAddress:
 		out = MAddress()
 		out.set_from_wid(self.id, self.domain)
 		return out
+
+
+class Name:
+	'''This class is for storing the user's name. It is required because there are so many possible 
+	pieces of information for the user's name, including prefix, suffixes, and formatting.'''
+	def __init__(self, given_name: str, family_name: str, prefix: str='', suffixes=None,
+				additional: list=None, family_first: bool=False) -> None:
+		self.formatted = ''
+		self.given = ''
+		self.family = ''
+		self.prefix = ''
+		self.suffixes = list()
+		self.additional = list()
+		self.family_first = family_first
+		self.set(given_name, family_name, prefix, suffixes, additional, family_first)
+	
+	def set(self, given_name: str, family_name: str, prefix: str='', suffixes=None,
+		additional=None, family_first: bool=None) -> str:
+		'''This method sets the user's name fields based on information'''
+		self.given = given_name
+		self.family = family_name
+		self.prefix = prefix
+		
+		if suffixes:
+			if isinstance(suffixes, str):
+				self.suffixes = [suffixes]
+			elif isinstance(suffixes, list):
+				self.suffixes = suffixes
+			else:
+				raise TypeError('suffixes must be list of strings or a single string')
+		else:
+			self.suffixes = list()
+		
+		if additional:
+			if isinstance(additional, str):
+				self.additional = [additional]
+			elif isinstance(additional, list):
+				self.additional = additional
+			else:
+				raise TypeError('additional names must be list of strings or a single string')
+		else:
+			self.additional = list()
+		
+		self.family_first = family_first
+		self._generate_formatted()
+
+		return self.formatted
+
+	def _generate_formatted(self):
+		parts = list()
+		
+		if self.family_first:
+			if self.family:
+				parts.append(self.family)
+			if self.given:
+				parts.append(self.given)
+			if self.additional:
+				parts.extend(self.additional)
+		else:
+			if self.given:
+				parts.append(self.given)
+			if self.additional:
+				parts.extend(self.additional)
+			if self.family:
+				parts.append(self.family)
+
+		base = ' '.join(parts)
+		if not base:
+			return ''
+
+		full = list()		
+		if self.prefix:
+			full.append(self.prefix + ' ')
+		full.append(base)
+
+		if self.suffixes:
+			full.append(', ' + ', '.join(self.suffixes))
+		
+		self.formatted = ''.join(full)
+		return self.formatted
 
 
 def validate_domain(indata: str) -> bool:

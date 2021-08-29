@@ -1,6 +1,5 @@
 '''Implements tests for the utils module'''
 
-# pylint: disable=import-error
 import pymensago.utils as utils
 
 def test_maddress_set():
@@ -108,8 +107,20 @@ def test_uuid():
 		assert not wid.is_valid(), f"test_uuid  - is_valid passed bad workspace ID '{testwid}'"
 
 
+def test_name():
+	'''Tests the Name class methods'''
+
+	name = utils.Name('Corbin', 'Simons', 'Dr.', 'MD', ['James', 'Alexander'])
+
+	assert name.formatted == 'Dr. Corbin James Alexander Simons, MD', \
+		f'test_name: full name formatting test failed: {name.formatted}'
+
+
+
 if __name__ == '__main__':
 	test_maddress_set()
 	test_userid()
 	test_domain()
 	test_uuid()
+	test_name()
+
