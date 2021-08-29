@@ -1049,7 +1049,7 @@ def db_get_last_entry(self, db: sqlite3.Connection, owner: str) -> RetVal:
 	return RetVal().set_value('entry', entry)
 
 
-def db_get_card(self, db: sqlite3.Connection, owner: str) -> RetVal:
+def db_get_card(db: sqlite3.Connection, owner: str) -> RetVal:
 	'''Obtains the entire keycard for the requested owner from the database'''
 	cursor = db.cursor()
 	cursor.execute("SELECT type,entry FROM keycards WHERE owner=? ORDER BY 'index'",

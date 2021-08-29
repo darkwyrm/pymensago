@@ -297,7 +297,7 @@ class MensagoClient:
 		regdata['devpair'] = devpair
 		regdata['devid'] = profile.devid
 
-		status = self._setup_workspace(profile, regdata, self.conn)
+		status = self._setup_workspace(profile, regdata)
 		self.conn.disconnect()
 		if status.error():
 			return status
@@ -320,7 +320,7 @@ class MensagoClient:
 		crspair = None
 		epair = None
 		spair = None
-		status = keycard.db_get_card(profile.db, profile.wid)
+		status = keycard.db_get_card(profile.db, profile.get_identity().as_string())
 		if status.error():
 			if status.error() != ErrNotFound:
 				return status
@@ -329,25 +329,25 @@ class MensagoClient:
 			# the client and the organization, though.
 
 			# The keys in the database we
-			status = auth.get_key_by_type('crencrypt')
+			status = auth.get_key_by_type(profile.db, 'crencrypt')
 			if status.error():
 				return status
 			crepair = status['key']
 			entry['Contact-Request-Encryption-Key'] = crepair.get_public_key()
 
-			status = auth.get_key_by_type('crsign')
+			status = auth.get_key_by_type(profile.db, 'crsign')
 			if status.error():
 				return status
 			crspair = status['key']
 			entry['Contact-Request-Verification-Key'] = crspair.get_public_key()
 
-			status = auth.get_key_by_type('encrypt')
+			status = auth.get_key_by_type(profile.db, 'encrypt')
 			if status.error():
 				return status
 			epair = status['key']
 			entry['Encryption-Key'] = epair.get_public_key()
 
-			status = auth.get_key_by_type('sign')
+			status = auth.get_key_by_type(profile.db, 'sign')
 			if status.error():
 				return status
 			spair = status['key']

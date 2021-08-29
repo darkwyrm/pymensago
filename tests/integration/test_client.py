@@ -150,8 +150,8 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	test_connect()
-	test_login()
-	test_preregister()
+	# test_connect()
+	# test_login()
+	# test_preregister()
 	test_register()
-	test_regcode()
+	# test_regcode()

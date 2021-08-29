@@ -192,19 +192,19 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 		return RetVal(ErrNotFound)
 	
 	if results[1] == 'asymmetric':
-		public = base64.b85decode(results[4])
-		private = base64.b85decode(results[3])
+		public = CryptoString(results[3])
+		private = CryptoString(results[2])
 		key = EncryptionPair(public,private)
 		return RetVal().set_value('key', key)
 	
 	if results[1] == 'symmetric':
-		private = base64.b85decode(results[3])
+		private = CryptoString(results[2])
 		key = SecretKey(private)
 		return RetVal().set_value('key', key)
 
 	if results[1] == 'signing':
-		public = base64.b85decode(results[4])
-		private = base64.b85decode(results[3])
+		public = CryptoString(results[3])
+		private = CryptoString(results[2])
 		key = SigningPair(public,private)
 		return RetVal().set_value('key', key)
 	
@@ -231,19 +231,19 @@ def get_key_by_type(db: sqlite3.Connection, keytype: str) -> RetVal:
 		return RetVal(ErrNotFound)
 	
 	if results[1] == 'asymmetric':
-		public = base64.b85decode(results[3])
-		private = base64.b85decode(results[2])
+		public = CryptoString(results[3])
+		private = CryptoString(results[2])
 		key = EncryptionPair(public,private)
 		return RetVal().set_value('key', key)
 	
 	if results[1] == 'symmetric':
-		private = base64.b85decode(results[2])
+		private = CryptoString(results[2])
 		key = SecretKey(private)
 		return RetVal().set_value('key', key)
 
 	if results[1] == 'signing':
-		public = base64.b85decode(results[3])
-		private = base64.b85decode(results[2])
+		public = CryptoString(results[3])
+		private = CryptoString(results[2])
 		key = SigningPair(public,private)
 		return RetVal().set_value('key', key)
 
