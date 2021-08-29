@@ -47,7 +47,7 @@ _db_setup_cmds = [ '''
 		"category" TEXT NOT NULL,
 		"private" TEXT NOT NULL,
 		"public" TEXT,
-		"algorithm" TEXT NOT NULL
+		"timestamp" TEXT NOT NULL
 	);''', '''
 	CREATE table "keycards"(
 		"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,

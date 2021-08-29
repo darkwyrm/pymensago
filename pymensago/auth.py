@@ -3,6 +3,7 @@
 import base64
 import platform
 import sqlite3
+import time
 
 import distro
 from pycryptostring import CryptoString
@@ -130,24 +131,25 @@ def add_key(db: sqlite3.Connection, key: CryptoKey, address: str, category='') -
 	if results:
 		return RetVal(ErrExists)
 	
+	timestamp = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())
 	if key.enctype == 'XSALSA20':
-		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,algorithm)
+		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,timestamp)
 			VALUES(?,?,?,?,?,?)''', (key.pubhash, address, 'symmetric', category,
-				key.get_key(), key.enctype))
+				key.get_key(), timestamp))
 		db.commit()
 		return RetVal()
 	
 	if key.enctype == 'CURVE25519':
-		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
+		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,timestamp)
 			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'asymmetric', category,
-				key.private.as_string(), key.public.as_string(), key.enctype))
+				key.private.as_string(), key.public.as_string(), timestamp))
 		db.commit()
 		return RetVal()
 	
 	if key.enctype == 'ED25519':
-		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,algorithm)
+		cursor.execute('''INSERT INTO keys(keyid,address,type,category,private,public,timestamp)
 			VALUES(?,?,?,?,?,?,?)''', (key.pubhash, address, 'signing', category,
-				key.private.as_string(), key.public.as_string(), key.enctype))
+				key.private.as_string(), key.public.as_string(), timestamp))
 		db.commit()
 		return RetVal()
 	
@@ -180,14 +182,11 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 
 	Returns:
 	'error' : string
-	'key' : CryptoKey object
+	'key' : CryptoKey object in (EncryptionPair|Secretkey|SigningPair)
 	'''
 
 	cursor = db.cursor()
-	cursor.execute('''
-		SELECT address,type,category,private,public,algorithm
-		FROM keys WHERE keyid=?''',
-		(keyid,))
+	cursor.execute("SELECT address,type,category,private,public FROM keys WHERE keyid=?", (keyid,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
@@ -209,12 +208,11 @@ def get_key(db: sqlite3.Connection, keyid: str) -> RetVal:
 		key = SigningPair(public,private)
 		return RetVal().set_value('key', key)
 	
-
 	return RetVal(ErrBadValue, "Key must be 'asymmetric', 'symmetric', or 'signing'")
 
 
 def get_key_by_type(db: sqlite3.Connection, keytype: str) -> RetVal:
-	'''Gets the specified key.
+	'''Returns the most recent key of the specified type.
 	Parameters:
 	keytype: str
 
@@ -226,7 +224,8 @@ def get_key_by_type(db: sqlite3.Connection, keytype: str) -> RetVal:
 	'''
 
 	cursor = db.cursor()
-	cursor.execute('SELECT address,type,private,public FROM keys WHERE category=?', (keytype,))
+	cursor.execute('''SELECT address,type,private,public
+		FROM keys WHERE category=? ORDER BY 'timestamp' DESC LIMIT 1''', (keytype,))
 	results = cursor.fetchone()
 	if not results or not results[0]:
 		return RetVal(ErrNotFound)
@@ -247,6 +246,5 @@ def get_key_by_type(db: sqlite3.Connection, keytype: str) -> RetVal:
 		private = base64.b85decode(results[2])
 		key = SigningPair(public,private)
 		return RetVal().set_value('key', key)
-	
 
 	return RetVal(ErrBadValue, "Key type not an official type")
