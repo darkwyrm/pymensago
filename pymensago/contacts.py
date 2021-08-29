@@ -6,7 +6,7 @@ import re
 import time
 import typing
 
-from pymensago.utils import UUID
+from pymensago.utils import UUID, Name
 from retval import RetVal, ErrBadType, ErrBadValue, ErrNotFound, ErrUnimplemented, ErrBadData 
 import sqlite3
 
@@ -549,6 +549,13 @@ def save_list_field(db: sqlite3.Connection, id: UUID, fieldname: str, fieldvalue
 	return RetVal(ErrUnimplemented)
 
 
+def delete_list_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
+	'''Deletes a field which is a list'''
+	
+	# TODO: implement delete_list_field()
+	return RetVal(ErrUnimplemented)
+
+
 def delete_field(db: sqlite3.Connection, id: UUID, fieldname: str) -> RetVal:
 	'''Deletes a field from the database. Fieldname is expected to be in dot-separated format.'''
 
@@ -579,16 +586,56 @@ def load_contact(db: sqlite3.Connection, id: UUID) -> RetVal:
 	'value' if successful.'''
 	return RetVal(ErrUnimplemented)
 
+
 def save_contact(db: sqlite3.Connection, id: UUID, clobber: bool) -> RetVal:
 	'''Saves a contact to the database. If clobber is false, fields that are in the contact object 
 	are updated or added. If clobber is true, all existing data for the contact is deleted first, 
 	ensuring that the database copy exactly matches that of the contact object.'''
 	return RetVal(ErrUnimplemented)
 
+
 def find_contact(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> RetVal:
 	'''Finds the ID for a contact with the specified dot-notated field name and value. If found, 
 	the application's internal ID -- not the contact's workspace ID -- is returned in the field 
 	'value'.'''
 	return RetVal(ErrUnimplemented)
+
+
+def save_name(db: sqlite3.Connection, id: UUID, name: Name) -> RetVal:
+	'''Saves the name passed into the database. Note that all name-related fields will be 
+	synchronized with the values in the object passed, so empty name fields will be deleted and 
+	missing name fields will be added. Thus all name information will be deleted if this function 
+	is passed an empty Name object. Note that this call does not affect the Nicknames field.'''
+
+	single_fields = {
+		'GivenName' : name.given,
+		'FamilyName' : name.family,
+		'Prefix' : name.prefix,
+		'FormattedName': name.formatted
+	}
+	for fieldname, fieldvalue in single_fields.items():
+		status = delete_field(db, id, fieldname)
+		if status.error():
+			return status
+		
+		if fieldvalue:
+			status = save_field(db, id, fieldname, fieldvalue)
+			if status.error():
+				return status
+	
+	list_fields = {
+		'Suffixes' : name.suffixes,
+		'AdditionalNames' : name.additional
+	}
+	for fieldname, fieldvalue in list_fields.items():
+		status = delete_list_field(db, id, fieldname)
+		if status.error():
+			return status
+
+		if fieldvalue:
+			status = save_list_field(db, id, fieldname, fieldvalue)
+			if status.error():
+				return status
+
 
 # TODO: Create JSON schemas for contacts and the contact request message type
