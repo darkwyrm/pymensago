@@ -148,12 +148,12 @@ def save_name(db: sqlite3.Connection, name: Name) -> RetVal:
 		'AdditionalNames' : name.additional
 	}
 	for fieldname, fieldvalue in list_fields.items():
-		status = delete_user_list_field(db, id, fieldname)
+		status = delete_user_list_field(db, fieldname)
 		if status.error():
 			return status
 
 		if fieldvalue:
-			status = save_user_list_field(db, id, fieldname, fieldvalue)
+			status = save_user_list_field(db, fieldname, fieldvalue)
 			if status.error():
 				return status
 
