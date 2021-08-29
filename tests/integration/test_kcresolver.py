@@ -11,9 +11,12 @@ def test_get_mgmt_record():
 	assert not status.error(), f"{funcname()}(): error returned for example.com"
 	
 	fields = status.fields()
-	assert 'pvk' in fields, f"{funcname()}(): pvk missing for example.com"
-	assert 'ek' in fields, f"{funcname()}(): ek missing for example.com"
-	assert 'svk' in fields, f"{funcname()}(): svk missing for example.com"
+	assert 'pvk' in fields and fields['pvk'].is_valid(), \
+		f"{funcname()}(): pvk missing for example.com"
+	assert 'ek' in fields and fields['ek'].is_valid(), \
+		f"{funcname()}(): ek missing for example.com"
+	assert 'svk' in fields and fields['svk'].is_valid(), \
+		f"{funcname()}(): svk missing for example.com"
 
 if __name__ == '__main__':
 	test_get_mgmt_record()

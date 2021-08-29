@@ -2,6 +2,7 @@
 
 import os
 
+from pycryptostring import CryptoString
 from retval import ErrOK, RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 
 from pymensago.config import load_server_config
@@ -240,10 +241,10 @@ def get_mgmt_record(domain: str) -> RetVal:
 		conn.disconnect()
 		card = status['card']
 
-		out['pvk'] = card.entries[0].fields['Primary-Verification-Key']
-		out['ek'] = card.entries[0].fields['Encryption-Key']
+		out['pvk'] = CryptoString(card.entries[0].fields['Primary-Verification-Key'])
+		out['ek'] = CryptoString(card.entries[0].fields['Encryption-Key'])
 		if 'Secondary-Verification-Key' in card.entries[0].fields:
-			out['svk'] = card.entries[0].fields['Secondary-Verification-Key']
+			out['svk'] = CryptoString(card.entries[0].fields['Secondary-Verification-Key'])
 		
 		# Because TLS isn't implemented yet, we won't worry about the TLS cert key hash
 		# TODO: POSTDEMO: get hash field for localhost TLS cert in get_mgmt_record()
