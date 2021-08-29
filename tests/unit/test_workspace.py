@@ -3,9 +3,9 @@ import os
 import shutil
 import time
 
-# pylint: disable=import-error
 from pymensago.encryption import Password
 from pymensago.userprofile import Profile
+import pymensago.utils as utils
 from pymensago.workspace import Workspace
 
 def setup_test(name):
@@ -35,14 +35,17 @@ def test_workspace_generate():
 	unit_test_folder = setup_test('workspace_generate')
 	profile = Profile(unit_test_folder)
 	profile.name = 'Primary'
-	profile.id = 'ca7149eb-e533-4de6-90b1-3b0181d6fa16'
-	profile.wid = 'b5a9367e-680d-46c0-bb2c-73932a6d4007'
-	profile.domain = 'example.com'
+	profile.wid = utils.UUID('b5a9367e-680d-46c0-bb2c-73932a6d4007')
+	profile.domain = utils.Domain('example.com')
 	profile.activate()
 	pw = Password()
 	status = pw.set('CheeseCustomerSmugnessDelegatorGenericUnaudited')
 	assert not status.error()
 
 	w = Workspace(profile.db, unit_test_folder)
-	status = w.generate('testname', profile.domain, profile.wid, pw)
+	status = w.generate(utils.UserID('testname'), profile.domain, profile.wid, pw)
 	assert not status.error(), f"Failed to generate workspace: {status.info()}"
+
+
+if __name__ == '__main__':
+	test_workspace_generate()
