@@ -2,7 +2,7 @@ import inspect
 
 from retval import ErrBadData
 
-from pymensago.flatcontact import flatten, unflatten, unflatten_field
+from pymensago.contact import flatten, unflatten, unflatten_field
 
 def funcname() -> str: 
 	frames = inspect.getouterframes(inspect.currentframe())

@@ -7,7 +7,7 @@ import socket
 from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
 
 import pymensago.auth as auth
-import pymensago.contacts as contacts
+from pymensago.contactdb import load_field
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
 import pymensago.kcresolver as kcresolver
@@ -359,7 +359,7 @@ class MensagoClient:
 			if profile.userid.is_valid() and not profile.userid.is_wid():
 				entry['UserID'] = profile.userid.as_string()
 			
-			status = contacts.load_field(profile.db, profile.wid, 'FormattedName')
+			status = load_field(profile.db, profile.wid, 'FormattedName')
 			if status.error() and status.error() != ErrNotFound:
 				return status
 			

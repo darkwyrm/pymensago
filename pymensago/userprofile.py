@@ -4,7 +4,7 @@ import os
 import pathlib
 import platform
 
-import pymensago.contacts as contacts
+import pymensago.contact as contact
 from pymensago.workspace import Workspace
 import shutil
 import sqlite3
@@ -319,23 +319,22 @@ class Profile:
 	def load_field(self, fieldname: str) -> RetVal:
 		'''Loads a value from the user's contact information. This call is mostly syntactic sugar 
 		that wraps around contacts.load_field()'''
-		return contacts.load_field(self.db, self.wid, fieldname)
+		return contact.load_field(self.db, self.wid, fieldname)
 	
 	def load_list_field(self, fieldname: str) -> RetVal:
 		'''Loads a list of values from the user's contact information. This call is mostly 
 		syntactic sugar that wraps around contacts.load_list_field()'''
-		return contacts.load_field(self.db, self.wid, fieldname)
+		return contact.load_field(self.db, self.wid, fieldname)
 	
 	def save_field(self, fieldname: str, fieldvalue: str) -> RetVal:
 		'''Saves a value to the user's contact information. This call is mostly syntactic sugar 
 		that wraps around contacts.save_field()'''
-		return contacts.save_field(self.db, self.wid, fieldname, fieldvalue, 'self')
+		return contact.save_field(self.db, self.wid, fieldname, fieldvalue, 'self')
 
 	def save_list_field(self, fieldname: str, fieldvalue: list) -> RetVal:
 		'''Saves a list of values to the user's contact information. This call is mostly syntactic 
 		sugar that wraps around contacts.save_list_field()'''
-		return contacts.save_list_field(self.db, self.wid, fieldname, fieldvalue, 'self')
-
+		return contact.save_list_field(self.db, self.wid, fieldname, fieldvalue, 'self')
 
 
 class ProfileManager:

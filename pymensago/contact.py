@@ -1,3 +1,5 @@
+'''This module contains functions to manage the dot-notated contact information used internally 
+and transforming it to and from the JSON-based format described in the spec.'''
 from base64 import b85encode
 import os
 import tempfile
@@ -354,5 +356,17 @@ def setphoto(target: dict, path: str) -> RetVal:
 		os.remove(temppath)
 
 	return RetVal()
+
+
+def merge_dict(dest: dict, source: dict, clobber: bool) -> None:
+	for k in source:
+		if isinstance(source[k], dict):
+			if k not in dest:
+				dest[k] = {}
+			merge_dict(dest[k], source[k], clobber)
+		else:
+			if k not in dest or (isinstance(source[k],str) and not dest[k]) \
+				or (clobber and k in dest):
+				dest[k] = source[k]
 
 
