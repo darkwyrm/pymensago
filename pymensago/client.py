@@ -364,6 +364,7 @@ class MensagoClient:
 			
 			if not status.error():
 				entry['Name'] = status['value']
+		
 		else:
 			card = status['card']
 			status = card.verify()
@@ -378,12 +379,12 @@ class MensagoClient:
 			status = card.chain(crspair.private, True)
 			if status.error():
 				return status
+			
 			entry = card.entries[-1]
-			crspair = SigningPair()
-
-			# TODO: finish implementing client.update_keycard()
-			return RetVal(ErrUnimplemented)
-
+			crspair = status['crsign']
+			crepair = status['crencrypt']
+			spair = status['sign']
+			epair = status['encrypt']
 
 		# Keycard entry setup complete. Now we log in and handle signing. Although we still have the
 		# network connection to the server from registration, we are not logged in... yet.
