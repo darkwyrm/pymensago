@@ -4,7 +4,7 @@ import secrets
 import time
 
 from pycryptostring import CryptoString
-from retval import RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemented
+from retval import ErrBadType, RetVal, ErrBadValue, ErrExists, ErrServerError, ErrUnimplemented
 
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
@@ -15,6 +15,9 @@ import pymensago.utils as utils
 def addentry(conn: ServerConnection, entry: EntryBase, ovkey: CryptoString,
 	spair: SigningPair) -> RetVal:
 	'''Handles the process to upload an entry to the server.'''
+
+	if not isinstance(ovkey, CryptoString):
+		return RetVal(ErrBadType, 'key must be a CryptoString')
 
 	status = conn.send_message({
 		'Action' : "ADDENTRY",
