@@ -24,11 +24,9 @@ def load_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 		
 		outnames = list()
 		outvalues = list()
-		outgroups = list()
 		for result in results:
 			outnames.append(result[0])
 			outvalues.append(result[1])
-			outgroups.append(result[2])
 		return RetVal().set_values({'name':outnames, 'value':outvalues})
 	else:
 		cursor.execute(
