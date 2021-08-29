@@ -248,8 +248,8 @@ def test_get_field():
 
 if __name__ == '__main__':
 	# test_contact_import()
-	# test_contact_setphoto()
+	test_contact_setphoto()
 	# test_contact_to_string()
 	# test_delete_field()
-	test_get_field()
+	# test_get_field()
 

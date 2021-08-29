@@ -1,6 +1,10 @@
+from base64 import b85encode
+import os
+import tempfile
 from typing import Union
 
-from retval import RetVal, ErrOutOfRange, ErrBadType, ErrBadValue, ErrNotFound
+from PIL import Image
+from retval import RetVal, ErrOutOfRange, ErrBadData, ErrBadType, ErrBadValue, ErrNotFound
 
 # This module implements the transformation of a contact dictionary between the official format
 # and the dot-notation format. An example of official format is as follows:
@@ -163,6 +167,9 @@ def unflatten_field(d: dict, fieldname: str, fieldvalue: str) -> RetVal:
 	if not isinstance(fieldname, str):
 		return RetVal(ErrBadType, 'values must be strings')
 	
+	if fieldname == 'Photo':
+		return setphoto(d, fieldvalue)
+	
 	parts = fieldname.split('.')
 
 	return _unflatten_recurse(d, parts, 0, fieldvalue)
@@ -292,3 +299,60 @@ def _get_recurse(target: Union[dict,list], levels: list, levelindex: int, pop_va
 
 
 	return RetVal()
+
+
+def setphoto(target: dict, path: str) -> RetVal:
+	'''Given a file path, encode and store the data in the contact structure'''
+
+	if path == '' and 'Photo' in target:
+		del target['Photo']
+		return RetVal()
+		
+	try:
+		fileinfo = os.stat(path)
+	except Exception as e:
+		return RetVal().wrap_exception(e)
+	
+	if fileinfo.st_size > 512_000:
+		return RetVal(ErrBadData, 'file too large')
+	
+	try:
+		img = Image.open(path)
+	except Exception as e:
+		return RetVal().wrap_exception(e)
+	
+	# Now that we have the image opened, let's make sure it uses one of the three formats:
+	# WEBP, JPEG, or PNG. If it isn't one of these three, convert it to WEBP. Then again, we'll
+	# also convert PNG to save on file size. ;-)
+	temppath = ''
+	filetype = img.get_format_mimetype()
+	if filetype not in ['image/jpeg', 'image/webp']:
+		temphandle, temppath = tempfile.mkstemp(suffix='.webp')
+		os.close(temphandle)
+		try:
+			img.save(temppath, 'WEBP', lossless=True, quality=3)
+		except Exception as e:
+			os.remove(temppath)
+			return RetVal().wrap_exception(e)
+		filetype = 'image/webp'
+	img.close()
+
+	fhandle = None
+	if temppath:
+		fhandle = open(temppath, 'rb')
+	else:
+		fhandle = open(path, 'rb')
+	
+	rawdata = fhandle.read()
+	fhandle.close()
+	target['Photo'] = {
+		'Mime': filetype,
+		'Data': b85encode(rawdata).decode()
+	}
+
+	if temppath:
+		os.remove(temppath)
+
+	return RetVal()
+
+
