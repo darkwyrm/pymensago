@@ -85,7 +85,7 @@ class MensagoClient:
 		if not waddr.is_valid():
 			return RetVal(ErrBadValue, 'bad resolved workpace ID')
 
-		status = iscmds.login(self.conn, waddr.id, CryptoString(record['ek']))
+		status = iscmds.login(self.conn, waddr.id, record['ek'])
 		if status.error():
 			return status
 		
@@ -399,7 +399,7 @@ class MensagoClient:
 		if status.error():
 			return status
 
-		status = kcresolver.get_mgmt_record(profile.domain)
+		status = kcresolver.get_mgmt_record(profile.domain.as_string())
 		if status.error():
 			return status
 
