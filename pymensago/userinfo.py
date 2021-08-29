@@ -4,7 +4,7 @@ import sqlite3
 
 from pymensago.utils import UUID
 from pymensago.contact import Name
-from retval import RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
+from retval import ErrBadType, RetVal, ErrBadValue, ErrNotFound, ErrUnimplemented
 
 
 def load_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
@@ -91,6 +91,9 @@ def save_user_list_field(db: sqlite3.Connection, fieldname: str, fieldvalues: li
 	if not fieldname:
 		return ErrBadValue
 	
+	if fieldvalues and not isinstance(fieldvalues[0], str):
+		return RetVal(ErrBadType, 'list must contain strings')
+
 	cursor = db.cursor()
 	cursor.execute("""DELETE FROM userinfo WHERE fieldname LIKE ?""", (fieldname + '.%',))
 
