@@ -12,7 +12,7 @@ def load_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 	format. If the fieldname is an asterisk (*), all fields are loaded and value is a list, 
 	not a string'''
 
-	if not id.is_valid() or not fieldname or not db:
+	if not fieldname or not db:
 		return RetVal(ErrBadValue)
 	
 	cursor = db.cursor()
@@ -29,16 +29,15 @@ def load_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 			outnames.append(result[0])
 			outvalues.append(result[1])
 			outgroups.append(result[2])
-		return RetVal().set_values({'name':outnames, 'value':outvalues, 'group':outgroups})
+		return RetVal().set_values({'name':outnames, 'value':outvalues})
 	else:
 		cursor.execute(
-			'''SELECT fieldvalue FROM userinfo WHERE fieldname=?''',
-			(id.as_string(),fieldname))
+			'''SELECT fieldvalue FROM userinfo WHERE fieldname=?''', (fieldname,))
 		results = cursor.fetchone()
 		if not results or not results[0]:
 			return RetVal(ErrNotFound)
 
-	return RetVal().set_values({ 'value':results[0], 'group':results[1] })
+	return RetVal().set_values({ 'value':results[0]})
 
 
 def save_user_field(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> RetVal:
@@ -46,9 +45,9 @@ def save_user_field(db: sqlite3.Connection, fieldname: str, fieldvalue: str) -> 
 	format.'''
 
 	cursor = db.cursor()
-	cursor.execute('DELETE FROM userinfo WHERE fieldname=?', (id.as_string(),fieldname))
+	cursor.execute('DELETE FROM userinfo WHERE fieldname=?', (fieldname,))
 	cursor.execute('INSERT INTO userinfo (fieldname, fieldvalue) VALUES(?,?)',
-			(id.as_string(), fieldname, fieldvalue))
+			(fieldname, fieldvalue))
 	db.commit()
 
 	return RetVal()
@@ -62,7 +61,7 @@ def delete_user_field(db: sqlite3.Connection, fieldname: str) -> RetVal:
 		return RetVal(ErrBadValue)
 	
 	cursor = db.cursor()
-	cursor.execute('DELETE FROM userinfo WHERE fieldname=?', (id.as_string(),fieldname))
+	cursor.execute('DELETE FROM userinfo WHERE fieldname=?', (fieldname,))
 	db.commit()
 
 	return RetVal()
