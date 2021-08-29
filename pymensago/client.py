@@ -201,21 +201,16 @@ class MensagoClient:
 			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
-		w = Workspace(profile.db, profile.path)
-		status = w.generate(address.id, address.domain, regdata['wid'], pw)
-		if status.error():
-			return status
+		# TODO: add support for setting name in regcode command
+				
+		regdata['password'] = pw
+		regdata['devpair'] = devpair
+		regdata['devid'] = profile.devid
 
-		status = profile.set_identity(w)
+		status = self._setup_workspace(profile, regdata)
+		self.conn.disconnect()
 		if status.error():
 			return status
-		
-		status = auth.add_device_session(profile.db, MAddress(f"{regdata['wid']}/{address.domain}"),
-										regdata['devid'], devpair, socket.gethostname())
-		if status.error():
-			return status
-		
-		# TODO: create, cross-sign, and upload first keycard entry
 
 		return regdata
 	
