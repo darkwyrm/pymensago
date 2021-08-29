@@ -102,7 +102,6 @@ def test_preregister():
 	client.disconnect()
 
 
-
 def test_register():
 	serverdbdata = load_server_config()
 	if serverdbdata['global']['registration'] not in ['network', 'public']:
