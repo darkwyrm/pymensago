@@ -404,7 +404,7 @@ class MensagoClient:
 			return status
 
 		ovkey = status['pvk']
-		status = iscmds.addentry(self.conn, entry, ovkey, spair)
+		status = iscmds.addentry(self.conn, entry, ovkey, crspair)
 
 		return status
 
