@@ -5,8 +5,8 @@ import time
 from retval import ErrUnimplemented
 
 from pymensago.client import MensagoClient
+import pymensago.contact as contact
 import pymensago.iscmds as iscmds
-from pymensago.encryption import Password
 import pymensago.utils as utils
 from tests.integration.integration_setup import setup_admin_profile, setup_test, init_server, \
 	load_server_config, init_admin, funcname, setup_profile_base
@@ -114,8 +114,24 @@ def test_register():
 	pgdb = setup_test()
 	dbdata = init_server(pgdb)
 
+	# We have to set up the admin profile even though we don't use it. The server depends on the
+	# administrator profile having been set up before any users can register
+
+	status = setup_admin_profile(test_folder, dbdata)
+	assert not status.error(), f"{funcname()}(): Couldn't set up admin profile"
+
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
+	status = init_admin(client.conn, dbdata)
+	assert not status.error(), f"{funcname()}(): Couldn't init admin"
+	
+	status = client.disconnect()
+
+	client.pman.create_profile('user')
+	client.pman.activate_profile('user')
+
 	status = client.register_account(utils.Domain('example.com'), 'MyS3cretPassw*rd', 
-		utils.UserID('csimons'), utils.Name('Corbin', 'Simons'))
+		utils.UserID('csimons'), contact.Name('Corbin', 'Simons'))
 	assert not status.error(), \
 		f"test_register_account: failed to register test account: {status.info()}"
 
