@@ -158,6 +158,9 @@ def test_regcode():
 		'regcode' in status and	\
 		status['uid'].as_string() == 'csimons', f"{funcname()}(): failed to return expected data"
 
+	client.pman.create_profile('user')
+	client.pman.activate_profile('user')
+
 	regdata = status
 	address = utils.MAddress('csimons/example.com')
 	status = client.redeem_regcode(address, regdata['regcode'], 'MyS3cretPassw*rd')
