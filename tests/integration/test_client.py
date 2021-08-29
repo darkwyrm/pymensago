@@ -115,7 +115,7 @@ def test_register():
 	dbdata = init_server(pgdb)
 
 	status = client.register_account(utils.Domain('example.com'), 'MyS3cretPassw*rd', 
-		utils.UserID('csimons'))
+		utils.UserID('csimons'), 'Corbin Simons')
 	assert not status.error(), \
 		f"test_register_account: failed to register test account: {status.info()}"
 
