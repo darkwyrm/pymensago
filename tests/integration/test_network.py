@@ -358,6 +358,38 @@ def test_unregister():
 	conn.disconnect()
 
 
+def test_usercard():
+	'''Tests the usercard command'''
+
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base(funcname())
+	status = setup_admin_profile(test_folder, dbdata)
+
+	# TODO: Finish test_usercard()
+	# A call to set up a test user here is needed
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
+
+	status = iscmds.orgcard(conn, 1, -1)
+	assert not status.error() and 'card' in status, ""
+
+	card = status['card']
+	assert card.type == 'User', f"{funcname()}(): subtest #1 wrong card type received"
+	assert len(card.entries) == 2, f"{funcname()}(): subtest #1 card had wrong number of entries"
+
+	status = iscmds.orgcard(conn, 0, -1)
+	assert not status.error() and 'card' in status, ""
+
+	card = status['card']
+	assert card.type == 'User', f"{funcname()}(): subtest #2 wrong card type received"
+	assert len(card.entries) == 1, f"{funcname()}(): subtest #2 card had wrong number of entries"
+	
+	conn.disconnect()
+
+
 if __name__ == '__main__':
 	# test_addentry()
 	# test_connect()
@@ -370,3 +402,4 @@ if __name__ == '__main__':
 	# test_set_password()
 	# test_set_status()
 	# test_unregister()
+	# test_usercard()

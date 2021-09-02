@@ -665,10 +665,61 @@ def unregister(conn: ServerConnection, pwhash: str, wid: utils.UUID) -> RetVal:
 	# registration modes), or an error. In all of those cases there isn't anything else to do.
 	return wrap_server_error(response)
 
-def usercard(conn: ServerConnection, start_index: int, end_index: int) -> RetVal:
+
+def usercard(conn: ServerConnection, owner: utils.MAddress, start_index: int, 
+	end_index: int) -> RetVal:
 	'''Obtains a user's keycard'''
 	
-	# TODO: implement usercard()
-	return RetVal(ErrUnimplemented)
+	if not owner.is_valid():
+		return RetVal(ErrBadValue, 'invalid owner address')
+	
+	status = conn.send_message({
+		'Action': 'USERCARD',
+		'Data': {
+			'Owner': owner.as_string(),
+			'Start-Index': str(start_index),
+			'End-Index': str(end_index)
+		}
+	})
+	if status.error():
+		return status
+
+	response = conn.read_response(server_response)
+	if response.error():
+		return response
+	
+	data_size = int(response['Data']['Total-Size'])
+	status = conn.send_message({'Action':'TRANSFER'})
+	if status.error():
+		return status
+
+	chunks = list()
+	tempstr = conn.read()
+	data_read = len(tempstr)
+	chunks.append(tempstr)
+	while data_read < data_size:
+		tempstr = conn.read()
+		data_read = data_read + len(tempstr)
+		chunks.append(tempstr)
+
+	if data_read != data_size:
+		return RetVal(ErrServerError, 'Mismatch in size of data returned from server')
+	
+	# Now that the data has been downloaded, we put it together and split it properly. 
+	entry_strings = ''.join(chunks).split('----- END USER ENTRY -----\r\n')
+	if entry_strings[-1] == '':
+		entry_strings.pop()
+	
+	card = Keycard()
+	card.type = 'Organization'
+	for entrystr in entry_strings:
+		if entrystr.startswith('----- BEGIN USER ENTRY -----\r\n'):
+			entry = OrgEntry()
+			status = entry.set(entrystr[29:].encode())
+			if status.error():
+				return status
+			card.entries.append(entry)
+	
+	return RetVal().set_value('card', card)
 
 
