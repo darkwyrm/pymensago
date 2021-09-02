@@ -163,7 +163,8 @@ def test_regcode():
 
 	regdata = status
 	address = utils.MAddress('csimons/example.com')
-	status = client.redeem_regcode(address, regdata['regcode'], 'MyS3cretPassw*rd')
+	status = client.redeem_regcode(address, regdata['regcode'], 'MyS3cretPassw*rd', 
+		contact.Name('Corbin', 'Simons'))
 
 	client.disconnect()
 
@@ -171,5 +172,5 @@ if __name__ == '__main__':
 	# test_connect()
 	# test_login()
 	# test_preregister()
-	test_register()
-	# test_regcode()
+	# test_register()
+	test_regcode()

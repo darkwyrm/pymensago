@@ -161,7 +161,8 @@ class MensagoClient:
 
 		return regdata
 
-	def redeem_regcode(self, address: MAddress, regcode: str, userpass: str) -> RetVal:
+	def redeem_regcode(self, address: MAddress, regcode: str, userpass: str, 
+		name: contact.Name=None) -> RetVal:
 		'''Completes setup of a preregistered account'''
 		
 		status = self.pman.get_active_profile()
@@ -206,6 +207,8 @@ class MensagoClient:
 		regdata['password'] = pw
 		regdata['devpair'] = devpair
 		regdata['devid'] = profile.devid
+		if name:
+			regdata['name'] = name
 
 		status = self._setup_workspace(profile, regdata)
 		self.conn.disconnect()
