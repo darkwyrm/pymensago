@@ -178,9 +178,12 @@ class MDateTime:
 		# TODO: Implement MDateTime.init()
 		pass
 
-	def now(self) -> MDateTime:
+	def now(self) -> object:
 		'''Sets the current object to the current time UTC and returns itself'''
 		# TODO: Implement MDateTime.now()
 		return self
 	
-
+	def as_string(self) -> str:
+		'''Returns the object as a string'''
+		# TODO: Implement MDateTime.as_string()
+		return ''
