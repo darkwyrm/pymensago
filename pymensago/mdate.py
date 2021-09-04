@@ -78,16 +78,16 @@ class MDate:
 			self.format = _get_format_type(year, month, day)
 
 	def set(self, year, month, day) -> bool:
+		status = _validate_date(year, month, day)
+		if not status:
+			return False
+		
+		self.format = _get_format_type(year, month, day)
 		self.year = year
 		self.month = month
 		self.day = day
 
-		status = _validate_date(year, month, day).error()
-		if not status:
-			self.format = MDATE_INVALID
-		else:
-			self.format = _get_format_type(year, month, day)
-		return status
+		return True
 
 	def is_valid(self) -> bool:
 		'''Returns an error if the object's values are invalid'''
@@ -161,8 +161,8 @@ class MDate:
 			return False
 		
 		status = _validate_date(y, m, d)
-		if status.error():
-			return status
+		if not status:
+			return False
 		
 		self.year = y
 		self.month = m
