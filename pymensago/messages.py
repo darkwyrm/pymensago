@@ -33,7 +33,7 @@ class Message:
 		if len(self.attachments) > 0:
 			out.append('\nAttachments:')
 			for file in self.attachments:
-				filesize = size_as_string((len(file['Data']) * 4) / 5)
+				filesize = "~" + size_as_string(int((len(file['Data']) * 4) / 5))
 				out.append(f"  {file['Name']}, {filesize}")
 		
 		return '\n'.join(out)
