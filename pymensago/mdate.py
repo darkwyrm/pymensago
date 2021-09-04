@@ -1,4 +1,6 @@
 import datetime as dt
+import re
+import time
 
 from retval import ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadValue, ErrBadType
 
@@ -172,18 +174,72 @@ def today(self) -> MDate:
 	return MDate(cd.year, cd.month, cd.day)
 
 
+_re_date_time = re.compile(r'[0-3][0-9]{3}[0-1][0-9][0-3][0-0]T[0-2][0-9][0-5][0-9][0-5][0-9]Z')
+
 class MDateTime:
-	'''This class is for simplified handling of times, unlike time()'''
-	def __init__(self_, t=''):
-		# TODO: Implement MDateTime.init()
-		pass
+	'''This class is for simplified handling of times, unlike time(), with resolution to the 
+	second.'''
+	def __init__(self, timestr=''):
+		self.year = -1
+		self.month = -1
+		self.day = -1
+		self.hour = -1
+		self.minute = -1
+		self.second = -1
+		if timestr:
+			self.from_string(timestr)
+
+	def is_valid(self) -> bool:
+		return self.year >= 0 and self.month >= 1 and self.day >= 1 \
+			and self.hour >= 0 and self.minute >= 0 and self.second >= 0
 
 	def now(self) -> object:
 		'''Sets the current object to the current time UTC and returns itself'''
-		# TODO: Implement MDateTime.now()
+		t = time.gmtime()
+		self.year = t.tm_year
+		self.month = t.tm_mon
+		self.day = t.tm_mday
+		self.hour = t.tm_hour
+		self.minute = t.tm_min
+		self.second = t.tm_sec
+
 		return self
-	
+
 	def as_string(self) -> str:
 		'''Returns the object as a string'''
-		# TODO: Implement MDateTime.as_string()
-		return ''
+		return time.strftime(r"%Y%m%dT%H%M%SZ", 
+						time.struct_time(tm_year=self.year, tm_mon=self.month, tm_mday=self.day, 
+									tm_hour=self.hour, tm_min=self.minute, tm_sec=self.second,
+									tm_isdst=0))
+
+	def from_string(self, timestr: str) -> bool:
+		if not timestr:
+			self.year = self.month = self.day = self.hour = self.minute = self.second = -1
+			return True
+		
+		# Strip out any separator characters and confirm that it meets the format
+		t = timestr.translate(timestr.maketrans('','','-:/ '))
+		if not _re_date_time.match(t):
+			return False
+
+		if len(t) < 16:
+			return False
+		
+		try:
+			year = int(t[0:4])
+			mon = int(t[4:6])
+			day = int(t[6:8])
+			hour = int(t[9:11])
+			min = int(t[11:13])
+			sec = int(t[13:15])
+		except:
+			return False
+
+		self.year = year
+		self.month = mon
+		self.day = day
+		self.hour = hour
+		self.min = min
+		self.second = sec
+		
+		return True
