@@ -10,7 +10,7 @@ def funcname() -> str:
 
 
 def test_message_tostring():
-	'''Tests the Message.to_string() method'''
+	'''Tests the Message.as_string() method'''
 
 	msg = Message()
 	msg.id = utils.UUID('11111111-1111-1111-1111-111111111111')
@@ -33,7 +33,7 @@ def test_message_tostring():
 		
 	}]
 
-	msgstr = msg.to_string()
+	msgstr = msg.as_string()
 	expected_string = "Message ID: 11111111-1111-1111-1111-111111111111\n" \
 		"Sender: 22222222-2222-2222-2222-222222222222/example.com\n" \
 		"Recipient: 33333333-3333-3333-3333-333333333333/example.com\n" \

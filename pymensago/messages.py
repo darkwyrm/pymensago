@@ -13,7 +13,7 @@ class Message:
 		self.images = list()
 		self.attachments = list()
 
-	def to_string(self):
+	def as_string(self):
 		out = [	f"Message ID: {self.id.as_string()}",
 			f"Sender: {self.sender.as_string()}",
 			f"Recipient: {self.recipient.as_string()}",
