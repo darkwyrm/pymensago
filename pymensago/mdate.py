@@ -187,12 +187,12 @@ class MDateTime:
 	'''This class is for simplified handling of times, unlike time(), with resolution to the 
 	second.'''
 	def __init__(self, timestr=''):
-		self.year = -1
-		self.month = -1
-		self.day = -1
-		self.hour = -1
-		self.minute = -1
-		self.second = -1
+		self.year = 0
+		self.month = 1
+		self.day = 1
+		self.hour = 0
+		self.minute = 0
+		self.second = 0
 		if timestr:
 			self.from_string(timestr)
 
@@ -200,17 +200,19 @@ class MDateTime:
 		return self.year >= 0 and self.month >= 1 and self.day >= 1 \
 			and self.hour >= 0 and self.minute >= 0 and self.second >= 0
 
-	def now(self) -> object:
-		'''Sets the current object to the current time UTC and returns itself'''
-		t = time.gmtime()
+	def set_from_struct(self, t: time.struct_time) -> bool:
+		'''Sets the time from a time.struct_time object. The object is expected to be in UTC and 
+		will return False if t.tm_isdst != 0.'''
+		
+		if t.tm_isdst != 0:
+			return False
+		
 		self.year = t.tm_year
 		self.month = t.tm_mon
 		self.day = t.tm_mday
 		self.hour = t.tm_hour
 		self.minute = t.tm_min
 		self.second = t.tm_sec
-
-		return self
 
 	def as_string(self) -> str:
 		'''Returns the object as a string'''
@@ -253,3 +255,10 @@ class MDateTime:
 		self.second = sec
 		
 		return True
+
+def now(self) -> MDateTime:
+	'''Returns an MDateTime containing the current time'''
+	out = MDateTime()
+	out.set_from_struct(time.gmtime())
+	return out
+
