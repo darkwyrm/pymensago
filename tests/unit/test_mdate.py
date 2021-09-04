@@ -65,6 +65,16 @@ def test_mdatetime():
 
 	assert t.as_string() == '20000504T134501Z', f"{funcname()}: as_string() formatting failure"
 
+	fromstr_tests = [
+		'2000-05-04T13:45:01Z',
+		'20000504 T 134501 Z',
+		'2000/05/04T13-45-01Z',
+	]
+	for timestr in fromstr_tests:
+		assert t.from_string(timestr), f"{funcname()}: legitimate from_string() failed: {timestr}"
+	
+	# TODO: Add more from_string() tests
+	
 
 if __name__ == '__main__':
 	test_mdate()

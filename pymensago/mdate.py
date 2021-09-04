@@ -181,7 +181,7 @@ def today(self) -> MDate:
 	return MDate(cd.year, cd.month, cd.day)
 
 
-_re_date_time = re.compile(r'[0-3][0-9]{3}[0-1][0-9][0-3][0-0]T[0-2][0-9][0-5][0-9][0-5][0-9]Z')
+_re_date_time = re.compile(r'[0-3][0-9]{3}[0-1][0-9][0-3][0-9]T[0-2][0-9][0-5][0-9][0-5][0-9]Z')
 
 class MDateTime:
 	'''This class is for simplified handling of times, unlike time(), with resolution to the 
@@ -231,9 +231,6 @@ class MDateTime:
 
 	def as_string(self) -> str:
 		'''Returns the object as a string'''
-		# return dt.datetime.strftime(r"%Y%m%dT%H%M%SZ", 
-		# 					dt.datetime(self.year, self.month, self.day, self.hour, self.minute,
-		# 								self.second, tzinfo=dt.timezone.utc))
 		return dt.datetime(self.year, self.month, self.day, self.hour, self.minute,
 							self.second, tzinfo=dt.timezone.utc).strftime(r"%Y%m%dT%H%M%SZ")
 
