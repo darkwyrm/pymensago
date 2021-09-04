@@ -22,7 +22,7 @@ def _validate_date(y: int, m: int, d: int) -> bool:
 		if d > 31:
 			return False
 	elif m in [ 4,6,9,11 ]:
-		if d > 31:
+		if d > 30:
 			return False
 	elif m == 2:
 		# It's annoying to handle leap year :/
@@ -72,7 +72,7 @@ class MDate:
 		self.month = month
 		self.day = day
 
-		if _validate_date(year, month, day).error():
+		if _validate_date(year, month, day):
 			self.format = MDATE_INVALID
 		else:
 			self.format = _get_format_type(year, month, day)
@@ -99,17 +99,17 @@ class MDate:
 	def as_string(self) -> str:
 		parts = []
 		if self.year:
-			parts.append(str(self.year))
+			parts.append("%.4d" % self.year)
 		
 		if self.month:
 			if self.year:
 				parts.append('-')
-			parts.append(str(self.month))
+			parts.append("%.2d" % self.month)
 		
 		if self.day:
 			if self.year or self.month:
 				parts.append('-')
-			parts.append(str(self.day))
+			parts.append("%.2d" % self.day)
 
 		return ''.join(parts)
 	
@@ -129,7 +129,7 @@ class MDate:
 			except:
 				return False
 
-			if len(y) != 4 or len(m) != 2 or len(d) != 2:
+			if len(parts[0]) != 4 or len(parts[1]) != 2 or len(parts[2]) != 2:
 				return False
 			
 		elif len(parts) == 2:
@@ -139,10 +139,10 @@ class MDate:
 			except:
 				return False
 
-			if len(parts[0]) == 4 and len(parts[1] == 2):
+			if len(parts[0]) == 4 and len(parts[1]) == 2:
 				y = first
 				m = second
-			elif len(parts[0]) == 2 and len(parts[1] == 2):
+			elif len(parts[0]) == 2 and len(parts[1]) == 2:
 				m = first
 				d = second
 			else:
@@ -153,8 +153,8 @@ class MDate:
 				y = int(parts[0])
 			except:
 				return False
-
-			if len(y) != 4:
+			
+			if len(parts[0]) != 4:
 				return False
 		
 		else:
@@ -227,12 +227,15 @@ class MDateTime:
 		self.minute = t.tm_min
 		self.second = t.tm_sec
 
+		return True
+
 	def as_string(self) -> str:
 		'''Returns the object as a string'''
-		return time.strftime(r"%Y%m%dT%H%M%SZ", 
-						time.struct_time(tm_year=self.year, tm_mon=self.month, tm_mday=self.day, 
-									tm_hour=self.hour, tm_min=self.minute, tm_sec=self.second,
-									tm_isdst=0))
+		# return dt.datetime.strftime(r"%Y%m%dT%H%M%SZ", 
+		# 					dt.datetime(self.year, self.month, self.day, self.hour, self.minute,
+		# 								self.second, tzinfo=dt.timezone.utc))
+		return dt.datetime(self.year, self.month, self.day, self.hour, self.minute,
+							self.second, tzinfo=dt.timezone.utc).strftime(r"%Y%m%dT%H%M%SZ")
 
 	def from_string(self, timestr: str) -> bool:
 		if not timestr:
