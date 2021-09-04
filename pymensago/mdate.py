@@ -200,6 +200,19 @@ class MDateTime:
 		return self.year >= 0 and self.month >= 1 and self.day >= 1 \
 			and self.hour >= 0 and self.minute >= 0 and self.second >= 0
 
+	def set(self, year: int, month: int, day: int, hour: int, minute: int, second: int) -> bool:
+		if not _validate_date(year, month, day) or not _validate_time(hour, minute, second):
+			return False
+		
+		self.year = year
+		self.month = month
+		self.day = day
+		self.hour = hour
+		self.minute = minute
+		self.second = second
+		
+		return True
+
 	def set_from_struct(self, t: time.struct_time) -> bool:
 		'''Sets the time from a time.struct_time object. The object is expected to be in UTC and 
 		will return False if t.tm_isdst != 0.'''
