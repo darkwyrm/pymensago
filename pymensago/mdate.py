@@ -2,8 +2,6 @@ import datetime as dt
 import re
 import time
 
-from retval import ErrOutOfRange, ErrUnimplemented, RetVal, ErrBadValue, ErrBadType
-
 # This module greatly simplifies working with dates and times within the Mensago codebase because
 # only concerns itself with one date format and one time format in UTC only. It also is restricted
 # to one of four groups of components: year, year-month, year-month-day, or month-day. All date
@@ -16,19 +14,16 @@ MDATE_MMDD = 3
 MDATE_YYYY = 4
 MDATE_INVALID = -1
 
-def _validate_date(y: int, m: int, d: int) -> RetVal:
-	if y < 0 or m < 0 or d < 0:
-		return RetVal(ErrOutOfRange, 'date components may not be negative')
-	
-	if m > 12:
-		return RetVal(ErrOutOfRange, 'month component out of range')
+def _validate_date(y: int, m: int, d: int) -> bool:
+	if y < 0 or m < 0 or d < 0 or m > 12:
+		return False
 	
 	if m in [ 1,3,5,7,8,10,12 ]:
 		if d > 31:
-			return RetVal(ErrOutOfRange, 'day component out of range')
+			return False
 	elif m in [ 4,6,9,11 ]:
 		if d > 31:
-			return RetVal(ErrOutOfRange, 'day component out of range')
+			return False
 	elif m == 2:
 		# It's annoying to handle leap year :/
 		febmax = 28
@@ -36,7 +31,9 @@ def _validate_date(y: int, m: int, d: int) -> RetVal:
 			febmax = 29
 
 		if d > febmax:
-			return RetVal(ErrOutOfRange, 'day component out of range')
+			return False
+	
+	return True
 
 
 def _validate_time(h: int, m: int, s: int) -> bool:
@@ -80,19 +77,19 @@ class MDate:
 		else:
 			self.format = _get_format_type(year, month, day)
 
-	def set(self, year, month, day) -> RetVal:
+	def set(self, year, month, day) -> bool:
 		self.year = year
 		self.month = month
 		self.day = day
 
 		status = _validate_date(year, month, day).error()
-		if status.error():
+		if not status:
 			self.format = MDATE_INVALID
 		else:
 			self.format = _get_format_type(year, month, day)
 		return status
 
-	def is_valid(self) -> RetVal:
+	def is_valid(self) -> bool:
 		'''Returns an error if the object's values are invalid'''
 		return _validate_date(self.year, self.month, self.day)
 
@@ -116,7 +113,7 @@ class MDate:
 
 		return ''.join(parts)
 	
-	def from_string(self, date: str) -> RetVal:
+	def from_string(self, date: str) -> bool:
 		'''Assigns a value to the object from a string. The format must be one of the following: 
 		YYYY-MM-DD, YYYY-MM, MM-DD, or YYYY. The year may be from 1 to 9999.'''
 		y = 0
@@ -130,17 +127,17 @@ class MDate:
 				m = int(parts[1])
 				d = int(parts[2])
 			except:
-				return RetVal(ErrBadValue, 'date component is not an integer')
+				return False
 
 			if len(y) != 4 or len(m) != 2 or len(d) != 2:
-				return RetVal(ErrBadValue, 'date format must be YYYY-MM-DD')
+				return False
 			
 		elif len(parts) == 2:
 			try:
 				first = int(parts[0])
 				second = int(parts[1])
 			except:
-				return RetVal(ErrBadValue, 'date component is not an integer')
+				return False
 
 			if len(parts[0]) == 4 and len(parts[1] == 2):
 				y = first
@@ -149,19 +146,19 @@ class MDate:
 				m = first
 				d = second
 			else:
-				return RetVal(ErrBadValue, 'Short date format must be YYYY-MM or MM-DD')
+				return False
 
 		elif len(parts) == 1:		
 			try:
 				y = int(parts[0])
 			except:
-				return RetVal(ErrBadValue, 'date component is not an integer')
+				return False
 
 			if len(y) != 4:
-				return RetVal(ErrBadValue, 'date format must be YYYY')
+				return False
 		
 		else:
-			return RetVal(ErrBadValue, 'invalid date format')
+			return False
 		
 		status = _validate_date(y, m, d)
 		if status.error():
@@ -172,10 +169,10 @@ class MDate:
 		self.day = d
 		self.format = _get_format_type(y,m,d)
 		
-		return RetVal()
+		return True
 
 	def unixtime(self) -> int:
-		'''Returns the '''
+		'''Returns the UNIX time for the date'''
 		return int(dt.datetime(self.year, self.month, self.day, tzinfo=dt.timezone.utc).timestamp())
 
 def today(self) -> MDate:
