@@ -172,3 +172,15 @@ def today(self) -> MDate:
 	return MDate(cd.year, cd.month, cd.day)
 
 
+class MDateTime:
+	'''This class is for simplified handling of times, unlike time()'''
+	def __init__(self_, t=''):
+		# TODO: Implement MDateTime.init()
+		pass
+
+	def now(self) -> MDateTime:
+		'''Sets the current object to the current time UTC and returns itself'''
+		# TODO: Implement MDateTime.now()
+		return self
+	
+
