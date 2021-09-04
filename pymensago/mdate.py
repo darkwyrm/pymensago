@@ -39,6 +39,16 @@ def _validate_date(y: int, m: int, d: int) -> RetVal:
 			return RetVal(ErrOutOfRange, 'day component out of range')
 
 
+def _validate_time(h: int, m: int, s: int) -> bool:
+	if h < 0 or m < 0 or s < 0:
+		return False
+	
+	if h > 23 or m > 59 or s > 59:
+		return False
+
+	return True
+
+
 def _get_format_type(year: int, month: int, day: int) -> int:
 	if year:
 		if month:
@@ -235,6 +245,9 @@ class MDateTime:
 		except:
 			return False
 
+		if not _validate_date(year, mon, day) or not _validate_time(hour, min, sec):
+			return False
+		
 		self.year = year
 		self.month = mon
 		self.day = day
