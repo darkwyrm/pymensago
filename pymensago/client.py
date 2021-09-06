@@ -202,8 +202,6 @@ class MensagoClient:
 			return RetVal(ErrInternalError, 'BUG: bad data from serverconn.register()') \
 					.set_value('status', 300)
 
-		# TODO: add support for setting name in regcode command
-				
 		regdata['password'] = pw
 		regdata['devpair'] = devpair
 		regdata['devid'] = profile.devid
