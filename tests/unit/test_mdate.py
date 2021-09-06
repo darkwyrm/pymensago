@@ -73,7 +73,16 @@ def test_mdatetime():
 	for timestr in fromstr_tests:
 		assert t.from_string(timestr), f"{funcname()}: legitimate from_string() failed: {timestr}"
 	
-	# TODO: Add more from_string() tests
+	fromstr_fail_tests = [
+		'20000504134501Z',
+		'20000504T134501',
+		r'2000\05\04T134501Z',
+		'2000.05.04T13.45.01Z',
+	]
+	for timestr in fromstr_fail_tests:
+		assert not t.from_string(timestr), \
+			f"{funcname()}: from_string() fail test passed: {timestr}"
+	
 	
 
 if __name__ == '__main__':
