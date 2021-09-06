@@ -192,6 +192,8 @@ def wrap_server_error(response) -> RetVal:
 	for key in ['Code', 'Status', 'Info', 'Data']:
 		if key in response:
 			out[key] = response[key]
+	if not response.info() and 'Status' in response:
+			out.set_info(response['Status'])
 	return out
 
 
