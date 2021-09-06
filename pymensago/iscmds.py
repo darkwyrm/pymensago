@@ -687,6 +687,8 @@ def usercard(conn: ServerConnection, owner: utils.MAddress, start_index: int,
 	response = conn.read_response(server_response)
 	if response.error():
 		return response
+	if response['Code'] != 200:
+		return wrap_server_error(response)
 	
 	data_size = int(response['Data']['Total-Size'])
 	status = conn.send_message({'Action':'TRANSFER'})
