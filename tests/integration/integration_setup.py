@@ -79,21 +79,39 @@ admin_profile_data = {
 
 # Test User Information
 
-# Name: Corbin Simons
-# Workspace-ID: 4418bf6c-000b-4bb3-8111-316e72030468
-# Domain: example.com
+user1_profile_data = {
+	'name': 'Corbin Simons',
+	'uid': utils.UserID('csimons'),
 
-# Initial User Contact Request Verification Key: d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D
-# Initial User Contact Request Signing Key: ip52{ps^jH)t$k-9bc_RzkegpIW?}FFe~BX&<V}9
+	# These fields are set by init_server()
+	'wid': utils.UUID('4418bf6c-000b-4bb3-8111-316e72030468'),
+	'domain': utils.Domain('example.com'),
+	'address': utils.MAddress(),
 
-# Initial User Contact Request Encryption Key: j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph
-# Initial User Contact Request Decryption Key: 55t6A0y%S?{7c47p(R@C*X#at9Y`q5(Rc#YBS;r}
+	'password': Password('MyS3cretPassw*rd'),
+	'crencryption': EncryptionPair(
+		CryptoString(r'CURVE25519:j(IBzX*F%OZF;g77O8jrVjM1a`Y<6-ehe{S;{gph'),
+		CryptoString(r'CURVE25519:55t6A0y%S?{7c47p(R@C*X#at9Y`q5(Rc#YBS;r}')),
+	
+	'crsigning': SigningPair(
+		CryptoString(r'ED25519:d0-oQb;{QxwnO{=!|^62+E=UYk2Y3mr2?XKScF4D'),
+		CryptoString(r'ED25519:ip52{ps^jH)t$k-9bc_RzkegpIW?}FFe~BX&<V}9')),
+	
+	'encryption': EncryptionPair(
+		CryptoString(r'CURVE25519:nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN'),
+		CryptoString(r'CURVE25519:4A!nTPZSVD#tm78d=-?1OIQ43{ipSpE;@il{lYkg')),
+	
+	'signing': SigningPair(
+		CryptoString(r'ED25519:k^GNIJbl3p@N=j8diO-wkNLuLcNF6#JF=@|a}wFE'),
+		CryptoString(r'ED25519:;NEoR>t9n3v%RbLJC#*%n4g%oxqzs)&~k+fH4uqi')),
+	
+	'storage': SecretKey(CryptoString(r'XSALSA20:(bk%y@WBo3&}(UeXeHeHQ|1B}!rqYF20DiDG+9^Q')),
+	'folder': SecretKey(CryptoString(r'XSALSA20:-DfH*_9^tVtb(z9j3Lu@_(=ow7q~8pq^<;;f%2_B')),
 
-# Initial User Encryption Key: nSRso=K(WF{P+4x5S*5?Da-rseY-^>S8VN#v+)IN
-# Initial User Decryption Key: 4A!nTPZSVD#tm78d=-?1OIQ43{ipSpE;@il{lYkg
-
-# Initial User Verification Key: ED25519:k^GNIJbl3p@N=j8diO-wkNLuLcNF6#JF=@|a}wFE
-# Initial User Signing Key: ED25519:;NEoR>t9n3v%RbLJC#*%n4g%oxqzs)&~k+fH4uqi
+	'device': EncryptionPair(
+		CryptoString(r'CURVE25519:94|@e{Kpsu_Qe{L@_U;QnOHz!eJ5zz?V@>+K)6F}'),
+		CryptoString(r'CURVE25519:!x2~_pSSCx1M$n7{QBQ5e*%~ytBzKL_C(bCviqYh')),
+}
 
 def funcname() -> str: 
 	frames = inspect.getouterframes(inspect.currentframe())
