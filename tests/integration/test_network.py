@@ -1,7 +1,7 @@
 from pycryptostring import CryptoString
 
 from tests.integration.integration_setup import setup_test, init_server, init_admin, init_user, \
-	setup_admin_profile, setup_profile_base, funcname
+	setup_profile, setup_profile_base, funcname, admin_profile_data
 from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
@@ -14,7 +14,7 @@ def test_addentry():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_addentry')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -42,7 +42,7 @@ def test_devkey():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_devkey')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 	
 	status = userprofile.profman.get_active_profile()
 	assert not status.error(), f"{funcname()}: failed to get active profile"
@@ -72,7 +72,7 @@ def test_getwid():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base(funcname())
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -95,7 +95,7 @@ def test_iscurrent():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base(funcname())
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -114,7 +114,7 @@ def test_orgcard():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base(funcname())
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -142,7 +142,7 @@ def test_preregister_regcode():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base(funcname())
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -201,7 +201,7 @@ def test_register():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_register')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 	
 	status = userprofile.profman.get_active_profile()
 	assert not status.error(), f"{funcname()}: failed to get active profile"
@@ -225,7 +225,7 @@ def test_reset_password():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_reset_password')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -276,7 +276,7 @@ def test_set_password():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_set_password')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -293,7 +293,7 @@ def test_set_password():
 	assert status.error() and status['Code'] == 402, \
 		"test_set_password: failed to catch bad password"
 	
-	status = iscmds.setpassword(conn, dbdata['admin_password'].hashstring,
+	status = iscmds.setpassword(conn, admin_profile_data['password'].hashstring,
 		newpassword.hashstring)
 	assert not status.error(), "test_set_password: failed to update password"
 
@@ -305,7 +305,7 @@ def test_set_status():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_setstatus')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -328,7 +328,7 @@ def test_unregister():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base('test_unregister')
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
@@ -364,7 +364,7 @@ def test_usercard():
 	dbconn = setup_test()
 	dbdata = init_server(dbconn)
 	test_folder = setup_profile_base(funcname())
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	# TODO: Finish test_usercard()
 	# A call to set up a test user here is needed
@@ -392,15 +392,15 @@ def test_usercard():
 
 
 if __name__ == '__main__':
-	# test_addentry()
-	# test_connect()
-	# test_devkey()
-	# test_iscurrent()
-	# test_orgcard()
-	# test_preregister_regcode()
-	# test_register()
-	# test_reset_password()
-	# test_set_password()
-	# test_set_status()
-	# test_unregister()
+	test_addentry()
+	test_connect()
+	test_devkey()
+	test_iscurrent()
+	test_orgcard()
+	test_preregister_regcode()
+	test_register()
+	test_reset_password()
+	test_set_password()
+	test_set_status()
+	test_unregister()
 	test_usercard()

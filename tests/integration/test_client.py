@@ -8,8 +8,8 @@ from pymensago.client import MensagoClient
 import pymensago.contact as contact
 import pymensago.iscmds as iscmds
 import pymensago.utils as utils
-from tests.integration.integration_setup import setup_admin_profile, setup_test, init_server, \
-	load_server_config, init_admin, funcname, setup_profile_base
+from tests.integration.integration_setup import setup_test, init_server, load_server_config, \
+	init_admin, funcname, setup_profile_base, setup_profile, admin_profile_data
 
 
 def test_connect():
@@ -32,7 +32,7 @@ def test_login():
 
 	pgdb = setup_test()
 	dbdata = init_server(pgdb)
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 	assert not status.error(), f"{funcname()}(): Couldn't set up admin profile"
 
 	status = client.connect(utils.Domain('example.com'))
@@ -54,7 +54,7 @@ def test_preregister():
 
 	pgdb = setup_test()
 	dbdata = init_server(pgdb)
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
@@ -116,7 +116,7 @@ def test_register():
 	# We have to set up the admin profile even though we don't use it. The server depends on the
 	# administrator profile having been set up before any users can register
 
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 	assert not status.error(), f"{funcname()}(): Couldn't set up admin profile"
 
 	status = client.connect(utils.Domain('example.com'))
@@ -142,7 +142,7 @@ def test_regcode():
 
 	pgdb = setup_test()
 	dbdata = init_server(pgdb)
-	status = setup_admin_profile(test_folder, dbdata)
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
@@ -169,8 +169,8 @@ def test_regcode():
 	client.disconnect()
 
 if __name__ == '__main__':
-	# test_connect()
-	# test_login()
-	# test_preregister()
-	# test_register()
+	test_connect()
+	test_login()
+	test_preregister()
+	test_register()
 	test_regcode()

@@ -43,18 +43,33 @@ from pymensago.workspace import Workspace
 
 # Test Admin Information
 
-# Initial Admin CR Encryption Key: CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{
-# Initial Admin CR Decryption Key: CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>
+admin_profile_data = {
+	'uid': utils.UserID('admin'),
 
-# Initial Admin CR Verification Key: ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|
-# Initial Admin CR Signing Key: ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;
+	# These fields are set by init_server()
+	'wid': utils.UUID(),
+	'domain': utils.Domain(),
 
-# Initial Admin Encryption Key: CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F
-# Initial Admin Decryption Key: CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$
-
-# Initial Admin Verification Key: 6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p
-# Initial Admin Signing Key: p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+
-
+	'password': Password('Linguini2Pegboard*Album'),
+	'crencryption': EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)),
+	
+	'crsigning': SigningPair(
+		CryptoString(r'ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|'),
+		CryptoString(r'ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;')),
+	
+	'encryption': EncryptionPair(
+		CryptoString(r'CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F'),
+		CryptoString(r'CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$')),
+	
+	'signing': SigningPair(
+		CryptoString(r'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p'),
+		CryptoString(r'ED25519:p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+')),
+	
+	'storage': SecretKey(CryptoString(r'XSALSA20:M^z-E(u3QFiM<QikL|7|vC|aUdrWI6VhN+jt>GH}')),
+	'folder': SecretKey(CryptoString(r'XSALSA20:H)3FOR}+C8(4Jm#$d+fcOXzK=Z7W+ZVX11jI7qh*'))
+}
 
 # Test User Information
 
@@ -231,6 +246,9 @@ def init_server(dbconn) -> dict:
 	cur.close()
 	dbconn.commit()	
 
+	admin_profile_data['wid'] = utils.UUID(admin_wid)
+	admin_profile_data['domain'] = utils.Domain('example.com')
+
 	return {
 		'configfile' : load_server_config(),
 		'ovkey' : keys['sign.public'],
@@ -242,7 +260,7 @@ def init_server(dbconn) -> dict:
 		'root_org_entry' : root_entry,
 		'second_org_entry' : new_entry,
 		'support_wid' : utils.UUID(support_wid),
-		'abuse_wid' : utils.UUID(abuse_wid)
+		'abuse_wid' : utils.UUID(abuse_wid),
 	}
 
 
@@ -288,9 +306,23 @@ def setup_profile_base(name):
 	return profiletest_folder
 
 
-def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
-	'''Creates the client-side profile for the administrator account. This call does not merely 
-	call the corresponding client-level functions so that crypto keys are the same from one test 
+# Profile_data fields
+# Note that the field names are carefully chosen -- for code efficiency they are the exact same
+# field names as those used in the database to identify the key types
+#
+# 'uid' - (UserID) user ID of the user
+# 'wid' - (UUID) workspace ID of the user
+# 'domain' - (Domain) domain of the user
+# 'password' - (Password) password object of the user's password
+# 'crencryption' - (EncryptionPair) contact request encryption pair
+# 'crsigning' - (SigningPair) contact request signing pair
+# 'encryption' - (EncryptionPair) general encryption pair
+# 'signing' - (SigningPair) general signing pair
+# 'folder' - (SecretKey) secret key for server-side folder name storage
+# 'storage' - (SecretKey) secret key for server-side file storage
+def setup_profile(profile_folder: str, config: dict, profile_data: dict) -> RetVal:
+	'''Creates the client-side profile for an account. This call does not merely call the 
+	corresponding client-level functions so that crypto keys are the same from one test 
 	to the next.'''
 
 	config['profile_folder'] = profile_folder
@@ -303,59 +335,24 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	assert not status.error(), f"{funcname()}(): Failed to get default profile"
 	profile = status['profile']
 
-	# The profile folder is assumed to be empty for the purposes of these tests. Thus, we will
-	# also assume that the primary profile for the integration tests is for the admin. The
-	# profile will not have any workspaces assigned to it, so we will create a workspace for the
-	# admin and add it to the primary profile.
+	# The profile folder is assumed to be empty for the purposes of these tests. 'primary' is
+	# assigned to the admin. Test users are assigned 'user1' and 'user2' for clarity.
 	
-	password = Password('Linguini2Pegboard*Album')
-	config['admin_password'] = password
-
+	
 	# In order to have consistent keys for debugging and testing purposes, we are going to more
 	# or less reimplement Workspace.generate() here.'
-
 	w = Workspace(profile.db, profile_folder)
 
-	w.uid = utils.UserID('admin')
-	w.wid = config['admin_wid']
-	w.domain = utils.Domain('example.com')
-	w.pw = password
+	w.uid = profile_data['uid']
+	w.wid = profile_data['wid']
+	w.domain = profile_data['domain']
+	w.pw = profile_data['password']
 
 	address = w.wid.as_string() + '/' + w.domain.as_string()
 
-	# Generate and add user's crypto keys
-
-	keys = {
-		'crencryption': EncryptionPair(
-			CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
-			CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)),
-		
-		'crsigning': SigningPair(
-			CryptoString(r'ED25519:E?_z~5@+tkQz!iXK?oV<Zx(ec;=27C8Pjm((kRc|'),
-			CryptoString(r'ED25519:u4#h6LEwM6Aa+f<++?lma4Iy63^}V$JOP~ejYkB;')),
-		
-		'encryption': EncryptionPair(
-			CryptoString(r'CURVE25519:Umbw0Y<^cf1DN|>X38HCZO@Je(zSe6crC6X_C_0F'),
-			CryptoString(r'CURVE25519:Bw`F@ITv#sE)2NnngXWm7RQkxg{TYhZQbebcF5b$')),
-		
-		'signing': SigningPair(
-			CryptoString(r'ED25519:6|HBWrxMY6-?r&Sm)_^PLPerpqOj#b&x#N_#C3}p'),
-			CryptoString(r'ED25519:p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+')),
-		
-		'storage': SecretKey(CryptoString(r'XSALSA20:M^z-E(u3QFiM<QikL|7|vC|aUdrWI6VhN+jt>GH}')),
-		'folder': SecretKey(CryptoString(r'XSALSA20:H)3FOR}+C8(4Jm#$d+fcOXzK=Z7W+ZVX11jI7qh*'))
-	}
-
-	config['admin_crepair'] = keys['crencryption']
-	config['admin_crspair'] = keys['crsigning']
-	config['admin_epair'] = keys['encryption']
-	config['admin_spair'] = keys['signing']
-	config['admin_storage'] = keys['storage']
-	config['admin_folder'] = keys['folder']
-
-	for k,v in keys.items():
-		status = auth.add_key(profile.db, v, address, k)
-		assert not status.error(), f"{funcname()}(): Failed to add {k} key to db"
+	for key in [ 'crencryption', 'crsigning', 'encryption', 'signing', 'folder', 'storage' ]:
+		status = auth.add_key(profile.db, profile_data[key], address, key)
+		assert not status.error(), f"{funcname()}(): Failed to add {key} key to db"
 	
 	# Add folder mappings
 	foldermap = FolderMapping()
@@ -372,7 +369,7 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 
 	for folder in folderlist:
 		foldermap.MakeID()
-		foldermap.Set(address, keys['folder'].pubhash, folder, 'root')
+		foldermap.Set(address, profile_data['folder'].pubhash, folder, 'root')
 		w.add_folder(foldermap)
 
 	# Create the folders themselves
@@ -380,7 +377,6 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	w.path.mkdir(parents=True, exist_ok=True)
 	w.path.joinpath('files').mkdir(exist_ok=True)
 	w.path.joinpath('files','attachments').mkdir(exist_ok=True)
-
 
 	status = profman.get_active_profile()
 	
@@ -392,7 +388,7 @@ def setup_admin_profile(profile_folder: str, config: dict) -> RetVal:
 	assert not status.error(), f"{funcname()}(): failure to set identity workspace"
 
 	return RetVal()
-	
+
 
 def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	'''Finishes setting up the admin account by registering it, logging in, and uploading a 
@@ -410,7 +406,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		profile = status['profile']
 	
 	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), config['admin_regcode'], 
-		config['admin_password'].hashstring, profile.devid, devpair)
+		admin_profile_data['password'].hashstring, profile.devid, devpair)
 	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
 
 	waddr = utils.WAddress()
@@ -421,7 +417,7 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
 	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, config['admin_password'].hashstring)
+	status = iscmds.password(conn, admin_profile_data['password'].hashstring)
 	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
 
 	status = iscmds.device(conn, profile.devid, devpair)
@@ -434,13 +430,13 @@ def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
 		'Workspace-ID':config['admin_wid'].as_string(),
 		'User-ID':'admin',
 		'Domain':'example.com',
-		'Contact-Request-Verification-Key':config['admin_crspair'].get_public_key(),
-		'Contact-Request-Encryption-Key':config['admin_crepair'].get_public_key(),
-		'Encryption-Key':config['admin_epair'].get_public_key(),
-		'Verification-Key':config['admin_spair'].get_public_key()
+		'Contact-Request-Verification-Key':admin_profile_data['crsigning'].get_public_key(),
+		'Contact-Request-Encryption-Key':admin_profile_data['crencryption'].get_public_key(),
+		'Encryption-Key':admin_profile_data['encryption'].get_public_key(),
+		'Verification-Key':admin_profile_data['signing'].get_public_key()
 	})
 
-	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), config['admin_crspair'])
+	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), admin_profile_data['crsigning'])
 	assert not status.error(), f"init_admin: failed to add entry: {status.info()}"
 
 	status = iscmds.iscurrent(conn, 1, config['admin_wid'])
