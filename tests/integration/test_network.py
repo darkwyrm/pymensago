@@ -373,8 +373,9 @@ def test_usercard():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
 
-	status = iscmds.orgcard(conn, 1, -1)
-	assert not status.error() and 'card' in status, ""
+	status = iscmds.usercard(conn, utils.MAddress('csimons/example.com'), 1, -1)
+	assert not status.error(), \
+		f"{funcname()}: subtest #1 usercard error {status.error()}: {status.info()}"
 
 	card = status['card']
 	assert card.type == 'User', f"{funcname()}(): subtest #1 wrong card type received"
@@ -395,11 +396,11 @@ if __name__ == '__main__':
 	# test_connect()
 	# test_devkey()
 	# test_iscurrent()
-	test_orgcard()
+	# test_orgcard()
 	# test_preregister_regcode()
 	# test_register()
 	# test_reset_password()
 	# test_set_password()
 	# test_set_status()
 	# test_unregister()
-	# test_usercard()
+	test_usercard()
