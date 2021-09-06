@@ -5,7 +5,7 @@ import uuid
 
 from retval import RetVal
 
-from tests.integration.integration_setup import setup_test, init_server, init_admin, \
+from tests.integration.integration_setup import setup_test, init_server, regcode_user, \
 	reset_workspace_dir, setup_profile_base, setup_profile, admin_profile_data
 import pymensago.serverconn as serverconn
 import pymensago.utils as utils
@@ -46,8 +46,8 @@ def test_copy():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_copy(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_copy: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_copy: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -79,8 +79,8 @@ def test_delete():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_delete(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_delete: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_delete: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -109,8 +109,8 @@ def test_download():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_download: failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_download: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_download: regcode_user failed: {status.info()}"
 
 	local_admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -141,8 +141,8 @@ def test_exists():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_exists(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_exists: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_exists: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -171,8 +171,8 @@ def test_getquotainfo():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_getquotainfo(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_getquotainfo: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_getquotainfo: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -200,8 +200,8 @@ def test_listfiles():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_listfiles(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_listfiles: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_listfiles: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -239,8 +239,8 @@ def test_listdirs():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_listdirs(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_listdirs: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_listdirs: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -277,8 +277,8 @@ def test_mkdir():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_mkdir(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_mkdir: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_mkdir: regcode_user failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
 		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
@@ -301,8 +301,8 @@ def test_move():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_move(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_move: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_move: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
@@ -334,8 +334,8 @@ def test_rmdir():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_rmdir: failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_rmdir: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_rmdir: regcode_user failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
 		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
@@ -358,8 +358,8 @@ def test_select():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_select: failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_select: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_select: regcode_user failed: {status.info()}"
 
 	status = serverconn.mkdir(conn, 
 		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
@@ -382,8 +382,8 @@ def test_setquota():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_setquota: failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_setquota: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_setquota: regcode_user failed: {status.info()}"
 
 	status = serverconn.setquota(conn, dbdata['admin_wid'].as_string(), 10240)
 	assert not status.error(), f"test_setquota: quota size change failed: {status.info()}"
@@ -404,8 +404,8 @@ def test_upload():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_upload: failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_upload: init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_upload: regcode_user failed: {status.info()}"
 
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())

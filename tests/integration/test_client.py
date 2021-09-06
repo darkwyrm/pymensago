@@ -9,7 +9,7 @@ import pymensago.contact as contact
 import pymensago.iscmds as iscmds
 import pymensago.utils as utils
 from tests.integration.integration_setup import setup_test, init_server, load_server_config, \
-	init_admin, funcname, setup_profile_base, setup_profile, admin_profile_data
+	funcname, setup_profile_base, setup_profile, admin_profile_data, regcode_user
 
 
 def test_connect():
@@ -37,7 +37,7 @@ def test_login():
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
-	status = init_admin(client.conn, dbdata)
+	status = regcode_user(client.conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	assert not status.error(), f"{funcname()}(): Couldn't init admin"
 	
 	status = client.disconnect()
@@ -58,9 +58,9 @@ def test_preregister():
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
-	status = init_admin(client.conn, dbdata)
+	status = regcode_user(client.conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	
-	# This small hack is because init_admin() does the logging in directly. This saves completely
+	# This small hack is because regcode_user() does the logging in directly. This saves completely
 	# restructuring all of the client-side integration tests
 	client.login_active = True
 	client.is_admin = True
@@ -121,7 +121,7 @@ def test_register():
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
-	status = init_admin(client.conn, dbdata)
+	status = regcode_user(client.conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	assert not status.error(), f"{funcname()}(): Couldn't init admin"
 	
 	status = client.disconnect()
@@ -146,7 +146,7 @@ def test_regcode():
 
 	status = client.connect(utils.Domain('example.com'))
 	assert not status.error(), f"{funcname()}(): Couldn't connect to server"
-	status = init_admin(client.conn, dbdata)
+	status = regcode_user(client.conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	assert not status.error(), f"{funcname()}(): Couldn't init admin"
 
 	userid = utils.UserID('33333333-3333-3333-3333-333333333333')

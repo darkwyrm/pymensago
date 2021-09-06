@@ -44,11 +44,13 @@ from pymensago.workspace import Workspace
 # Test Admin Information
 
 admin_profile_data = {
+	'name': 'Administrator',
 	'uid': utils.UserID('admin'),
 
 	# These fields are set by init_server()
 	'wid': utils.UUID(),
 	'domain': utils.Domain(),
+	'address': utils.MAddress(),
 
 	'password': Password('Linguini2Pegboard*Album'),
 	'crencryption': EncryptionPair(
@@ -68,7 +70,11 @@ admin_profile_data = {
 		CryptoString(r'ED25519:p;XXU0XF#UO^}vKbC-wS(#5W6=OEIFmR2z`rS1j+')),
 	
 	'storage': SecretKey(CryptoString(r'XSALSA20:M^z-E(u3QFiM<QikL|7|vC|aUdrWI6VhN+jt>GH}')),
-	'folder': SecretKey(CryptoString(r'XSALSA20:H)3FOR}+C8(4Jm#$d+fcOXzK=Z7W+ZVX11jI7qh*'))
+	'folder': SecretKey(CryptoString(r'XSALSA20:H)3FOR}+C8(4Jm#$d+fcOXzK=Z7W+ZVX11jI7qh*')),
+
+	'device': EncryptionPair(
+		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
+		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)),
 }
 
 # Test User Information
@@ -248,6 +254,7 @@ def init_server(dbconn) -> dict:
 
 	admin_profile_data['wid'] = utils.UUID(admin_wid)
 	admin_profile_data['domain'] = utils.Domain('example.com')
+	admin_profile_data['address'] = utils.MAddress('admin/example.com')
 
 	return {
 		'configfile' : load_server_config(),
@@ -310,10 +317,13 @@ def setup_profile_base(name):
 # Note that the field names are carefully chosen -- for code efficiency they are the exact same
 # field names as those used in the database to identify the key types
 #
+# 'name' - (str) the user's name
 # 'uid' - (UserID) user ID of the user
 # 'wid' - (UUID) workspace ID of the user
 # 'domain' - (Domain) domain of the user
+# 'address' - (MAddress) full address of the user -- exists just for convenience
 # 'password' - (Password) password object of the user's password
+# 'device' - (EncryptionPair) first device encryption pair
 # 'crencryption' - (EncryptionPair) contact request encryption pair
 # 'crsigning' - (SigningPair) contact request signing pair
 # 'encryption' - (EncryptionPair) general encryption pair
@@ -390,61 +400,55 @@ def setup_profile(profile_folder: str, config: dict, profile_data: dict) -> RetV
 	return RetVal()
 
 
-def init_admin(conn: serverconn.ServerConnection, config: dict) -> RetVal:
+def regcode_user(conn: serverconn.ServerConnection, config: dict, profile_data: dict, 
+	regcode: str) -> RetVal:
 	'''Finishes setting up the admin account by registering it, logging in, and uploading a 
 	root keycard entry'''
 	
-	devpair = EncryptionPair(
-		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
-		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
-	)
-	config['admin_devpair'] = devpair
-
 	status = userprofile.profman.get_active_profile()
 	profile = None
 	if not status.error():
 		profile = status['profile']
 	
-	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), config['admin_regcode'], 
-		admin_profile_data['password'].hashstring, profile.devid, devpair)
-	assert not status.error(), f"init_admin(): regcode failed: {status.info()}"
+	status = iscmds.regcode(conn, profile_data['address'], regcode, 
+		profile_data['password'].hashstring, profile.devid, profile_data['device'])
+	assert not status.error(), f"{funcname()}: regcode failed: {status.info()}"
 
 	waddr = utils.WAddress()
-	waddr.id = config['admin_wid']
-	waddr.domain = utils.Domain('example.com')
-	auth.add_device_session(profile.db, waddr, profile.devid, devpair)
+	waddr.id = profile_data['wid']
+	waddr.domain = profile_data['domain']
+	auth.add_device_session(profile.db, waddr, profile.devid, profile_data['device'])
 
-	status = iscmds.login(conn, config['admin_wid'], CryptoString(config['oekey']))
-	assert not status.error(), f"init_admin(): login phase failed: {status.info()}"
+	status = iscmds.login(conn, profile_data['wid'], CryptoString(config['oekey']))
+	assert not status.error(), f"{funcname()}: login phase failed: {status.info()}"
 
-	status = iscmds.password(conn, admin_profile_data['password'].hashstring)
-	assert not status.error(), f"init_admin(): password phase failed: {status.info()}"
+	status = iscmds.password(conn, profile_data['password'].hashstring)
+	assert not status.error(), f"{funcname()}: password phase failed: {status.info()}"
 
-	status = iscmds.device(conn, profile.devid, devpair)
-	assert not status.error(), "init_admin(): device phase failed: " \
-		f"{status.info()}"
+	status = iscmds.device(conn, profile.devid, profile_data['device'])
+	assert not status.error(), f"{funcname()}: device phase failed: {status.info()}"
 
 	entry = keycard.UserEntry()
 	entry.set_fields({
-		'Name':'Administrator',
-		'Workspace-ID':config['admin_wid'].as_string(),
-		'User-ID':'admin',
-		'Domain':'example.com',
-		'Contact-Request-Verification-Key':admin_profile_data['crsigning'].get_public_key(),
-		'Contact-Request-Encryption-Key':admin_profile_data['crencryption'].get_public_key(),
-		'Encryption-Key':admin_profile_data['encryption'].get_public_key(),
-		'Verification-Key':admin_profile_data['signing'].get_public_key()
+		'Name':profile_data['name'],
+		'Workspace-ID':profile_data['wid'].as_string(),
+		'User-ID':profile_data['uid'].as_string(),
+		'Domain':profile_data['domain'].as_string(),
+		'Contact-Request-Verification-Key':profile_data['crsigning'].get_public_key(),
+		'Contact-Request-Encryption-Key':profile_data['crencryption'].get_public_key(),
+		'Encryption-Key':profile_data['encryption'].get_public_key(),
+		'Verification-Key':profile_data['signing'].get_public_key()
 	})
 
-	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), admin_profile_data['crsigning'])
-	assert not status.error(), f"init_admin: failed to add entry: {status.info()}"
+	status = iscmds.addentry(conn, entry, CryptoString(config['ovkey']), profile_data['crsigning'])
+	assert not status.error(), f"{funcname()}: failed to add entry: {status.info()}"
 
-	status = iscmds.iscurrent(conn, 1, config['admin_wid'])
-	assert not status.error(), "init_admin(): admin iscurrent() success check failed: " \
+	status = iscmds.iscurrent(conn, 1, profile_data['wid'])
+	assert not status.error(), f"{funcname()}: user iscurrent() success check failed: " \
 		f"{status.info()}"
 
-	status = iscmds.iscurrent(conn, 2, config['admin_wid'])
-	assert not status.error(), "init_admin(): admin iscurrent() failure check failed: " \
+	status = iscmds.iscurrent(conn, 2, profile_data['wid'])
+	assert not status.error(), f"{funcname()}: user iscurrent() failure check failed: " \
 		f"{status.info()}"
 	
 	return RetVal()

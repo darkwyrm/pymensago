@@ -1,7 +1,7 @@
 from pycryptostring import CryptoString
 
-from tests.integration.integration_setup import setup_test, init_server, init_admin, init_user, \
-	setup_profile, setup_profile_base, funcname, admin_profile_data
+from tests.integration.integration_setup import setup_test, init_server, init_user, \
+	setup_profile, setup_profile_base, funcname, admin_profile_data, regcode_user
 from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
@@ -20,10 +20,10 @@ def test_addentry():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_addentry(): failed to connect to server: {status.info()}"
 
-	# Moved all the test code to integration_setup.init_admin(), because that kind of setup is 
+	# Moved all the test code to integration_setup.regcode_user(), because that kind of setup is 
 	# needed for other tests.
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_addentry(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_addentry(): regcode_user failed: {status.info()}"
 
 	conn.disconnect()
 
@@ -52,15 +52,15 @@ def test_devkey():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"{funcname()}(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"{funcname()}(): regcode_user failed: {status.info()}"
 
 	newdevpair = EncryptionPair(
 		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
 		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
 	)
 
-	status = iscmds.devkey(conn, profile.devid, dbdata['admin_devpair'], newdevpair)
+	status = iscmds.devkey(conn, profile.devid, admin_profile_data['device'], newdevpair)
 	assert not status.error(), f"{funcname()}(): error returned: {status.info()}"
 
 	conn.disconnect()
@@ -78,8 +78,8 @@ def test_getwid():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_getwid(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_getwid(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_getwid(): regcode_user failed: {status.info()}"
 
 	status = iscmds.getwid(conn, utils.UserID('admin'), utils.Domain('example.com'))
 	assert not status.error(), f"test_getwid(): getwid failed: {status.info()}"
@@ -282,10 +282,10 @@ def test_set_password():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_set_password(): failed to connect to server: {status.info()}"
 
-	# Moved all the test code to integration_setup.init_admin(), because that kind of setup is 
+	# Moved all the test code to integration_setup.regcode_user(), because that kind of setup is 
 	# needed for other tests.
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_set_password(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_set_password(): regcode_user failed: {status.info()}"
 
 	badpassword = Password('MyS3cretPassw*rd')
 	newpassword = Password('Renovate-Baggy-Grunt-Override')
@@ -311,8 +311,8 @@ def test_set_status():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_set_workstatus(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_set_workstatus(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_set_workstatus(): regcode_user failed: {status.info()}"
 
 	status = init_user(conn, dbdata)
 	assert not status.error(), f"test_set_workstatus(): init_user failed: {status.info()}"
@@ -334,8 +334,8 @@ def test_unregister():
 	status = conn.connect('localhost', 2001)
 	assert not status.error(), f"test_unregister(): failed to connect to server: {status.info()}"
 
-	status = init_admin(conn, dbdata)
-	assert not status.error(), f"test_unregister(): init_admin failed: {status.info()}"
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"test_unregister(): regcode_user failed: {status.info()}"
 
 	status = init_user(conn, dbdata)
 	assert not status.error(), f"test_unregister(): init_user failed: {status.info()}"
