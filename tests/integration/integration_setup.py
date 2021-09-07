@@ -83,10 +83,9 @@ user1_profile_data = {
 	'name': 'Corbin Simons',
 	'uid': utils.UserID('csimons'),
 
-	# These fields are set by init_server()
 	'wid': utils.UUID('4418bf6c-000b-4bb3-8111-316e72030468'),
 	'domain': utils.Domain('example.com'),
-	'address': utils.MAddress(),
+	'address': utils.MAddress('csimons/example.com'),
 
 	'password': Password('MyS3cretPassw*rd'),
 	'crencryption': EncryptionPair(
