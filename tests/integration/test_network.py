@@ -1,7 +1,9 @@
+from pymensago.contact import Name
 from pycryptostring import CryptoString
 
 from tests.integration.integration_setup import setup_test, init_server, init_user, \
-	setup_profile, setup_profile_base, funcname, admin_profile_data, regcode_user
+	setup_profile, setup_profile_base, funcname, admin_profile_data, regcode_user, user1_profile_data
+from pymensago.client import MensagoClient
 from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
 import pymensago.iscmds as iscmds
@@ -227,48 +229,59 @@ def test_reset_password():
 	test_folder = setup_profile_base('test_reset_password')
 	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
+	client = MensagoClient(test_folder)
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}: client failed to connect to server"
+
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"test_login(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"{funcname()}: failed to connect to server: {status.info()}"
+	regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 
-	status = userprofile.profman.get_active_profile()
-	profile = None
-	assert not status.error(), f"{funcname()}: failed to obtain active profile"
-	profile = status['profile']
+	# Preregister the regular user
+	regdata = iscmds.preregister(conn, user1_profile_data['wid'], user1_profile_data['uid'],
+				user1_profile_data['domain'])
+	assert not regdata.error(), f"{funcname()}: uid preregistration failed"
+	assert regdata['domain'].as_string() == 'example.com' and 'wid' in regdata \
+		and 'regcode' in regdata and regdata['uid'].as_string() == 'csimons', \
+		f"{funcname()}: user prereg failed to return expected data"
+	conn.disconnect()
 
-	password = Password('Linguini2Pegboard*Album')
-	keypair = EncryptionPair(
-		CryptoString(r'CURVE25519:mO?WWA-k2B2O|Z%fA`~s3^$iiN{5R->#jxO@cy6{'),
-		CryptoString(r'CURVE25519:2bLf2vMA?GA2?L~tv<PA9XOw6e}V~ObNi7C&qek>'	)
-	)
-	status = iscmds.regcode(conn, utils.MAddress('admin/example.com'), dbdata['admin_regcode'], 
-		password.hashstring, profile.devid, keypair)
-	assert not status.error(), f"test_reset_password(): regcode failed: {status.info()}"
+	# Log in as the user and set up the profile
+	client = MensagoClient(test_folder)
+	status = client.pman.create_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to create test user profile"
+	status = client.pman.activate_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to switch to test user profile"
 
-	status = iscmds.login(conn, dbdata['admin_wid'], CryptoString(dbdata['oekey']))
-	assert not status.error(), f"test_reset_password(): login phase failed: {status.info()}"
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}: client failed to connect to server"
+	status = client.redeem_regcode(user1_profile_data['address'], regdata['regcode'], 'Some*1Pass',
+								Name('Corbin', 'Simons'))
+	assert not status.error(), f"{funcname()}: client failed to regcode test user"
+	client.logout()
 
-	status = iscmds.password(conn, password.hashstring)
-	assert not status.error(), f"test_reset_password(): password phase failed: {status.info()}"
+	# Log out as the user, switch to the admin, and perform the reset
+	status = client.pman.activate_profile('primary')
+	assert not status.error(), f"{funcname()}: client failed to switch to back to admin profile"
+	status = client.login(utils.MAddress('admin/example.com'))
+	assert not status.error(), f"{funcname()}: client failed to log back in as admin"
 
-	status = iscmds.device(conn, profile.devid, keypair)
-	assert not status.error(), "test_reset_password(): device phase failed: " \
-		f"{status.info()}"
-
-	status = init_user(conn, dbdata)
-	assert not status.error(), f"test_reset_password(): user init failed: {status.info()}"
-
-	status = iscmds.reset_password(conn, dbdata['user_wid'])
-	assert not status.error(), f"test_reset_password(): password reset failed: {status.info()}"
+	status = iscmds.reset_password(client.conn, user1_profile_data['wid'])
+	assert not status.error(), f"{funcname()}: password reset failed: {status.info()}"
 	resetdata = status
 
-	status = iscmds.logout(conn)
-	assert not status.error(), f"test_reset_password(): admin logout failed: {status.info()}"
+	status = client.logout()
+	assert not status.error(), f"{funcname()}: admin logout failed: {status.info()}"
+	
+	# Switch to the user and test out the password reset
+	status = client.pman.activate_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed final switch to test user profile"
 
 	newpassword = Password('SomeOth3rPassw*rd')
-	status = iscmds.passcode(conn, dbdata['user_wid'], resetdata['resetcode'],
+	status = iscmds.passcode(client.conn, user1_profile_data['wid'], resetdata['resetcode'],
 		newpassword.hashstring)
-	assert not status.error(), f"test_reset_password(): passcode failed: {status.info()}"
+	assert not status.error(), f"{funcname()}: passcode failed: {status.info()}"
 
 
 def test_set_password():
@@ -392,15 +405,15 @@ def test_usercard():
 
 
 if __name__ == '__main__':
-	test_addentry()
-	test_connect()
-	test_devkey()
-	test_iscurrent()
-	test_orgcard()
-	test_preregister_regcode()
-	test_register()
+	# test_addentry()
+	# test_connect()
+	# test_devkey()
+	# test_iscurrent()
+	# test_orgcard()
+	# test_preregister_regcode()
+	# test_register()
 	test_reset_password()
-	test_set_password()
-	test_set_status()
-	test_unregister()
-	test_usercard()
+	# test_set_password()
+	# test_set_status()
+	# test_unregister()
+	# test_usercard()
