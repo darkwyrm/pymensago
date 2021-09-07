@@ -119,7 +119,9 @@ class MensagoClient:
 	def logout(self) -> RetVal:
 		'''Logs out of a server'''
 		self.login_active = False
-		return iscmds.logout(self.conn)
+		if self.conn.is_connected():
+			return iscmds.logout(self.conn)
+		return RetVal()
 
 	def preregister_account(self, id: UserID=None, domain: Domain=None) -> RetVal:
 		'''Create a new account on the local server. This is a simple command because it is not 
