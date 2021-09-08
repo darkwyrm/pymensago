@@ -1,8 +1,8 @@
 from pymensago.contact import Name
 from pycryptostring import CryptoString
 
-from tests.integration.integration_setup import setup_test, init_server, init_user, \
-	setup_profile, setup_profile_base, funcname, admin_profile_data, regcode_user, user1_profile_data
+from tests.integration.integration_setup import setup_test, init_server, user1_profile_data, \
+	setup_profile, setup_profile_base, funcname, admin_profile_data, regcode_user
 from pymensago.client import MensagoClient
 from pymensago.config import load_server_config
 from pymensago.encryption import EncryptionPair, Password
