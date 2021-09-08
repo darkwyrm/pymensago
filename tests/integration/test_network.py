@@ -420,14 +420,45 @@ def test_usercard():
 	test_folder = setup_profile_base(funcname())
 	status = setup_profile(test_folder, dbdata, admin_profile_data)
 
-	# TODO: Finish test_usercard()
-	# A call to set up a test user here is needed
+	client = MensagoClient(test_folder)
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}: client failed to connect to server"
 
 	conn = serverconn.ServerConnection()
 	status = conn.connect('localhost', 2001)
-	assert not status.error(), f"{funcname()}(): failed to connect to server: {status.info()}"
+	assert not status.error(), f"{funcname()}: failed to connect to server: {status.info()}"
+	regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 
-	status = iscmds.usercard(conn, utils.MAddress('csimons/example.com'), 1, -1)
+	# Preregister the regular user
+	regdata = iscmds.preregister(conn, user1_profile_data['wid'], user1_profile_data['uid'],
+				user1_profile_data['domain'])
+	assert not regdata.error(), f"{funcname()}: uid preregistration failed"
+	assert regdata['domain'].as_string() == 'example.com' and 'wid' in regdata \
+		and 'regcode' in regdata and regdata['uid'].as_string() == 'csimons', \
+		f"{funcname()}: user prereg failed to return expected data"
+	conn.disconnect()
+
+	# Log in as the user and set up the profile
+	client = MensagoClient(test_folder)
+	status = client.pman.create_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to create test user profile"
+	status = client.pman.activate_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to switch to test user profile"
+
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}: client failed to connect to server"
+	status = client.redeem_regcode(user1_profile_data['address'], regdata['regcode'], 'Some*1Pass',
+								Name('Corbin', 'Simons'))
+	assert not status.error(), f"{funcname()}: client failed to regcode test user"
+	client.logout()
+
+	# Log out as the user, switch to the admin, and perform the reset
+	status = client.pman.activate_profile('primary')
+	assert not status.error(), f"{funcname()}: client failed to switch to back to admin profile"
+	status = client.login(utils.MAddress('admin/example.com'))
+	assert not status.error(), f"{funcname()}: client failed to log back in as admin"
+
+	status = iscmds.usercard(client.conn, utils.MAddress('csimons/example.com'), 1, -1)
 	assert not status.error(), \
 		f"{funcname()}: subtest #1 usercard error {status.error()}: {status.info()}"
 
@@ -435,7 +466,7 @@ def test_usercard():
 	assert card.type == 'User', f"{funcname()}(): subtest #1 wrong card type received"
 	assert len(card.entries) == 2, f"{funcname()}(): subtest #1 card had wrong number of entries"
 
-	status = iscmds.orgcard(conn, 0, -1)
+	status = iscmds.usercard(client.conn, utils.MAddress('csimons/example.com'), 0, -1)
 	assert not status.error() and 'card' in status, ""
 
 	card = status['card']
@@ -456,5 +487,5 @@ if __name__ == '__main__':
 	# test_reset_password()
 	# test_set_password()
 	# test_set_status()
-	test_unregister()
-	# test_usercard()
+	# test_unregister()
+	test_usercard()
