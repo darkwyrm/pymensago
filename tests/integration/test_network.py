@@ -376,25 +376,40 @@ def test_unregister():
 	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	assert not status.error(), f"test_unregister(): regcode_user failed: {status.info()}"
 
-	status = init_user(conn, dbdata)
-	assert not status.error(), f"test_unregister(): init_user failed: {status.info()}"
-	
-	status = iscmds.logout(conn)
-	assert not status.error(), f"test_unregister(): logout failed: {status.info()}"
+	# Preregister the regular user
+	regdata = iscmds.preregister(conn, user1_profile_data['wid'], user1_profile_data['uid'],
+				user1_profile_data['domain'])
+	assert not regdata.error(), f"{funcname()}: uid preregistration failed"
+	assert regdata['domain'].as_string() == 'example.com' and 'wid' in regdata \
+		and 'regcode' in regdata and regdata['uid'].as_string() == 'csimons', \
+		f"{funcname()}: user prereg failed to return expected data"
+	conn.disconnect()
 
-	status = iscmds.login(conn, dbdata['user_wid'], CryptoString(dbdata['oekey']))
-	assert not status.error(), f"test_unregister(): user login phase failed: {status.info()}"
+	# Log in as the user and set up the profile
+	client = MensagoClient(test_folder)
+	status = client.pman.create_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to create test user profile"
+	status = client.pman.activate_profile('user1')
+	assert not status.error(), f"{funcname()}: client failed to switch to test user profile"
 
-	status = iscmds.password(conn, dbdata['user_password'].hashstring)
-	assert not status.error(), f"test_unregister(): password phase failed: {status.info()}"
+	status = client.connect(utils.Domain('example.com'))
+	assert not status.error(), f"{funcname()}: client failed to connect to server"
+	status = client.redeem_regcode(user1_profile_data['address'], regdata['regcode'], 'Some*1Pass',
+								Name('Corbin', 'Simons'))
+	assert not status.error(), f"{funcname()}: client failed to regcode test user"
+	client.logout()
 
-	status = iscmds.device(conn, dbdata['user_devid'], dbdata['user_devpair'])
-	assert not status.error(), f"test_unregister(): device phase failed: {status.info()}"
+	# Log out as the user, switch to the admin, and perform the reset
+	status = client.pman.activate_profile('primary')
+	assert not status.error(), f"{funcname()}: client failed to switch to back to admin profile"
+	status = client.login(utils.MAddress('admin/example.com'))
+	assert not status.error(), f"{funcname()}: client failed to log back in as admin"
 
-	status = iscmds.unregister(conn, dbdata['user_password'].hashstring, utils.UUID())
+	status = iscmds.unregister(client.conn, admin_profile_data['password'].hashstring,
+		user1_profile_data['wid'])
 	assert not status.error(), f"test_unregister(): unregister failed: {status.info()}"
 
-	conn.disconnect()
+	client.disconnect()
 
 
 def test_usercard():
