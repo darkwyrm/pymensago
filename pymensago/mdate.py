@@ -269,7 +269,7 @@ class MDateTime:
 		
 		return True
 
-def now(self) -> MDateTime:
+def now() -> MDateTime:
 	'''Returns an MDateTime containing the current time'''
 	out = MDateTime()
 	out.set_from_struct(time.gmtime())
