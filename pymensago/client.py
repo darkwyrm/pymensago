@@ -306,6 +306,10 @@ class MensagoClient:
 
 		return regdata
 
+	def unregister(self, wid: UUID=None) -> RetVal:
+		# TODO: Implement client.unregister()
+		return RetVal(ErrUnimplemented, "MensagoClient.unregister() not implemented")
+	
 	def update_keycard(self) -> RetVal:
 		'''Creates a new entry in the user's keycard. New keys are created and added to the database'''
 		
