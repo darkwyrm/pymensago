@@ -8,7 +8,7 @@ from retval import ErrBadType, RetVal, ErrBadValue, ErrExists, ErrServerError, E
 
 from pymensago.encryption import DecryptionFailure, EncryptionPair, PublicKey, SigningPair
 from pymensago.errorcodes import *	# pylint: disable=unused-wildcard-import,wildcard-import
-from pymensago.keycard import EntryBase, Keycard, OrgEntry
+from pymensago.keycard import EntryBase, Keycard, OrgEntry, UserEntry
 from pymensago.serverconn import ServerConnection, server_response, wrap_server_error
 import pymensago.utils as utils
 
@@ -687,8 +687,6 @@ def usercard(conn: ServerConnection, owner: utils.MAddress, start_index: int,
 	response = conn.read_response(server_response)
 	if response.error():
 		return response
-	if response['Code'] != 200:
-		return wrap_server_error(response)
 	
 	data_size = int(response['Data']['Total-Size'])
 	status = conn.send_message({'Action':'TRANSFER'})
@@ -713,10 +711,10 @@ def usercard(conn: ServerConnection, owner: utils.MAddress, start_index: int,
 		entry_strings.pop()
 	
 	card = Keycard()
-	card.type = 'Organization'
+	card.type = 'User'
 	for entrystr in entry_strings:
 		if entrystr.startswith('----- BEGIN USER ENTRY -----\r\n'):
-			entry = OrgEntry()
+			entry = UserEntry()
 			status = entry.set(entrystr[29:].encode())
 			if status.error():
 				return status

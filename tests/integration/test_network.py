@@ -464,15 +464,8 @@ def test_usercard():
 
 	card = status['card']
 	assert card.type == 'User', f"{funcname()}(): subtest #1 wrong card type received"
-	assert len(card.entries) == 2, f"{funcname()}(): subtest #1 card had wrong number of entries"
+	assert len(card.entries) == 1, f"{funcname()}(): subtest #1 card had wrong number of entries"
 
-	status = iscmds.usercard(client.conn, utils.MAddress('csimons/example.com'), 0, -1)
-	assert not status.error() and 'card' in status, ""
-
-	card = status['card']
-	assert card.type == 'User', f"{funcname()}(): subtest #2 wrong card type received"
-	assert len(card.entries) == 1, f"{funcname()}(): subtest #2 card had wrong number of entries"
-	
 	conn.disconnect()
 
 
