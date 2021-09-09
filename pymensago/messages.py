@@ -6,6 +6,8 @@ class Message:
 		self.id = UUID()
 		self.sender = WAddress()
 		self.recipient = WAddress()
+		self.cc = list()
+		self.bcc = list()
 		self.time = MDateTime()
 		self.thread_id = UUID()
 		self.subject = ''
@@ -38,3 +40,33 @@ class Message:
 		
 		return '\n'.join(out)
 
+	def flatten(self) -> dict:
+		out = {
+			'Type': 'usermessage',
+			'Version': '1.0',
+			'ID': self.id.as_string(),
+			'From': self.sender.as_string(),
+			'To': self.recipient.as_string(),
+			'Date': self.time.as_string(),
+			'ThreadID': self.thread_id.as_string(),
+			'Subject': self.subject,
+			'Body': self.body
+		}
+
+		if len(self.cc) > 0:
+			out['CC'] = list()
+			for item in self.cc:
+				out['CC'].append(item.as_string())
+
+		if len(self.bcc) > 0:
+			out['BCC'] = list()
+			for item in self.cc:
+				out['BCC'].append(item.as_string())
+
+		if len(self.images) > 0:
+			out['Images'] = self.images
+
+		if len(self.attachments) > 0:
+			out['Attachments'] = self.attachments
+
+		return out
