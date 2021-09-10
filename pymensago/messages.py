@@ -21,6 +21,19 @@ class Message:
 		}
 
 
+class SystemMessage:
+	'''This is the base class for all system messages'''
+	def __init__(self) -> None:
+		super().__init__()
+		self.type = 'sysmessage'
+		self.subtype = ''
+
+	def flatten(self) -> dict:
+		out = super().flatten()
+		out['subtype'] = self.subtype
+		return out
+
+
 class UserMessage (Message):
 	def __init__(self) -> None:
 		super().__init__()
