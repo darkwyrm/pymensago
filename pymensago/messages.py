@@ -21,19 +21,6 @@ class Message:
 		}
 
 
-class SystemMessage:
-	'''This is the base class for all system messages'''
-	def __init__(self) -> None:
-		super().__init__()
-		self.type = 'sysmessage'
-		self.subtype = ''
-
-	def flatten(self) -> dict:
-		out = super().flatten()
-		out['subtype'] = self.subtype
-		return out
-
-
 class UserMessage (Message):
 	def __init__(self) -> None:
 		super().__init__()
@@ -93,4 +80,40 @@ class UserMessage (Message):
 		if len(self.attachments) > 0:
 			out['Attachments'] = self.attachments
 
+		return out
+
+
+class SystemMessage (Message):
+	'''This is the base class for all system messages'''
+	def __init__(self) -> None:
+		super().__init__()
+		self.type = 'sysmessage'
+		self.subtype = ''
+
+	def flatten(self) -> dict:
+		out = super().flatten()
+		out['subtype'] = self.subtype
+		return out
+
+
+# Constants for the different subtypes
+CONTACT_REQUEST_INITIATE = 'contactreq.1'
+CONTACT_REQUEST_RESPONSE = 'contactreq.2'
+CONTACT_REQUEST_ACK = 'contactreq.3'
+
+class ContactRequest (SystemMessage):
+	'''This message type is used for messages used during the contact request process. Note that 
+	the subtype must be specified before a ContactRequest instance can be used.'''
+	def __init__(self, subtype='', contact_info=dict(), msg='') -> None:
+		super().__init__()
+		self.type = 'sysmessage'
+		self.subtype = subtype
+		self.contact_info = contact_info
+		self.message = msg
+
+	def flatten(self) -> dict:
+		out = super().flatten()
+		out['subtype'] = self.subtype
+		out['ContactInfo'] = self.contact_info
+		out['Message'] = self.message
 		return out
