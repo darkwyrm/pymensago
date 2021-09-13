@@ -1,7 +1,7 @@
 import inspect
 
 import pymensago.mdate as mdate
-from pymensago.messages import Message
+import pymensago.messages as messages
 import pymensago.utils as utils
 
 def funcname() -> str: 
@@ -9,12 +9,12 @@ def funcname() -> str:
 	return frames[1].function
 
 
-def test_message_asstring():
+def test_message_string():
 	'''Tests the Message.as_string() method'''
 
 	current_time = mdate.now()
 	
-	msg = Message()
+	msg = messages.UserMessage()
 	msg.id = utils.UUID('11111111-1111-1111-1111-111111111111')
 	msg.sender = utils.WAddress('22222222-2222-2222-2222-222222222222/example.com')
 	msg.recipient = utils.WAddress('33333333-3333-3333-3333-333333333333/example.com')
