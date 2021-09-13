@@ -512,6 +512,92 @@ def select(conn: ServerConnection, path: str) -> RetVal:
 	return RetVal()
 
 
+def send(conn: ServerConnection, localpath: str, domain: utils.Domain, tempname='', offset=-1,
+	hashstr=''):
+	'''Uploads a message to the server for delivery. tempname and offset are passed to the function if 
+	resuming a previous upload. hashstr expects CryptoString-formatted data and can be passed 
+	to the function to save recalculating the hash of the file data.'''
+
+	try:	
+		filesize = os.path.getsize(localpath)
+	except OSError as e:
+		return RetVal(ErrBadValue, str(e))
+	except Exception as e:
+		return RetVal().wrap_exception(e)
+	
+	if offset >= 0 and offset > filesize:
+		return RetVal(ErrBadValue, 'bad offset')
+	
+	if (offset >= 0 and not tempname) or (offset < 0 and tempname):
+		return RetVal(ErrBadValue, 'both tempname and offset must both be set')
+	
+	if not hashstr:
+		status = hashfile(localpath)
+		if status.error():
+			return status
+		hashstr = status['hash']
+	
+	status = conn.send_message({
+		'Action': 'SEND',
+		'Data': {
+			'Size': str(filesize),
+			'Hash': hashstr,
+			'Domain': domain.as_string()
+		}
+	})
+	if status.error():
+		return status
+
+	response = conn.read_response(server_response)
+	if response['Code'] != 100:
+		return wrap_server_error(response)
+	
+	totalsent = 0
+	try:
+		handle = open(localpath, 'rb')
+	except Exception as e:
+		return RetVal(ErrFilesystemError, e)
+
+	if offset > 0:
+		handle.seek(offset)
+
+	try:
+		filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
+	except Exception as e:
+		handle.close()
+		return RetVal(ErrFilesystemError, e).set_values({
+			'sent': totalsent,
+			'tempname': response['TempName']
+		})
+	while filedata:
+		try:
+			sent_size = conn.socket.send(filedata)
+		except Exception as e:
+			handle.close()
+			return RetVal(ErrNetworkError, e).set_values({
+				'sent': totalsent,
+				'tempname': response['TempName']
+			})
+		totalsent = totalsent + sent_size
+
+		try:
+			filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
+		except Exception as e:
+			handle.close()
+			return RetVal(ErrFilesystemError, e).set_values({
+				'sent': totalsent,
+				'tempname': response['TempName']
+			})
+	handle.close()
+
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+
+	return RetVal().set_value("FileName", response['Data']['FileName'])
+
+
+
 def setquota(conn: ServerConnection, wid: str, size: int) -> RetVal:
 	'''Admin-only: set size of a workspace's quota'''
 
