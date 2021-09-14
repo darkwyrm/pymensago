@@ -469,33 +469,3 @@ def regcode_user(conn: serverconn.ServerConnection, config: dict, profile_data: 
 		f"{status.info()}"
 	
 	return RetVal()
-
-
-def init_user(conn: serverconn.ServerConnection, config: dict) -> RetVal:
-	'''Creates a test user for command testing'''
-	
-	userid = utils.UserID('33333333-3333-3333-3333-333333333333')
-	status = iscmds.preregister(conn, userid, utils.UserID('csimons'), utils.Domain('example.com'))
-	assert not status.error(), "init_user(): uid preregistration failed"
-	assert status['domain'].as_string() == 'example.com' and \
-		'wid' in status and \
-		'regcode' in status and	\
-		status['uid'].as_string() == 'csimons', "init_user(): failed to return expected data"
-
-	devid = utils.UUID()
-	devid.generate()
-	regdata = status
-	password = Password('MyS3cretPassw*rd')
-	devpair = EncryptionPair()
-	status = iscmds.regcode(conn, utils.MAddress('csimons/example.com'), regdata['regcode'], 
-		password.hashstring, devid, devpair)
-	assert not status.error(), "init_user(): uid regcode failed"
-
-	config['user_wid'] = userid
-	config['user_uid'] = utils.UserID(regdata['uid'])
-	config['user_domain'] = utils.Domain(regdata['domain'])
-	config['user_devid'] = devid
-	config['user_devpair'] = devpair
-	config['user_password'] = password
-
-	return RetVal()
