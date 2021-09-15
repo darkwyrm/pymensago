@@ -53,6 +53,7 @@ admin_profile_data = {
 	'wid': utils.UUID(),
 	'domain': utils.Domain(),
 	'address': utils.MAddress(),
+	'waddress': utils.WAddress(),
 
 	'password': Password('Linguini2Pegboard*Album'),
 	'crencryption': EncryptionPair(
@@ -88,6 +89,7 @@ user1_profile_data = {
 	'wid': utils.UUID('4418bf6c-000b-4bb3-8111-316e72030468'),
 	'domain': utils.Domain('example.com'),
 	'address': utils.MAddress('csimons/example.com'),
+	'waddress': utils.WAddress('4418bf6c-000b-4bb3-8111-316e72030468/example.com'),
 
 	'password': Password('MyS3cretPassw*rd'),
 	'crencryption': EncryptionPair(
@@ -274,6 +276,7 @@ def init_server(dbconn) -> dict:
 	admin_profile_data['wid'] = utils.UUID(admin_wid)
 	admin_profile_data['domain'] = utils.Domain('example.com')
 	admin_profile_data['address'] = utils.MAddress('admin/example.com')
+	admin_profile_data['waddress'] = utils.WAddress(admin_wid + 'example.com')
 
 	return {
 		'configfile' : load_server_config(),

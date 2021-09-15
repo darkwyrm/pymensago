@@ -1,17 +1,58 @@
-from tests.integration.integration_setup import user1_profile_data, funcname, setup_two_profiles
+from tests.integration.integration_setup import user1_profile_data, funcname, setup_two_profiles, \
+	admin_profile_data
+from pymensago.envelope import Envelope
 import pymensago.iscmds as iscmds
+import pymensago.messages as messages
 import pymensago.utils as utils
 
 def test_local_delivery():
 	'''Tests the SEND command for the sender and then GETUPDATES on the recipient side'''
-	# TODO: Finish implementing test_local_delivery()
 
 	status = setup_two_profiles('test_local_delivery')
 	assert not status.error(), f"{funcname}: profile setup failure: {status.error()}"
-	client = status['client']
+	setupdata = status
+	client = setupdata['client']
 
 	status = client.login(utils.MAddress('admin/example.com'))
 	assert not status.error(), f"{funcname}: admin login failure: {status.error()}"
+
+	# Construct a test contact request, which is the only kind of message allowed to be sent
+	# to a person not in your address book
+	cr = messages.ContactRequest(messages.CONTACT_REQUEST_INITIATE)
+	cr.contact_info = {
+		'Header': { 'Version':'1.0', 'EntityType':'Individual' },
+		'GivenName': 'Example.com',
+		'FamilyName': 'Admin',
+		'FormattedName': 'Example.com Admin',
+		'Mensago': [
+			{	'Label': 'Primary',
+				'UserID': admin_profile_data['uid'].as_string(),
+				'Domain': admin_profile_data['domain'].as_string(),
+				'WorkspaceID': admin_profile_data['wid'].as_string()
+			}
+		]
+	}
+	cr.message = 'I would like to connect with you in case you need help.\n\n--Admin'
+
+	# Assemble the envelope and save to disk so that it can be sent
+	
+	env = Envelope()
+	env.payload = cr
+
+	# Proper clients will do a keycard lookup for the organization and get the key from there. This
+	# is an integration test under very controlled conditions, so we can skip that part and only
+	# test the code we really want to test.
+	status = env.set_sender(admin_profile_data['waddress'], user1_profile_data['waddress'],
+		setupdata['dbdata']['oekey'])
+	assert not status.error(), f"{funcname()}: Failed to encrypt sender information"
+
+	# This is exactly the same call only because the sender and receiver are on the same server.
+	# If they weren't, the key here would be the receiving organization's encryption key
+	status = env.set_receiver(admin_profile_data['waddress'], user1_profile_data['waddress'],
+		setupdata['dbdata']['oekey'])
+	assert not status.error(), f"{funcname()}: Failed to encrypt receiver information"
+
+	# TODO: Finish implementing test_local_delivery()
 
 	client.disconnect()	
 
