@@ -92,7 +92,7 @@ class SystemMessage (Message):
 
 	def flatten(self) -> dict:
 		out = super().flatten()
-		out['subtype'] = self.subtype
+		out['Subtype'] = self.subtype
 		return out
 
 
@@ -113,7 +113,7 @@ class ContactRequest (SystemMessage):
 
 	def flatten(self) -> dict:
 		out = super().flatten()
-		out['subtype'] = self.subtype
+		out['Subtype'] = self.subtype
 		out['ContactInfo'] = self.contact_info
 		out['Message'] = self.message
 		return out
