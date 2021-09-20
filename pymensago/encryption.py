@@ -424,6 +424,10 @@ class SecretKey (CryptoKey):
 	def __str__(self):
 		return self.get_key()
 
+	def as_string(self) -> str:
+		'''Returns the key encoded in base85'''
+		return self.key.as_string()
+
 	def get_key(self) -> str:
 		'''Returns the key encoded in base85'''
 		return self.key.as_string()
