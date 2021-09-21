@@ -425,7 +425,7 @@ class MensagoClient:
 		msgdata = status['envelope']
 		totalsize = len(msgdata) + len(domain.as_string()) + 49
 		if totalsize <= 16384:
-			return serverconn.sendfast(self.conn, msgdata)
+			return serverconn.sendfast(self.conn, msgdata, domain)
 				
 		# TODO: finish implementing client.send()
 
