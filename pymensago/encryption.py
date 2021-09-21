@@ -83,6 +83,10 @@ class PublicKey (CryptoKey):
 			raise TypeError
 		self.public = public
 		self.pubhash = blake2hash(self.public.data.encode())
+	
+	def as_string(self):
+		'''Returns the key as a string'''
+		return self.public.as_string()
 
 	def encrypt(self, data : bytes) -> RetVal:
 		'''Encrypt the passed data using the public key and return the Base85-encoded data in the 
@@ -239,6 +243,10 @@ class VerificationKey (CryptoKey):
 			raise TypeError
 		self.public = public
 		self.pubhash = blake2hash(self.public.data.encode())
+
+	def as_string(self):
+		'''Returns the key as a string'''
+		return self.public.as_string()
 
 	def verify(self, data : bytes, data_signature : CryptoString) -> RetVal:
 		'''Return a Base85-encoded signature for the supplied data in the field 'signature'.'''
@@ -424,9 +432,13 @@ class SecretKey (CryptoKey):
 	def __str__(self):
 		return self.get_key()
 
+	def is_valid(self):
+		return self.key.is_valid()
+
 	def as_string(self) -> str:
 		'''Returns the key encoded in base85'''
 		return self.key.as_string()
+	
 	def get_key(self) -> str:
 		'''Returns the key encoded in base85'''
 		return self.key.as_string()
