@@ -92,7 +92,8 @@ class Envelope:
 			return RetVal(ErrBadValue)
 		
 		try:
-			tag = json.dumps({ 'From': sender.as_string(), 'RecipientDomain': recipient.domain })
+			tag = json.dumps({ 'From': sender.as_string(), 
+							'RecipientDomain': recipient.domain.as_string() })
 		except Exception as e:
 			return RetVal(ErrBadData, 'JSON marshalling error')
 
@@ -112,7 +113,8 @@ class Envelope:
 			return RetVal(ErrBadValue)
 		
 		try:
-			tag = json.dumps({ 'To': recipient.as_string(), 'SenderDomain': sender.domain })
+			tag = json.dumps({ 'To': recipient.as_string(),
+							'SenderDomain': sender.domain.as_string() })
 		except Exception as e:
 			return RetVal(ErrBadData, 'JSON marshalling error')
 

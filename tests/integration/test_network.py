@@ -1,5 +1,7 @@
 from tests.integration.integration_setup import user1_profile_data, funcname, setup_two_profiles, \
 	admin_profile_data
+
+from pycryptostring import CryptoString
 from pymensago.envelope import Envelope
 import pymensago.iscmds as iscmds
 import pymensago.messages as messages
@@ -43,13 +45,13 @@ def test_local_delivery():
 	# is an integration test under very controlled conditions, so we can skip that part and only
 	# test the code we really want to test.
 	status = env.set_sender(admin_profile_data['waddress'], user1_profile_data['waddress'],
-		setupdata['dbdata']['oekey'])
+		CryptoString(setupdata['dbdata']['oekey']))
 	assert not status.error(), f"{funcname()}: Failed to encrypt sender information"
 
 	# This is exactly the same call only because the sender and receiver are on the same server.
 	# If they weren't, the key here would be the receiving organization's encryption key
 	status = env.set_receiver(admin_profile_data['waddress'], user1_profile_data['waddress'],
-		setupdata['dbdata']['oekey'])
+		CryptoString(setupdata['dbdata']['oekey']))
 	assert not status.error(), f"{funcname()}: Failed to encrypt receiver information"
 
 	# TODO: Finish implementing test_local_delivery()
@@ -75,5 +77,5 @@ def test_set_status():
 
 
 if __name__ == '__main__':
-	test_set_status()
+	# test_set_status()
 	test_local_delivery()
