@@ -4,11 +4,13 @@ from pycryptostring import CryptoString
 from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
 import socket
 
-from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, ErrExists
+from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, \
+	ErrExists, ErrOutOfRange
 
 import pymensago.auth as auth
 import pymensago.contact as contact
 from pymensago.contactdb import load_field
+from pymensago.envelope import Envelope
 import pymensago.iscmds as iscmds
 import pymensago.keycard as keycard
 import pymensago.kcresolver as kcresolver
@@ -409,6 +411,26 @@ class MensagoClient:
 		status = iscmds.addentry(self.conn, entry, ovkey, crspair)
 
 		return status
+
+	def send(self, msg: Envelope, domain: utils.Domain) -> RetVal:
+		'''Uploads an encrypted message to the server for delivery. Whenever possible this method 
+		uses the SENDFAST command for lower resource usage and faster processing.'''
+		if not self.is_logged_in():
+			return ErrNotLoggedIn
+		
+		status = msg.marshall()
+		if status.error():
+			return status.error()
+		
+		msgdata = status['envelope']
+		totalsize = len(msgdata) + len(domain.as_string()) + 49
+		if totalsize <= 16384:
+			return serverconn.sendfast(self.conn, msgdata)
+				
+		# TODO: finish implementing client.send()
+
+		return RetVal(ErrUnimplemented)
+
 
 	def _setup_workspace(self, profile: userprofile.Profile, regdata: dict) -> RetVal:
 		'''This finishes all the profile and workspace setup common to both standard registration 

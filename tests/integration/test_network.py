@@ -59,8 +59,8 @@ def test_local_delivery():
 	status = env.set_msg_key(user1_profile_data['crencryption'].public)
 	assert not status.error(), f"{funcname()}: Failed to set message key"
 
-	status = env.marshall()
-	assert not status.error(), f"{funcname()}: Failed to marshall envelope data"
+	status = client.send(env, user1_profile_data['domain'])
+	assert not status.error(), f"{funcname()}: Failed to send message"
 
 	# TODO: Finish implementing test_local_delivery()
 
