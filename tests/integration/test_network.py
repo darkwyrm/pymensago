@@ -54,6 +54,11 @@ def test_local_delivery():
 		CryptoString(setupdata['dbdata']['oekey']))
 	assert not status.error(), f"{funcname()}: Failed to encrypt receiver information"
 
+	# set_msg_key() sets up the message encryption and takes the CryptoString public key of the 
+	# recipient
+	status = env.set_msg_key(user1_profile_data['crencryption'].)
+	assert not status.error(), f"{funcname()}: Failed to encrypt receiver information"
+
 	# TODO: Finish implementing test_local_delivery()
 
 	client.disconnect()	
