@@ -56,8 +56,11 @@ def test_local_delivery():
 
 	# set_msg_key() sets up the message encryption and takes the CryptoString public key of the 
 	# recipient
-	status = env.set_msg_key(user1_profile_data['crencryption'].)
-	assert not status.error(), f"{funcname()}: Failed to encrypt receiver information"
+	status = env.set_msg_key(user1_profile_data['crencryption'].public)
+	assert not status.error(), f"{funcname()}: Failed to set message key"
+
+	status = env.marshall()
+	assert not status.error(), f"{funcname()}: Failed to marshall envelope data"
 
 	# TODO: Finish implementing test_local_delivery()
 

@@ -41,12 +41,10 @@ class Envelope:
 		if not self.msgkey.is_valid():
 			return RetVal(RequiredDataMissing, 'message key missing')
 		
-		status = cs.validate(self.fields['KeyHash'])
-		if status.error():
+		if not cs.CryptoString(self.fields['KeyHash']).is_valid():
 			return RetVal(ErrInternalError, 'BUG: bad msg key hash')
 		
-		status = cs.validate(self.fields['PayloadKey'])
-		if status.error():
+		if cs.CryptoString(self.fields['PayloadKey']).is_valid():
 			return RetVal(ErrInternalError, 'BUG: bad payload key')
 		
 		if self.fields['Version'] != '1.0':
@@ -60,11 +58,10 @@ class Envelope:
 		except Exception as e:
 			return RetVal.wrap_exception(e)
 		
-		secretkey = SecretKey(self.msgkey)
-		paystr = secretkey.encrypt(json.dumps(self.fields).encode())
+		paystr = self.msgkey.encrypt(json.dumps(self.fields).encode())
 
 		return RetVal().set_value('envelope',
-					'\n'.join[ 'MENSAGO', envstr, '----------', self.msgkey.prefix, paystr ])
+					'\n'.join(['MENSAGO', envstr, '----------', self.msgkey.key.prefix, paystr]))
 		
 
 	def set_msg_key(self, recipientkey: cs.CryptoString) -> RetVal:
