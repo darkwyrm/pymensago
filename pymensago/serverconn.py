@@ -7,7 +7,7 @@ import os
 import socket
 
 import jsonschema
-from retval import RetVal, ErrBadValue, ErrFilesystemError, ErrNetworkError, ErrServerError
+from retval import ErrOutOfRange, RetVal, ErrBadValue, ErrFilesystemError, ErrNetworkError, ErrServerError
 
 from pymensago.errorcodes import *	# pylint: disable=wildcard-import
 from pymensago.hash import hashfile
@@ -506,6 +506,34 @@ def select(conn: ServerConnection, path: str) -> RetVal:
 	if response.error():
 		return response
 	
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+	
+	return RetVal()
+
+
+def sendfast(conn: ServerConnection, msgdata: str, domain: utils.Domain) -> RetVal:
+	'''Works like send(), but only works for messages able to fit within the 16KiB command limit. 
+	Note that this 16KiB includes all JSON formatting, so the actual message payload will need 
+	to be smaller than this.'''
+	
+	# 49 is the number of bytes used in this message when minified without including the two
+	# variables in the message: the domain size and the size of the message data
+	totalsize = len(msgdata) + len(domain.as_string()) + 49
+	if totalsize > 16384:
+		return ErrOutOfRange
+
+	status = conn.send_message({
+		'Action': 'SENDFAST',
+		'Data': {
+			'Domain': domain.as_string(),
+			'Message': msgdata
+		}
+	})
+	if status.error():
+		return status
+
+	response = conn.read_response(server_response)
 	if response['Code'] != 200:
 		return wrap_server_error(response)
 	
