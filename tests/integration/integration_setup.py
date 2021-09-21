@@ -276,7 +276,7 @@ def init_server(dbconn) -> dict:
 	admin_profile_data['wid'] = utils.UUID(admin_wid)
 	admin_profile_data['domain'] = utils.Domain('example.com')
 	admin_profile_data['address'] = utils.MAddress('admin/example.com')
-	admin_profile_data['waddress'] = utils.WAddress(admin_wid + 'example.com')
+	admin_profile_data['waddress'] = utils.WAddress(admin_wid.as_string() + 'example.com')
 
 	return {
 		'configfile' : load_server_config(),
