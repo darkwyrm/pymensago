@@ -1,8 +1,8 @@
 '''This module provides a simple interface to the handling storage and networking needs for a 
 Mensago client'''
-from pycryptostring import CryptoString
-from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
+import os
 import socket
+import tempfile
 
 from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, \
 	ErrExists, ErrOutOfRange
@@ -17,6 +17,7 @@ import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as userprofile
 import pymensago.utils as utils
+from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.userinfo import save_name
 from pymensago.workspace import Workspace
@@ -427,6 +428,17 @@ class MensagoClient:
 		if totalsize <= 16384:
 			return serverconn.sendfast(self.conn, msgdata, domain)
 				
+		status = self.pman.get_active_profile()
+		if status.error():
+			return status
+		
+		temppath = os.path.join(status['profile'].path, 'temp')
+		try:
+			temphandle = tempfile.TemporaryFile(dir=temppath)
+		except Exception as e:
+			return RetVal().wrap_exception(e)
+		
+
 		# TODO: finish implementing client.send()
 
 		return RetVal(ErrUnimplemented)
