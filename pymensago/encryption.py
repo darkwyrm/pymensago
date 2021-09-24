@@ -465,8 +465,7 @@ class SecretKey (CryptoKey):
 
 		return RetVal()
 	
-	# TODO: make SecretKey.decrypt return a RetVal, not bytes
-	def decrypt(self, encdata : str) -> bytes:
+	def decrypt(self, encdata : str) -> RetVal:
 		'''Decrypts the Base85-encoded encrypted data and returns it as bytes. Returns None on 
 		failure'''
 		if encdata is None:
@@ -476,10 +475,9 @@ class SecretKey (CryptoKey):
 			raise TypeError
 
 		secretbox = nacl.secret.SecretBox(self.key.as_raw())
-		return secretbox.decrypt(encdata, encoder=Base85Encoder)
+		return RetVal().set_value('data', secretbox.decrypt(encdata, encoder=Base85Encoder))
 	
-	# TODO: make SecretKey.decrypt return a RetVal, not string
-	def encrypt(self, data : bytes) -> str:
+	def encrypt(self, data : bytes) -> RetVal:
 		'''Encrypts the passed data and returns it as a Base85-encoded string. Returns None on 
 		failure'''
 		if data is None:
@@ -490,7 +488,8 @@ class SecretKey (CryptoKey):
 		
 		secretbox = nacl.secret.SecretBox(self.key.as_raw())
 		mynonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
-		return secretbox.encrypt(data,nonce=mynonce, encoder=Base85Encoder).decode()
+		return RetVal().set_values({ 'prefix':'XSALSA20',
+			'data':secretbox.encrypt(data,nonce=mynonce, encoder=Base85Encoder).decode()})
 		
 
 def load_secretkey(path: str) -> RetVal:

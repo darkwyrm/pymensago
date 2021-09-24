@@ -58,10 +58,13 @@ class Envelope:
 		except Exception as e:
 			return RetVal.wrap_exception(e)
 		
-		paystr = self.msgkey.encrypt(json.dumps(self.fields).encode())
+		status = self.msgkey.encrypt(json.dumps(self.fields).encode())
+		if status.error():
+			return status
 
 		return RetVal().set_value('envelope',
-					'\n'.join(['MENSAGO', envstr, '----------', self.msgkey.key.prefix, paystr]))
+					'\n'.join(['MENSAGO', envstr, '----------', self.msgkey.key.prefix,
+					status['data']]))
 		
 
 	def set_msg_key(self, recipientkey: cs.CryptoString) -> RetVal:
