@@ -143,11 +143,16 @@ class Profile:
 	def activate(self) -> RetVal:
 		'''Connects the profile to its associated database'''
 
-		if not os.path.exists(self.path):
-			try:
-				os.mkdir(self.path)
-			except Exception as e:
-				return RetVal().wrap_exception(e)
+		pathlist = [
+			self.path,
+			os.path.join(self.path, 'temp')
+		]
+		for pathitem in pathlist:
+			if not os.path.exists(pathitem):
+				try:
+					os.mkdir(pathitem)
+				except Exception as e:
+					return RetVal().wrap_exception(e)
 		
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
