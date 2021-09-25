@@ -89,6 +89,7 @@ _db_setup_cmds = [ '''
 		"contactgroup" TEXT
 	);''', '''
 	CREATE TABLE "updates" (
+		"id" TEXT NOT NULL UNIQUE,
 		"type" TEXT NOT NULL,
 		"data" TEXT NOT NULL,
 		"time" TEXT NOT NULL
