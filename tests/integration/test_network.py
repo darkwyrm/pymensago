@@ -62,6 +62,14 @@ def test_local_delivery():
 	status = client.send(env, user1_profile_data['domain'])
 	assert not status.error(), f"{funcname()}: Failed to send message"
 
+	# Now switch to the recipient and check for updates
+	client.logout()
+	status = client.pman.activate_profile('user')
+	assert not status.error(), f"{funcname()}: failed to switch to user profile: {status.error()}"
+
+	status = client.login(utils.MAddress('csimons/example.com'))
+	assert not status.error(), f"{funcname}: user login failure: {status.error()}"
+
 	# TODO: Finish implementing test_local_delivery()
 
 	client.disconnect()	
