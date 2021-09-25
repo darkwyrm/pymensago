@@ -1,7 +1,50 @@
 import os
 import platform
+import sqlite3
 import sys
 import toml
+
+from retval import  RetVal, ErrEmptyData
+
+# Although load_server_config() exists here for historical reasons, this module is for interacting
+# with application configuration information. It is stored as a table of strings in the profile's
+# database. This is so that a person can have a regular everyday profile and a super-secret
+# Paranoid Mode profile for whatever reason and they can coexist peacefully.
+
+_modstate = {
+	'path': '',
+	'dbconn': None
+}
+
+def load(path: str) -> RetVal:
+	'''Attempts to load settings from the specified database.'''
+	if not path:
+		return RetVal(ErrEmptyData)
+	
+	global _modstate 
+
+	try:
+		conn = sqlite3.connect(path)
+	except Exception as e:
+		return RetVal().wrap_exception(e)
+
+	_modstate['path'] = path
+	_modstate['dbconn'] = conn
+	
+	# Ensure that the configuration table exists
+	cur = conn.cursor()
+	cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='appconfig';")
+	exists = cur.fetchone()
+	
+	if not exists:
+		cur.execute('''CREATE TABLE "appconfig" (
+			"fname" TEXT NOT NULL,
+			"ftype" TEXT NOT NULL,
+			"fvalue" TEXT);''')
+		conn.commit()
+
+	return RetVal()
+
 
 def load_server_config() -> dict:
 	'''Loads the Mensago server configuration from the config file'''
@@ -68,3 +111,4 @@ def load_server_config() -> dict:
 		sys.exit()
 	
 	return serverconfig
+
