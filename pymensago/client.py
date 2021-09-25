@@ -2,10 +2,9 @@
 Mensago client'''
 import os
 import socket
-import tempfile
 
 from retval import ErrNotFound, ErrUnimplemented, RetVal, ErrInternalError, ErrBadValue, \
-	ErrExists, ErrOutOfRange
+	ErrExists
 
 import pymensago.auth as auth
 import pymensago.contact as contact
@@ -17,7 +16,7 @@ import pymensago.kcresolver as kcresolver
 import pymensago.serverconn as serverconn
 import pymensago.userprofile as userprofile
 import pymensago.utils as utils
-from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress
+from pymensago.utils import Domain, MAddress, UUID, UserID, WAddress, generate_filename
 from pymensago.encryption import Password, EncryptionPair
 from pymensago.userinfo import save_name
 from pymensago.workspace import Workspace
@@ -432,16 +431,26 @@ class MensagoClient:
 		if status.error():
 			return status
 		
-		temppath = os.path.join(status['profile'].path, 'temp')
+		temppath = os.path.join(status['profile'].path, 'temp',
+			generate_filename(len(msgdata)) + '.msgo')
+
 		try:
-			temphandle = tempfile.TemporaryFile(dir=temppath)
+			temphandle = open(temppath, 'w+b')
 		except Exception as e:
 			return RetVal().wrap_exception(e)
 		
+		temphandle.write(msgdata)
+		temphandle.close()
 
-		# TODO: finish implementing client.send()
+		status = serverconn.send(self.conn, temppath, domain)
+		if status.error():
+			return status
 
-		return RetVal(ErrUnimplemented)
+		# TODO: POSTDEMO: add resume support to client.send()
+		
+		os.remove(temppath)
+
+		return RetVal()
 
 
 	def _setup_workspace(self, profile: userprofile.Profile, regdata: dict) -> RetVal:
