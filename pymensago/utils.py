@@ -1,7 +1,7 @@
 '''Houses just some different utility functions'''
 
 import re
-from typing import Type
+import time
 import uuid
 
 from retval import RetVal, ErrBadValue
@@ -263,3 +263,17 @@ def size_as_string(size: int) -> str:
 			return str(round(size / size_pair[0], 2)) + size_pair[1]
 	
 	return str(size) + ' bytes'
+
+
+def generate_filename(size: int) -> str:
+	'''Generates a unique filename for a file using the Mensago filename template consisting of 
+	a UUID, the size of the file, and a timestamp. If None is passed as the file size, the 
+	file name only consists of a UUID and timestamp.'''
+	parts = [ str(uuid.uuid4()) ]
+	
+	if size is not None:
+		parts.append(str(size))
+	
+	parts.append(time.strftime('%Y%m%dT%H%M%SZ', time.gmtime()))
+	
+	return '.'.join(parts)
