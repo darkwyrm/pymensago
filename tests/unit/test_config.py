@@ -27,15 +27,16 @@ def setup_test(name):
 	return profiletest_folder
 
 
-def test_load():
-	'''Smoketests config.load()'''
-	
-	test_folder = setup_test('config_load')
+def test_set_get_int():
+	'''Tests getting and setting an integer field'''
+	test_folder = setup_test('config_setget_int')
 	dbpath = os.path.join(test_folder, 'storage.db')
 	status = config.load(dbpath)
-	assert not status.error(), f"{funcname()}: failed to load init db"
+	assert not status.error(), f"{funcname()}: failed to load/init db"
+
+	assert config.set_int('testint', 10), f"{funcname()}: failed to set integer field testint"
+	assert config.get_int('testint') == 10, f"{funcname()}: failed to get integer field testint"
 
 
 if __name__ == '__main__':
-	test_load()
-
+	test_set_get_int()

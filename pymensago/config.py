@@ -38,13 +38,53 @@ def load(path: str) -> RetVal:
 	
 	if not exists:
 		cur.execute('''CREATE TABLE "appconfig" (
-			"fname" TEXT NOT NULL,
+			"fname" TEXT NOT NULL UNIQUE,
 			"ftype" TEXT NOT NULL,
 			"fvalue" TEXT);''')
 		conn.commit()
 
 	return RetVal()
 
+
+def get_int(name: str) -> int:
+	'''Gets an integer field. Returns None if it doesn't exist.'''
+	global _modstate
+	if not name or not _modstate['path']:
+		return None
+	
+	conn = _modstate['dbconn']
+
+	cur = conn.cursor()
+	cur.execute("SELECT fvalue FROM appconfig WHERE fname=? AND ftype='int';", (name,))
+	row = cur.fetchone()
+	if not row or len(row) == 0:
+		return None
+	
+	try:
+		out = int(row[0])
+	except:
+		return None
+
+	return out
+
+
+def set_int(name: str, value: int) -> bool:
+	'''Creates/sets an integer field'''
+	global _modstate
+	if not name or not value or not _modstate['path']:
+		return False
+	
+	conn = _modstate['dbconn']
+
+	val = get_int(name)
+
+	cur = conn.cursor()
+	if val is not None:
+		cur.execute("UPDATE appconfig SET fvalue=? WHERE fname=? and ftype='int';", (value, name))
+	else:
+		cur.execute("INSERT INTO appconfig (fname,ftype,fvalue) VALUES(?,'int',?);", (name, value))
+	conn.commit()
+	return True
 
 def load_server_config() -> dict:
 	'''Loads the Mensago server configuration from the config file'''
