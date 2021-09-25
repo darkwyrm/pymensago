@@ -4,12 +4,12 @@ import os
 import pathlib
 import platform
 
-import pymensago.contact as contact
+import pymensago.config as config
 from pymensago.workspace import Workspace
 import shutil
 import sqlite3
 
-from retval import ErrBusy, RetVal, ErrEmptyData, ErrUnimplemented, ErrExists, ErrBadValue, ErrNotFound
+from retval import ErrBusy, RetVal, ErrEmptyData, ErrExists, ErrBadValue, ErrNotFound
 import pymensago.utils as utils
 
 
@@ -162,6 +162,7 @@ class Profile:
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
 			self.db = sqlite3.connect(dbpath)
+			config.load(dbpath)
 			return RetVal().set_value('connection', self.db)
 		
 		return self.reset_db()
