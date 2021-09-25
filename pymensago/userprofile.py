@@ -88,6 +88,11 @@ _db_setup_cmds = [ '''
 		"fieldvalue" TEXT,
 		"contactgroup" TEXT
 	);''', '''
+	CREATE TABLE "updates" (
+		"type" TEXT NOT NULL,
+		"data" TEXT NOT NULL,
+		"time" TEXT NOT NULL
+	);''','''
 	CREATE TABLE "photos" (
 		"id" TEXT NOT NULL,
 		"type" TEXT NOT NULL,
