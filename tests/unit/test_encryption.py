@@ -190,10 +190,10 @@ def test_secretkey_encrypt_decrypt():
 	testdata = b'1234567890'
 
 	sk = encryption.SecretKey()
-	encdata = sk.encrypt(testdata)
+	encstatus = sk.encrypt(testdata)
 
-	newdata = sk.decrypt(encdata)
-	assert testdata == newdata, "Decrypted data didn't match"
+	decstatus = sk.decrypt(encstatus['data'])
+	assert testdata == decstatus['data'], "Decrypted data didn't match"
 
 if __name__ == '__main__':
 	test_encryptionpair_encrypt_decrypt()
