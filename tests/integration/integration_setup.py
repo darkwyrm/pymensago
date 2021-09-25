@@ -407,8 +407,8 @@ def setup_profile(profile_folder: str, config: dict, profile_data: dict) -> RetV
 	# Create the folders themselves
 
 	w.path.mkdir(parents=True, exist_ok=True)
-	w.path.joinpath('files').mkdir(exist_ok=True)
-	w.path.joinpath('files','attachments').mkdir(exist_ok=True)
+	w.path.joinpath(profile.name, 'files').mkdir(exist_ok=True)
+	w.path.joinpath(profile.name, 'files','attachments').mkdir(exist_ok=True)
 
 	status = profman.get_active_profile()
 	
