@@ -136,12 +136,15 @@ class ServerConnection:
 		
 		return RetVal()
 
-	def read_response(self, schema: dict) -> RetVal:
+	def read_response(self, schema: dict=None) -> RetVal:
 		'''Reads a server response and returns a separated code and string'''
 		
 		if not self.socket:
 			return None
 		
+		if schema is None:
+			schema = server_response
+
 		# We don't actually handle the possible exceptions because we *want* to have them crash --
 		# the test will fail and give us the cause of the exception. If we have a successful test, 
 		# exceptions weren't thrown
