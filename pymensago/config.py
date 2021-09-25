@@ -71,7 +71,7 @@ def get_int(name: str) -> int:
 def set_int(name: str, value: int) -> bool:
 	'''Creates/sets an integer field'''
 	global _modstate
-	if not name or not value or not _modstate['path']:
+	if not name or not value or not _modstate['path'] or not isinstance(value, int):
 		return False
 	
 	conn = _modstate['dbconn']
@@ -85,6 +85,43 @@ def set_int(name: str, value: int) -> bool:
 		cur.execute("INSERT INTO appconfig (fname,ftype,fvalue) VALUES(?,'int',?);", (name, value))
 	conn.commit()
 	return True
+
+
+def get_str(name: str) -> str:
+	'''Gets a string field. Returns None if it doesn't exist.'''
+	global _modstate
+	if not name or not _modstate['path']:
+		return None
+	
+	conn = _modstate['dbconn']
+
+	cur = conn.cursor()
+	cur.execute("SELECT fvalue FROM appconfig WHERE fname=? AND ftype='str';", (name,))
+	row = cur.fetchone()
+	if not row or len(row) == 0:
+		return None
+
+	return row[0]
+
+
+def set_str(name: str, value: int) -> bool:
+	'''Creates/sets a string field'''
+	global _modstate
+	if not name or not value or not _modstate['path'] or not isinstance(value, str):
+		return False
+	
+	conn = _modstate['dbconn']
+
+	val = get_str(name)
+
+	cur = conn.cursor()
+	if val is not None:
+		cur.execute("UPDATE appconfig SET fvalue=? WHERE fname=? and ftype='str';", (value, name))
+	else:
+		cur.execute("INSERT INTO appconfig (fname,ftype,fvalue) VALUES(?,'str',?);", (name, value))
+	conn.commit()
+	return True
+
 
 def load_server_config() -> dict:
 	'''Loads the Mensago server configuration from the config file'''

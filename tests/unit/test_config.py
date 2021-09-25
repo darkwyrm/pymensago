@@ -37,6 +37,22 @@ def test_set_get_int():
 	assert config.set_int('testint', 10), f"{funcname()}: failed to set integer field testint"
 	assert config.get_int('testint') == 10, f"{funcname()}: failed to get integer field testint"
 
+	assert not config.set_int('testint', 'badval'), f"{funcname()}: failed to handle bad value type"
+
+
+def test_set_get_str():
+	'''Tests getting and setting a string field'''
+	test_folder = setup_test('config_setget_str')
+	dbpath = os.path.join(test_folder, 'storage.db')
+	status = config.load(dbpath)
+	assert not status.error(), f"{funcname()}: failed to load/init db"
+
+	assert config.set_str('teststr', 'foo'), f"{funcname()}: failed to set string field teststr"
+	assert config.get_str('teststr') == 'foo', f"{funcname()}: failed to get string field teststr"
+
+	assert not config.set_str('testint', []), f"{funcname()}: failed to handle bad value type"
+
 
 if __name__ == '__main__':
 	test_set_get_int()
+	test_set_get_str()
