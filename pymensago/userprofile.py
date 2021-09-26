@@ -1,4 +1,14 @@
-'''The userprofile module handles user profile management'''
+'''The userprofile module handles user profile management.
+
+Only two classes are found here: ProfileManager and Profile.
+
+Most interaction with ProfileManager is limited to calling get_active_profile()
+and occasionally activate_profile().
+
+Most of the time a Profile instance is used to access its connection to the
+SQLite database file.
+'''
+
 import json
 import os
 import pathlib
@@ -200,7 +210,11 @@ class Profile:
 		return RetVal()
 	
 	def save_config(self) -> RetVal:
-		'''Saves the profile-specific configuration information to a file'''
+		'''Saves the profile-specific configuration information to a file
+
+		Returns:
+			* no additional fields
+		'''
 		
 		if self.devid.is_empty():
 			return RetVal()
@@ -221,14 +235,26 @@ class Profile:
 		
 		return RetVal()
 	
-	def deactivate(self):
+	def deactivate(self) -> None:
 		'''Disconnects the profile from its associated database'''
 		if self.db:
 			self.db.close()
 			self.db = None
 
 	def set_default(self, is_default: bool) -> RetVal:
-		'''Makes a profile the default'''
+		'''Sets or unsets the default status for a profile.
+
+		Parameters:
+			* is_default: flag for if the profile should or should not be the default
+		
+		Returns:
+			* no additional fields
+		
+		Notes:
+			The default status is flagged in the filesystem by the existence of the
+			file 'default.txt'. This call turns on or off the default status by handling
+			the file's existence and the in-memory flag.
+		'''
 
 		filepath = os.path.join(self.path, 'default.txt')
 		if is_default:
@@ -254,7 +280,12 @@ class Profile:
 		return self.default
 		
 	def get_identity(self) -> utils.MAddress:
-		'''Returns the identity workspace address for the profile'''
+		'''Returns the identity workspace address for the profile.
+		
+		Notes:
+			The profile can have multiple workspace memberships, but only one can be used
+			for the identity of the user. This call returns that address.
+		'''
 		
 		out = utils.MAddress()
 		if self.userid.is_valid() and self.domain.is_valid():
@@ -289,8 +320,16 @@ class Profile:
 			return out
 	
 	def set_identity(self, w: Workspace) -> RetVal:
-		'''Assigns an identity workspace to the profile. Because so much is tied to an identity 
-		workspace, once this is set, it cannot be changed.'''
+		'''Assigns an identity workspace to the profile.
+
+		Returns:
+			* no additional fields
+		
+		Notes:
+			The profile can have multiple workspace memberships, but only one can be used
+			for the identity of the user. This call returns that address. Because so much
+			is tied to an identity workspace, once this is set, it cannot be changed.
+		'''
 
 		if w.db and w.db != self.db:
 			return RetVal(ErrBusy, f"Workspace {w.wid} already belongs to another profile")
@@ -308,9 +347,15 @@ class Profile:
 		return status
 
 	def reset_db(self) -> RetVal:
-		'''This function reinitializes the database to empty, taking a path to the file used by the 
-		SQLite database. The status includes the field 'connection' which contains a 
-		sqlite3.Connection object.'''
+		'''This function reinitializes the database to empty.
+		
+		Returns:
+			* 'connection': (sqlite3.Connection) an connection instance to the database
+		
+		Notes:
+			All data is IRREVOCABLY deleted from the database using this call, including
+			keys, user data, and application settings. You have been warned.
+		'''
 		
 		dbpath = os.path.join(self.path, 'storage.db')
 		if os.path.exists(dbpath):
@@ -330,7 +375,19 @@ class Profile:
 		return RetVal().set_value('connection', self.db)
 	
 	def resolve_address(self, address: utils.MAddress) -> RetVal:
-		'''Resolves a Mensago address and returns a workspace ID in the field 'wid'''
+		'''Resolves a Mensago address to its corresponding workspace ID.
+		
+		Parameters:
+			* address: the address to resolve
+		
+		Returns:
+			* wid: (UUID) the workspace ID of the address.
+
+		Notes:
+			This call works only for those addresses to which the profile has a
+			membership. Resolving any arbitrary Mensago address should be done using the
+			keycard resolver.
+		'''
 
 		if address.id_type == 1:
 			return RetVal().set_value('wid', address.id.as_string())
@@ -355,8 +412,18 @@ class ProfileManager:
 		self.error_state = RetVal()
 
 	def load_profiles(self, profile_path='') -> RetVal:
-		'''Loads profile information from the specified JSON file stored in the top level of the 
-		profile folder.'''
+		'''Loads all profiles under the specified path
+		
+		Parameters:
+			* profile_path: (optional) the path containing the profile hierarchy
+		
+		Returns:
+			* no additional fields
+		
+		Notes:
+			If not specified, the profile manager will look in ~/config/mensago on POSIX
+			platforms and %LOCALAPPDATA%\mensago on Windows.
+		'''
 
 		self.active_index = -1
 		
@@ -402,7 +469,7 @@ class ProfileManager:
 		return RetVal()
 	
 	def _index_for_profile(self, name: str) -> int:
-		'''Returns the numeric index of the named profile. Returns -1 on error'''
+		'''Internal method which returns the numeric index of the named profile or -1 on error'''
 		if not name:
 			return -1
 		
@@ -413,10 +480,20 @@ class ProfileManager:
 		return -1
 
 	def create_profile(self, name: str) -> RetVal:
-		'''Creates a profile with the specified name. Profile names are expected to be all.
+		'''Creates a profile with the specified name.
+		
+		Parameters:
+			* name: name of the profile to create
 
-		Attached Values: 
-		'profile': a copy of the created profile as "profile"'''
+		Returns: 
+			* profile: (Profile) management object of the newly-created profile
+		
+		Notes:
+			The name given to this method is expected to be all lowercase and profile names
+			will have capital letters squashed. Care should be used with spaces and special
+			characters as the name is used directly as the directory name in the filesystem.
+			The name `default` is reserved and may not be used.
+		'''
 
 		if not name:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
@@ -441,7 +518,14 @@ class ProfileManager:
 		return RetVal().set_value("profile", profile)
 
 	def delete_profile(self, name: str) -> RetVal:
-		'''Deletes the named profile and all files on disk contained in it.'''
+		'''Deletes the named profile and all files on disk contained in it.
+
+		Parameters:
+			* name: the name of the profile to delete
+		
+		Returns:
+			* no additional fields
+		'''
 
 		if name == 'default':
 			return RetVal(ErrBadValue, "'default' is reserved")
@@ -467,7 +551,19 @@ class ProfileManager:
 		return RetVal()
 
 	def rename_profile(self, oldname, newname) -> RetVal:
-		'''Renames a profile, leaving the profile ID unchanged.'''
+		'''Renames a profile, leaving the profile ID unchanged.
+
+		Parameters:
+			* oldname: the current name of the profile
+			* newname: the new name of the profile
+		
+		Returns:
+			* no additional fields
+		
+		Notes:
+			As with create_profile(), capital letters will be squashed, care should be
+			used with special characters, and `default` is reserved.
+		'''
 		
 		if not oldname or not newname:
 			return RetVal(ErrEmptyData, "BUG: profile names may not be empty")
@@ -510,18 +606,26 @@ class ProfileManager:
 		return self.profiles
 	
 	def get_default_profile(self) -> str:
-		'''
-		Returns the name of the default profile. If one has not been set, it returns an empty string.
-		'''
+		'''Returns the name of the default profile.
+		
+		If one has not been set, it returns an empty string.'''
 		for item in self.profiles:
 			if item.is_default():
 				return item.name
 		return ''
 
 	def set_default_profile(self, name: str) -> RetVal:
-		'''
-		Sets the default profile. If there is only one profile -- or none at all -- this call has 
-		no effect.
+		'''Sets the default profile.
+		
+		Parameters:
+			* name: the name of the profile to set as default
+		
+		Returns:
+			* no additional fields
+		
+		Notes:
+			If there is only one profile -- or none at all -- this call has no effect and
+			no error is returned.
 		'''
 		if not name:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
@@ -554,11 +658,12 @@ class ProfileManager:
 	def activate_profile(self, name: str) -> RetVal:
 		'''Activates the specified profile.
 
+		Parameters:
+			* name: the name of the profile to activate
+
 		Returns:
-		"error" : string
-		"wid" : string
-		"host" : string
-		"port" : integer
+			* wid: (UUID) the workspace ID of the identity address
+			* host: (Domain) the domain of the identity address
 		'''
 		if not name:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
@@ -586,7 +691,11 @@ class ProfileManager:
 		})
 
 	def get_active_profile(self) -> RetVal:
-		'''Returns the active profile'''
+		'''Returns the active profile
+		
+		Returns:
+			* profile: (Profile) instance of active profile
+		'''
 
 		if self.active_index >= 0:
 			return RetVal().set_value("profile", self.profiles[self.active_index])
