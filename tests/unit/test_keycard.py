@@ -794,7 +794,7 @@ def bench_hashers():
 
 	iterations = 25000
 	print(f'Times for {iterations} iterations of each hash algorithm:')
-	for hasher in ['BLAKE2-256', 'BLAKE2B-256', 'SHA-256', 'SHA3-256']:
+	for hasher in ['BLAKE2B-256', 'SHA-256', 'SHA3-256']:
 		start = time.time()
 		for _ in range(iterations):
 			entry.generate_hash(hasher)
