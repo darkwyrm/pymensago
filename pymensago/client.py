@@ -26,9 +26,7 @@ ErrNotConnected = 'ErrNotConnected'
 ErrNotAdmin = 'ErrNotAdmin'
 
 class MensagoClient:
-	'''
-	This is the primary interface to the entire library from an application perspective.
-	'''
+	'''The primary interface to the entire library.'''
 	def __init__(self, profile_folder=''):
 		self.active_profile = ''
 		self.conn = serverconn.ServerConnection()
@@ -42,15 +40,23 @@ class MensagoClient:
 		self.kcr = kcresolver.KCResolver(self.pman.profile_folder)
 
 	def connect(self, domain: Domain) -> RetVal:
-		'''Establishes a network connection to a Mensago server. No logging in is performed.'''
+		'''Establishes a network connection to a Mensago server. Logging in is not performed.
+		
+		Parameters:
+			* domain: domain to connect to
+		
+		Returns:
+			* no additional fields
+		'''
 		serverconfig = kcresolver.get_server_config(domain)
 		if serverconfig.error():
 			return serverconfig
 		return self.conn.connect(serverconfig['server'], serverconfig['port'])
 	
 	def is_connected(self) -> bool:
-		'''Returns true if the client has an active connection with a server. Note that this does 
-		not imply that the client has an active login session on that connection.'''
+		'''Returns true if the client has an active connection with a server.
+		
+		An active connection does not imply that the client has an active login session.'''
 		return self.conn.is_connected()
 
 	def disconnect(self):
@@ -59,7 +65,15 @@ class MensagoClient:
 		self.conn.disconnect()
 
 	def login(self, address: MAddress) -> RetVal:
-		'''Logs into a server. NOTE: not the same as connecting to one. At the same time, if no 
+		'''Logs into a server.
+		
+		Parameters:
+			* address: the Mensago address or workspace address to connect with.
+		
+		Returns:
+			* no additional fields
+		
+		Note that logging in and connecting are not the same. At the same time, if no 
 		connection is established, login() will also create the connection.'''
 		if not self.conn.is_connected():
 			self.connect(address.domain)
@@ -119,15 +133,34 @@ class MensagoClient:
 		return False
 
 	def logout(self) -> RetVal:
-		'''Logs out of a server'''
+		'''Logs out of a server
+		
+		Returns:
+			* no additional fields
+		'''
 		self.login_active = False
 		if self.conn.is_connected():
 			return iscmds.logout(self.conn)
 		return RetVal()
 
 	def preregister_account(self, id: UserID=None, domain: Domain=None) -> RetVal:
-		'''Create a new account on the local server. This is a simple command because it is not 
-		meant to create a local profile.'''
+		'''Administrator command which preprovisions a new account on the server.
+		
+		Parameters:
+			* id: (optional) username for the account
+			* domain: (optional) domain for the account
+		
+		Returns:
+			* Workspace-ID: (UUID) the workspace ID of the account
+			* Reg-Code: (str) the registration code
+			* Domain: (Domain) the domain for the account. 
+			* User-ID: (UserID) returned only if specified
+		 
+		This is a simple command because it is not meant to create a local
+		profile. It is only meant to provision the account on the server side
+		so that the user can finish logging in. The administrator gives the
+		user the address information and registration code so they can finish
+		setting up their account.'''
 
 		if not self.is_logged_in() or not self.is_admin:
 			return RetVal(ErrNotLoggedIn, 'must be logged in as admin')
@@ -166,8 +199,30 @@ class MensagoClient:
 		return regdata
 
 	def redeem_regcode(self, address: MAddress, regcode: str, userpass: str, 
-		name: contact.Name=None) -> RetVal:
-		'''Completes setup of a preregistered account'''
+						name: contact.Name=None) -> RetVal:
+		'''Completes setup of a preregistered account.
+		
+		Parameters:
+			* address: the preprovisioned account address
+			* regcode: the registration code obtains from preregister()
+			* userpass: the user's cleartext password
+			* name: (optional) the user's name
+		
+		Returns:
+			* wid: (UUID) the workspace ID of the account
+			* devid: (UUID) the registration code
+			* domain: (Domain) the domain for the account. 
+			* uid: (UserID) returned only if specified
+			* password: (Password) the Password object containing the user's hashed 
+				password
+			* devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
+				individual device to the server
+		
+		Notes:
+			This command also initializes the user's local profile and sets up the user's
+			keycard. Once this command is complete, the user is more or less ready to use
+			the platform.
+		'''
 		
 		status = self.pman.get_active_profile()
 		if status.error():
@@ -221,7 +276,31 @@ class MensagoClient:
 	
 	def register_account(self, domain: Domain, userpass: str, userid=None, 
 		name: contact.Name=None) -> RetVal:
-		'''Create a new account on the specified server.'''
+		'''Create a new account on the specified server.
+		
+		Parameters:
+			* domain: the domain to create the account on
+			* userpass: the user's cleartext password
+			* userid: (optional) the desired username
+			* name: (optional) the user's name
+		
+		Returns:
+			* wid: (UUID) the workspace ID of the account
+			* devid: (UUID) the registration code
+			* domain: (Domain) the domain for the account. 
+			* uid: (UserID) returned only if specified
+			* password: (Password) the Password object containing the user's hashed 
+				password
+			* devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
+				individual device to the server
+		
+		Notes:
+			This command is only useful on servers where the administrator permits
+			self-registration. This requires a server mode to be set to 'moderated',
+			'network', or 'public'. This command also initializes the user's local profile
+			and sets up the user's keycard. Once this command is complete, the user is more
+			or less ready to use the platform.
+		'''
 		
 		# Process for registration of a new account:
 		# 
@@ -309,6 +388,19 @@ class MensagoClient:
 		return regdata
 
 	def unregister(self, wid: UUID=None) -> RetVal:
+		'''Disables the account on the server.
+		
+		Parameters:
+			* wid: the UUID of the workspace to disable
+		
+		Returns:
+			* no additional fields
+		
+		Notes:
+			This function can be called for a user to disable their own account or by an
+			administrator to disable another's account. The account is not deleted for
+			security reasons, but all useful data is deleted from storage.
+		'''
 		# TODO: Implement client.unregister()
 		return RetVal(ErrUnimplemented, "MensagoClient.unregister() not implemented")
 	
@@ -413,8 +505,19 @@ class MensagoClient:
 		return status
 
 	def send(self, msg: Envelope, domain: utils.Domain) -> RetVal:
-		'''Uploads an encrypted message to the server for delivery. Whenever possible this method 
-		uses the SENDFAST command for lower resource usage and faster processing.'''
+		'''Uploads an encrypted message to the server for delivery.
+
+		Parameters:
+			* msg: The envelope object containing the message to send
+			* domain: The domain of the recipient
+
+		Returns:
+			* No additional fields		
+		
+		Notes:
+			The Envelope object is expected to be fully set up, and all keys applied.
+			Whenever possible this command internally uses the SENDFAST command for lower
+			resource usage and faster processing.'''
 		if not self.is_logged_in():
 			return ErrNotLoggedIn
 		
@@ -454,8 +557,9 @@ class MensagoClient:
 
 
 	def _setup_workspace(self, profile: userprofile.Profile, regdata: dict) -> RetVal:
-		'''This finishes all the profile and workspace setup common to both standard registration 
-		and registration via a code.'''
+		'''This internal method finishes all the profile and workspace setup common to both
+		standard registration and registration via a code. It is not to be called
+		externally.'''
 		
 		w = Workspace(profile.db, profile.path)
 		status = w.generate(regdata['uid'], regdata['domain'], regdata['wid'], regdata['password'])
