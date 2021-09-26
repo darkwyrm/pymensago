@@ -21,18 +21,6 @@ VerificationError = 'VerificationError'
 DecryptionFailure = 'DecryptionFailure'
 ErrUnsupportedAlgorithm = 'ErrUnsupportedAlgorithm'
 
-supported_algorithms = [
-	# Hash algorithms
-	'BLAKE2B-256'
-
-	# Public key crypto
-	'CURVE25519', 'ED25519',
-
-	# Secret key crypt
-	'XSALSA20', 
-]
-
-
 # JSON schemas used to validate keyfile data
 __encryption_pair_schema = {
 	'type' : 'object',
