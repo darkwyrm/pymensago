@@ -1,4 +1,8 @@
-'''Houses just some different utility functions'''
+'''This modules houses basic data types and some utility functions
+
+UUID, Domain, WAddress, and MAddress are used extensively by the reset of the
+library. They are used primarily for validation and consistency in the API.
+'''
 
 import re
 import time
@@ -13,9 +17,16 @@ _illegal_pattern = re.compile(r'[\s\\/\"A-Z]')
 
 
 class UUID:
-	'''Although there already is a uuid module, this class makes interaction easier by keeping it 
-	as a string and ensuring that the formatting is always lowercase and has dashes, two Mensago 
-	requirements to ensure consistency and fewer bugs.'''
+	'''A string-based class for handling UUIDs.
+
+	Notes:
+		Although there already is a uuid module, this class makes interaction easier
+		by keeping it as a string and ensuring that the formatting is always lowercase
+		and has dashes, two Mensago requirements to ensure consistency and fewer bugs.
+		The UUIDs themselves are also restricted to the randomly-generated type 4 UUIDs.
+		This class exists mainly because User IDs are used for user-facing tasks and
+		UUIDs are used internally almost exclusively.
+	'''
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
 
@@ -33,9 +44,12 @@ class UUID:
 		return self.value
 
 	def set(self, obj) -> str:
-		'''Sets a value to the UUID. String case is squashed, leading and trailing whitespace is 
-		removed, and the value is validated. set() returns the object's final internal value or 
-		an empty string if an error occurred.'''
+		'''Sets the value for the UUID.
+		
+		Notes:
+			String case is squashed, leading and trailing whitespace is removed, and the
+			value is validated. set() returns the object's final internal value or an
+			empty string if an error occurred.'''
 		
 		self.value = str(obj).strip().casefold()
 		if self.is_valid():
@@ -50,6 +64,14 @@ class UUID:
 
 
 class UserID:
+	'''A basic data type class for housing Mensago user IDs.
+
+	Notes:
+		User IDs on the Mensago platform must be no more than 64 Unicode code points. They
+		may not contain whitespace, backslashes, forward slashes, or capital letters.
+		Because of the relatively freeform format, it is possible for a workspace ID to
+		also be a User ID. This class may contain either one.
+	'''
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
 		self.widflag = False
@@ -79,12 +101,16 @@ class UserID:
 		return self.widflag
 	
 	def is_empty(self) -> bool:
+		'''Returns true if the instance has no value'''
 		return self.value == ''
 
 	def set(self, obj) -> str:
-		'''Sets a value to the user ID. String case is squashed, leading and trailing whitespace is 
-		removed, and the value is validated. set() returns the object's final internal value or 
-		an empty string if an error occurred.'''
+		'''Sets a value for the user ID.
+		
+		Notes:
+			String case is squashed, leading and trailing whitespace is removed, and the
+			value is validated. set() returns the object's final internal value or an 
+			empty string if an error occurred.'''
 		
 		self.value = str(obj).strip().casefold()
 		if self.is_valid():
@@ -100,10 +126,16 @@ class UserID:
 		return self.value
 	
 	def as_string(self) -> str:
+		'''Returns the value of the UserID as a string'''
 		return self.value
 
 
 class Domain:
+	'''Basic data type representing an Internet domain.
+	
+	Notes:
+		This class exists mainly to ensure valid domains are utilized across the library.
+	'''
 	def __init__(self, obj='') -> None:
 		self.value = str(obj)
 
@@ -113,12 +145,16 @@ class Domain:
 		return _domain_pattern.match(self.value)
 	
 	def is_empty(self) -> bool:
+		'''Returns true if the instance has no value'''
 		return self.value == ''
 	
 	def set(self, obj) -> str:
-		'''Sets a value to the domain. String case is squashed, leading and trailing whitespace is 
-		removed, and the value is validated. set() returns the object's final internal value or 
-		an empty string if an error occurred.'''
+		'''Sets a value for the domain.
+		
+		Notes:
+			String case is squashed, leading and trailing whitespace is removed, and the
+			value is validated. set() returns the object's final internal value or an empty
+			string if an error occurred.'''
 		
 		self.value = str(obj).strip().casefold()
 		if self.is_valid():
@@ -129,11 +165,18 @@ class Domain:
 		return self.value
 	
 	def as_string(self) -> str:
+		'''Returns the value of the Domain as a string'''
 		return self.value
 
 
 class MAddress:
-	'''Represents a Mensago address'''
+	'''Represents a full Mensago address.
+	
+	Notes:
+		Like the UserID, this class can represent a standard alphabetic Mensago address
+		or a workspace address. It simplifies validating an address and ensures
+		consistently-valid data is used across the library.
+	'''
 	
 	def __init__(self, addr = ''):
 		self.id = UserID()
@@ -143,8 +186,15 @@ class MAddress:
 			self.set(addr)
 
 	def set(self, addr: str) -> RetVal:
-		'''Validates input and assigns the address. If the given address is invalid, no change is 
-		made to the object'''
+		'''Sets a value for the object from a string.
+		
+		Returns:
+			* no additional fields
+
+		Notes:
+			Validates input, adjusts formatting, and assigns the address. Formatting is
+			enforced as described for Domain and UserID.
+		'''
 		
 		parts = addr.split('/')
 		if len(parts) != 2 or not parts[0] or not parts[1]:
@@ -167,15 +217,27 @@ class MAddress:
 		return self.id.as_string() + '/' + self.domain.as_string()
 	
 	def is_valid(self) -> bool:
+		'''Returns true if the address is valid'''
 		return self.id_type in [1,2] and self.id.is_valid() and self.domain.is_valid()
 	
 	def is_empty(self) -> bool:
+		'''Returns true if the address has no value'''
 		return self.id.is_empty() and self.domain.is_empty()
 
 	def as_string(self) -> str:
+		'''Returns the value of the address as a string'''
 		return self.id.as_string() + '/' + self.domain.as_string()
 	
 	def set_from_userid(self, uid: UserID, domain: Domain) -> RetVal:
+		'''Sets the value of the instance from separate components
+
+		Parameters:
+			* uid: UserID instance for the username
+			* domain: Domain instance for the address domain
+		
+		Returns:
+			* No additional fields
+		'''
 		if not (uid.is_valid() and domain.is_valid()):
 			return RetVal(ErrBadValue, 'bad parameter')
 		self.id = uid
@@ -187,6 +249,15 @@ class MAddress:
 		return RetVal()
 	
 	def set_from_wid(self, wid: UUID, domain: Domain) -> RetVal:
+		'''Sets the value of the instance from separate components
+
+		Parameters:
+			* wid: UUID instance for the workspace ID
+			* domain: Domain instance for the address domain
+		
+		Returns:
+			* No additional fields
+		'''
 		if not (wid.is_valid() and domain.is_valid()):
 			return RetVal(ErrBadValue, 'bad parameter')
 		self.id.set(wid.as_string())
@@ -196,7 +267,12 @@ class MAddress:
 
 
 class WAddress:
-	'''Represents a workspace address'''
+	'''Represents a workspace address.
+	
+	Notes:
+		This class simplifies validating an address and ensures	consistently-valid data is
+		used across the library.
+	'''
 
 	def __init__(self, addr='') -> None:
 		self.id = UUID()
@@ -205,11 +281,19 @@ class WAddress:
 			self.set(addr)
 	
 	def is_empty(self) -> bool:
+		'''Returns true if the instance has no value'''
 		return self.id.is_empty() and self.domain.is_empty()
 		
 	def set(self, addr: str) -> RetVal:
-		'''Validates input and assigns the address. If the given address is invalid, no change is 
-		made to the object'''
+		'''Sets a value for the object from a string.
+		
+		Returns:
+			* no additional fields
+
+		Notes:
+			Validates input, adjusts formatting, and assigns the address. Formatting is
+			enforced as described for Domain and UUID.
+		'''
 		
 		parts = addr.split('/')
 		if len(parts) != 2 or not parts[0] or not parts[1]:
@@ -227,12 +311,15 @@ class WAddress:
 		return self.id.as_string() + '/' + self.domain.as_string
 	
 	def is_valid(self) -> bool:
+		'''Returns true if the instance is a valid workspace address'''
 		return self.id and self.domain
 	
 	def as_string(self) -> str:
+		'''Returns the value of the instance as a string'''
 		return self.id.as_string() + '/' + self.domain.as_string()
 	
 	def as_maddress(self) -> MAddress:
+		'''Returns an MAddress instance which has the same address value'''
 		out = MAddress()
 		out.set_from_wid(self.id, self.domain)
 		return out
@@ -266,9 +353,13 @@ def size_as_string(size: int) -> str:
 
 
 def generate_filename(size: int) -> str:
-	'''Generates a unique filename for a file using the Mensago filename template consisting of 
-	a UUID, the size of the file, and a timestamp. If None is passed as the file size, the 
-	file name only consists of a UUID and timestamp.'''
+	'''Generates a unique filename for a file using the Mensago filename template.
+	
+	Notes:
+		Mensago filenames are intended to convey no information about its contents. It
+		consists of a UUID, the size of the file, and a timestamp. If None is passed
+		as the file size, the file name only consists of a UUID and timestamp.
+	'''
 	parts = [ str(uuid.uuid4()) ]
 	
 	if size is not None:
