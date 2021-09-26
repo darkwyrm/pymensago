@@ -147,7 +147,15 @@ class Profile:
 			self.save_config()
 
 	def activate(self) -> RetVal:
-		'''Connects the profile to its associated database'''
+		'''Connects the profile to its associated database.
+		
+		Returns:
+			* connection: (sqlite3.Connection) a Sqlite3 database connection instance
+		
+		Notes:
+			If the database file for the profile doesn't already exist, it is created and
+			initialized.
+		'''
 
 		pathlist = [
 			self.path,
@@ -169,7 +177,11 @@ class Profile:
 		return self.reset_db()
 
 	def load_config(self) -> RetVal:
-		'''Loads the config file for the profile'''
+		'''Loads the config file for the profile
+		
+		Returns:
+			* no additional fields
+		'''
 
 		config_path = os.path.join(self.path, 'config.json')
 		if os.path.exists(config_path):
