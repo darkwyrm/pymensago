@@ -23,13 +23,13 @@ ErrUnsupportedAlgorithm = 'ErrUnsupportedAlgorithm'
 
 supported_algorithms = [
 	# Hash algorithms
-	'BLAKE2B-256', 'SHA256', 'SHA512', 'SHA3-256', 'SHA3-512',
+	'BLAKE2B-256'
 
 	# Public key crypto
 	'CURVE25519', 'ED25519',
 
 	# Secret key crypt
-	'XSALSA20', 'SALSA20', 'AES-128', 'AES-256', 
+	'XSALSA20', 
 ]
 
 
