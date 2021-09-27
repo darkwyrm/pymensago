@@ -61,8 +61,8 @@ CREATE TABLE quotas(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL, usage BIGIN
 -- 4: ROTATE. Keys have been rotated. update_data contains the path to the encrypted key storage
 --    package.
 
-CREATE TABLE updates(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL, update_type INTEGER,
-	update_data VARCHAR(2048), unixtime BIGINT);
+CREATE TABLE updates(rowid SERIAL PRIMARY KEY, rid CHAR(36) NOT NULL, wid CHAR(36) NOT NULL,
+	update_type INTEGER, update_data VARCHAR(2048), unixtime BIGINT);
 
 -- Information about individual workspaces
 
