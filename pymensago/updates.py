@@ -68,7 +68,7 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 	})
 
 	res = conn.read_response()
-	if res['Code'] != '200':
+	if res['Code'] != 200:
 		return wrap_server_error(res)
 	
 	if 'UpdateCount' not in res['Data']:
@@ -90,7 +90,7 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 		})
 
 		res = conn.read_response()
-		if res['Code'] != '200':
+		if res['Code'] != 200:
 			return wrap_server_error(res)
 		
 		try:

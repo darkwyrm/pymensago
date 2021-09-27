@@ -5,18 +5,19 @@ from pycryptostring import CryptoString
 from pymensago.envelope import Envelope
 import pymensago.iscmds as iscmds
 import pymensago.messages as messages
+import pymensago.updates as updates
 import pymensago.utils as utils
 
 def test_local_delivery():
 	'''Tests the SEND command for the sender and then GETUPDATES on the recipient side'''
 
 	status = setup_two_profiles('test_local_delivery')
-	assert not status.error(), f"{funcname}: profile setup failure: {status.error()}"
+	assert not status.error(), f"{funcname()}: profile setup failure: {status.error()}"
 	setupdata = status
 	client = setupdata['client']
 
 	status = client.login(utils.MAddress('admin/example.com'))
-	assert not status.error(), f"{funcname}: admin login failure: {status.error()}"
+	assert not status.error(), f"{funcname()}: admin login failure: {status.error()}"
 
 	# Construct a test contact request, which is the only kind of message allowed to be sent
 	# to a person not in your address book
@@ -64,11 +65,19 @@ def test_local_delivery():
 
 	# Now switch to the recipient and check for updates
 	client.logout()
-	status = client.pman.activate_profile('user')
+	status = client.pman.activate_profile('user1')
 	assert not status.error(), f"{funcname()}: failed to switch to user profile: {status.error()}"
-
+	
 	status = client.login(utils.MAddress('csimons/example.com'))
 	assert not status.error(), f"{funcname}: user login failure: {status.error()}"
+
+	status = client.pman.get_active_profile()
+	assert not status.error(), f"{funcname()}: failed to get active profile: {status.error()}"
+	profile = status['profile']
+
+	status = updates.download_updates(client.conn, profile.db)
+	assert not status.error(), \
+		f"{funcname()}: failed to get recipient workspace updates: {status.error()}"
 
 	# TODO: Finish implementing test_local_delivery()
 
