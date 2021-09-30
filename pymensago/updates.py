@@ -28,7 +28,7 @@ def _validate_update(item: dict()) -> bool:
 	if not id.is_valid():
 		return False
 	
-	if item['Type'] not in [ 'Create', 'Move', 'Delete', 'Rotate' ]:
+	if item['Type'] not in [ 'CREATE', 'MOVE', 'DELETE', 'ROTATE' ]:
 		return False
 	
 	try:
@@ -36,11 +36,11 @@ def _validate_update(item: dict()) -> bool:
 	except:
 		return False
 	
-	if item['Type'] in [ 'Create', 'Delete' ] and filePattern.match() == None:
+	if item['Type'] in [ 'CREATE', 'DELETE' ] and filePattern.match(item['Data']) == None:
 		return False
 	
 	# Validating 'Move' is tricky
-	if item['Type'] == 'Move':
+	if item['Type'] == 'MOVE':
 		paths = item['Data'].strip().split('/')
 		if len(paths) != 3:
 			return False
@@ -48,7 +48,7 @@ def _validate_update(item: dict()) -> bool:
 		if not filePattern.match('/'+paths[1]) or not folderPattern.match('/'+paths[2]):
 			return False
 
-	return False
+	return True
 
 
 def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetVal:
