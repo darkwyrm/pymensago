@@ -5,6 +5,7 @@ import sqlite3
 from retval import RetVal, ErrServerError, ErrUnimplemented
 import pymensago.config as config
 from pymensago.serverconn import ServerConnection, wrap_server_error
+from pymensago.userprofile import Profile
 import pymensago.utils as utils
 
 folderPattern = re.compile(r'/( new)?'
@@ -127,3 +128,14 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 	config.set_str('last_update', str(int(datetime.datetime.utcnow().timestamp())))
 
 	return RetVal()
+
+
+def process_updates(profile: Profile) -> RetVal:
+	'''Acts upon account updates in the database'''
+
+	cur = profile.db.cursor()
+	cur.execute('SELECT id,type,data FROM updates ORDER BY time')
+	for row in cur.fetchall():
+		pass
+		# TODO: Implement process_updates()
+
