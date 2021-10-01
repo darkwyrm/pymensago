@@ -144,6 +144,11 @@ def process_updates(client: MensagoClient) -> RetVal:
 	cur = profile.db.cursor()
 	cur.execute('SELECT id,type,data FROM updates ORDER BY time')
 	for row in cur.fetchall():
+		update_id = utils.UUID(row[0])
+		if not update_id.is_valid():
+			out = RetVal(ErrBadData, 'bad update record found in database: ' + row[0])
+			break
+
 		if row[1] == "CREATE":
 			status = _process_create_update(row)
 		elif row[1] == "DELETE":
@@ -154,6 +159,10 @@ def process_updates(client: MensagoClient) -> RetVal:
 			status = _process_rotate_update(row)
 		else:
 			out = RetVal(ErrBadData, 'invalid record type ' + row[1])
+			break
+		
+		if status.error():
+			out = status
 			break
 	
 	# Remove the records for the items successfully processed
@@ -167,6 +176,26 @@ def process_updates(client: MensagoClient) -> RetVal:
 
 def _process_create_update(data: tuple) -> RetVal:
 	'''Handles downloading and creating items from CREATE records'''
+
+	rawpath = data[2]
+	if filePattern.match(rawpath) == None:
+		return RetVal(ErrBadData, 'bad path in database ' + rawpath)
+	
+	# Processing Steps:
+	# - Download item to temporary location
+	#   - If item doesn't exist and is in 'new' directory, abort
+	#     and save to see if it was deleted later on
+	# - Decrypt item
+	# - Validate data
+	# - Process attachments
+	# 	- Create attachment ID
+	#   - Save attachment to filesystem
+	#   - Add attachment record to database
+	#   - Add attachment reference to item
+	# - Save item data to database
+	# - Delete item from server
+	# - 
+
 	# TODO: Implement _process_create_update()
 
 
