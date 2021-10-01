@@ -2,10 +2,10 @@ import datetime
 import re
 import sqlite3
 
-from retval import RetVal, ErrServerError, ErrUnimplemented
+from retval import ErrBadData, RetVal, ErrServerError, ErrUnimplemented
+from pymensago.client import MensagoClient
 import pymensago.config as config
 from pymensago.serverconn import ServerConnection, wrap_server_error
-from pymensago.userprofile import Profile
 import pymensago.utils as utils
 
 folderPattern = re.compile(r'/( new)?'
@@ -130,12 +130,56 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 	return RetVal()
 
 
-def process_updates(profile: Profile) -> RetVal:
+def process_updates(client: MensagoClient) -> RetVal:
 	'''Acts upon account updates in the database'''
+
+	status = client.pman.get_active_profile()
+	if status.error():
+		return status
+	profile = status['profile']
+
+	out = RetVal()
+	itemlist = list()
 
 	cur = profile.db.cursor()
 	cur.execute('SELECT id,type,data FROM updates ORDER BY time')
 	for row in cur.fetchall():
-		pass
-		# TODO: Implement process_updates()
+		if row[1] == "CREATE":
+			status = _process_create_update(row)
+		elif row[1] == "DELETE":
+			status = _process_delete_update(row)
+		elif row[1] == "MOVE":
+			status = _process_move_update(row)
+		elif row[1] == "ROTATE":
+			status = _process_rotate_update(row)
+		else:
+			out = RetVal(ErrBadData, 'invalid record type ' + row[1])
+			break
+	
+	# Remove the records for the items successfully processed
+	for item in itemlist:
+		cur.execute("DELETE FROM updates WHERE id=?", (item,))
+	
+	cur.commit()
+	
+	return out
 
+
+def _process_create_update(data: tuple) -> RetVal:
+	'''Handles downloading and creating items from CREATE records'''
+	# TODO: Implement _process_create_update()
+
+
+def _process_delete_update(data: tuple) -> RetVal:
+	'''Handles deleting items from DELETE records'''
+	# TODO: Implement _process_delete_update()
+
+
+def _process_move_update(data: tuple) -> RetVal:
+	'''Handles moving items around because of MOVE records'''
+	# TODO: Implement _process_move_update()
+
+
+def _process_rotate_update(data: tuple) -> RetVal:
+	'''Handles key rotation because of ROTATE records'''
+	# TODO: Implement _process_rotate_update()
