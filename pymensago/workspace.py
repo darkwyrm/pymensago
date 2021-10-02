@@ -7,7 +7,7 @@ from retval import ErrBadData, RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
-from pymensago.fmap import FolderMapping
+from pymensago.fmap import FolderMap
 from pymensago.utils import UserID, UUID, Domain
 
 class Workspace:
@@ -59,7 +59,7 @@ class Workspace:
 					return status
 		
 		# Add folder mappings
-		foldermap = FolderMapping()
+		foldermap = FolderMap()
 
 		folderlist = [
 			'messages',
@@ -185,11 +185,11 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 		
-	def add_folder(self, folder: FolderMapping) -> RetVal:
+	def add_folder(self, folder: FolderMap) -> RetVal:
 		'''
 		Adds a mapping of a folder ID to a specific path in the workspace.
 		Parameters:
-		folder : FolderMapping object
+		folder : FolderMap object
 		'''
 		cursor = self.db.cursor()
 		cursor.execute("SELECT fid FROM folders WHERE fid=?", (folder.fid,))
@@ -203,7 +203,7 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 
-	def remove_folder(self, fid: FolderMapping) -> RetVal:
+	def remove_folder(self, fid: FolderMap) -> RetVal:
 		'''Deletes a folder mapping.
 		Parameters:
 		fid : uuid
@@ -221,14 +221,14 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 	
-	def get_folder(self, fid: FolderMapping) -> RetVal:
+	def get_folder(self, fid: FolderMap) -> RetVal:
 		'''Gets the specified folder.
 		Parameters:
 		fid : uuid
 
 		Returns:
 		'error' : string
-		'folder' : FolderMapping object
+		'folder' : FolderMap object
 		'''
 
 		cursor = self.db.cursor()
@@ -238,7 +238,7 @@ class Workspace:
 		if not results or not results[0]:
 			return RetVal(ErrNotFound, fid)
 		
-		folder = FolderMapping()
+		folder = FolderMap()
 		folder.fid = fid
 		folder.Set(results[0], results[1], results[2], results[3])
 		
