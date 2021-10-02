@@ -467,7 +467,7 @@ def move(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 	return RetVal()
 
 
-def rmdir(conn: ServerConnection, path: str, recursive: bool) -> RetVal:
+def rmdir(conn: ServerConnection, path: str) -> RetVal:
 	'''Removes a directory. If recursive is True, all files and subdirectories are also deleted.'''
 
 	request = {
@@ -476,8 +476,6 @@ def rmdir(conn: ServerConnection, path: str, recursive: bool) -> RetVal:
 			'Path': path
 		}
 	}
-	if recursive:
-		request['Data']['Recursive'] = 'True'
 	status = conn.send_message(request)
 	if status.error():
 		return status
