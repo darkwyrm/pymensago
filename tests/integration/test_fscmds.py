@@ -339,6 +339,10 @@ def test_rmdir():
 
 	status = serverconn.mkdir(conn, 
 		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
+	assert not status.error(), f"test_rmdir: mkdir failed: {status.info()}"
+
+	status = serverconn.rmdir(conn, 
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
 	assert not status.error(), f"test_rmdir: rmdir failed: {status.info()}"
 
 	conn.disconnect()
