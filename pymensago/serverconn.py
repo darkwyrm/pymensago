@@ -77,7 +77,7 @@ server_response = {
 CONN_TIMEOUT = 900.0
 
 # Size (in bytes) of the read buffer size for recv()
-READ_BUFFER_SIZE = 8192
+READ_BUFFER_SIZE = 16384
 
 class ServerConnection:
 	'''Mini class to simplify network communications'''
@@ -98,7 +98,7 @@ class ServerConnection:
 			sock.connect((address, port))
 			
 			# absorb the hello string
-			_ = sock.recv(8192)
+			_ = sock.recv(READ_BUFFER_SIZE)
 
 		except Exception as e:
 			sock.close()
@@ -149,7 +149,7 @@ class ServerConnection:
 		# the test will fail and give us the cause of the exception. If we have a successful test, 
 		# exceptions weren't thrown
 		try:
-			rawdata = self.socket.recv(8192)
+			rawdata = self.socket.recv(READ_BUFFER_SIZE)
 			rawstring = rawdata.decode()
 			rawresponse = json.loads(rawstring)
 			if schema:
@@ -171,7 +171,7 @@ class ServerConnection:
 		if not self.socket:
 			return None
 		
-		rawdata = self.socket.recv(8192)
+		rawdata = self.socket.recv(READ_BUFFER_SIZE)
 		return rawdata.decode()
 
 	def write(self, text: str) -> RetVal:
