@@ -5,6 +5,7 @@ import sqlite3
 from retval import ErrBadData, RetVal, ErrServerError, ErrUnimplemented
 from pymensago.client import MensagoClient
 import pymensago.config as config
+import pymensago.fmap as fmap
 from pymensago.serverconn import ServerConnection, wrap_server_error
 import pymensago.utils as utils
 
@@ -141,26 +142,42 @@ def process_updates(client: MensagoClient) -> RetVal:
 	out = RetVal()
 	itemlist = list()
 
+	handlers = {
+		"CREATE":_process_create_update,
+		"DELETE":_process_delete_update,
+		"MOVE":_process_move_update,
+		"ROTATE":_process_rotate_update,
+		"MKDIR":_process_mkdir_update,
+		"RMDIR":_process_rmdir_update
+	}
+	maps = fmap.load_folder_maps(profile.db)
+
 	cur = profile.db.cursor()
+	cur.execute('SELECT COUNT(ALL) FROM updates')
+	row = cur.fetchone()
+	if row == None or row[0] == 0:
+		return RetVal()
+
 	cur.execute('SELECT id,type,data FROM updates ORDER BY time')
-	for row in cur.fetchall():
-		update_id = utils.UUID(row[0])
+	rows = cur.fetchall()
+	
+	for i in range(len(rows)):
+		update_id = utils.UUID(rows[i][0])
 		if not update_id.is_valid():
 			out = RetVal(ErrBadData, 'bad update record found in database: ' + row[0])
 			break
-
-		if row[1] == "CREATE":
-			status = _process_create_update(row)
-		elif row[1] == "DELETE":
-			status = _process_delete_update(row)
-		elif row[1] == "MOVE":
-			status = _process_move_update(row)
-		elif row[1] == "ROTATE":
-			status = _process_rotate_update(row)
-		else:
+		
+		if row[1] not in handlers:
 			out = RetVal(ErrBadData, 'invalid record type ' + row[1])
 			break
-		
+
+		if row[1] == "CREATE":
+			# CREATE is one of the most complicated updates to process. When new messages come in,
+			# the new item is downloaded and entry in / new is deleted because it will be replaced
+			# with a new entry that is encrypted with the user's storage key, not an ephemeral one
+			pass
+
+		status = handlers[row[1]](row, maps)
 		if status.error():
 			out = status
 			break
@@ -174,7 +191,7 @@ def process_updates(client: MensagoClient) -> RetVal:
 	return out
 
 
-def _process_create_update(data: tuple) -> RetVal:
+def _process_create_update(data: tuple, maps: dict) -> RetVal:
 	'''Handles downloading and creating items from CREATE records'''
 
 	rawpath = data[2]
@@ -199,16 +216,24 @@ def _process_create_update(data: tuple) -> RetVal:
 	# TODO: Implement _process_create_update()
 
 
-def _process_delete_update(data: tuple) -> RetVal:
+def _process_delete_update(data: tuple, maps: dict) -> RetVal:
 	'''Handles deleting items from DELETE records'''
 	# TODO: Implement _process_delete_update()
 
 
-def _process_move_update(data: tuple) -> RetVal:
+def _process_move_update(data: tuple, maps: dict) -> RetVal:
 	'''Handles moving items around because of MOVE records'''
 	# TODO: Implement _process_move_update()
 
 
-def _process_rotate_update(data: tuple) -> RetVal:
+def _process_rotate_update(data: tuple, maps: dict) -> RetVal:
 	'''Handles key rotation because of ROTATE records'''
 	# TODO: Implement _process_rotate_update()
+
+def _process_mkdir_update(data: tuple, maps: dict) -> RetVal:
+	'''Handles making folders'''
+	# TODO: Implement _process_mkdir_update()
+
+def _process_rmdir_update(data: tuple, maps: dict) -> RetVal:
+	'''Handles removing folders'''
+	# TODO: Implement _process_rmdir_update()
