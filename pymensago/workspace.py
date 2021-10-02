@@ -7,6 +7,7 @@ from retval import ErrBadData, RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
+from pymensago.fmap import FolderMapping
 from pymensago.utils import UserID, UUID, Domain
 
 class Workspace:
@@ -58,7 +59,7 @@ class Workspace:
 					return status
 		
 		# Add folder mappings
-		foldermap = encryption.FolderMapping()
+		foldermap = FolderMapping()
 
 		folderlist = [
 			'messages',
@@ -184,7 +185,7 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 		
-	def add_folder(self, folder: encryption.FolderMapping) -> RetVal:
+	def add_folder(self, folder: FolderMapping) -> RetVal:
 		'''
 		Adds a mapping of a folder ID to a specific path in the workspace.
 		Parameters:
@@ -202,7 +203,7 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 
-	def remove_folder(self, fid: encryption.FolderMapping) -> RetVal:
+	def remove_folder(self, fid: FolderMapping) -> RetVal:
 		'''Deletes a folder mapping.
 		Parameters:
 		fid : uuid
@@ -220,7 +221,7 @@ class Workspace:
 		self.db.commit()
 		return RetVal()
 	
-	def get_folder(self, fid: encryption.FolderMapping) -> RetVal:
+	def get_folder(self, fid: FolderMapping) -> RetVal:
 		'''Gets the specified folder.
 		Parameters:
 		fid : uuid
@@ -237,7 +238,7 @@ class Workspace:
 		if not results or not results[0]:
 			return RetVal(ErrNotFound, fid)
 		
-		folder = encryption.FolderMapping()
+		folder = FolderMapping()
 		folder.fid = fid
 		folder.Set(results[0], results[1], results[2], results[3])
 		
