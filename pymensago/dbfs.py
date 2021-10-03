@@ -5,8 +5,6 @@ import uuid
 
 from retval import RetVal, ErrNotFound, ErrUnimplemented
 
-from pymensago.userprofile import Profile
-
 # This module implements basic filesystem operations inside the SQLite3 database. This is because
 # the files themselves are stored in the database for (a) data protection and (b) easy search.
 # Only attachments are stored outside the database, and this is for bloat protection. The files'
@@ -62,36 +60,16 @@ def load_folder_maps(db: sqlite3.Connection) -> RetVal():
 	return RetVal().set_value('maps', maps)
 
 
-def make_path_dblocal(profile: Profile, path: str) -> RetVal:
-	'''Converts a Mensago path to an absolute path that references the local filesystem
-
-	Parameters:
-		* profile: the active profile
-		* path: a string containing a single Mensago path
-	
-	Returns:
-		* path: (str) The converted path
-	'''
-	
-	# Load the folder mappings. We'll need these in a bit.
-	status = load_folder_maps(profile.db)
-	if status.error():
-		return status
-	maps = status['maps']
-
-	parts = path.strip().replace(f'/ wsp {profile.wid} ', '').split(' ')
-	
-	for i in range(len(parts)):
-		if parts[i] in maps:
-			parts[i] = maps[parts[i]]
-
-	return RetVal().set_value('path','/' + '/'.join(parts))
-
-
 def validate_dbpath(path: str) -> bool:
 	'''Returns true if the path supplied is valid'''
+
+	if not isinstance(path, str):
+		return False
 	
-	if not path or '//' in path or '\\' in path:
+	if path == '/':
+		return True
+	
+	if not path or '//' in path or '\\' in path or path[-1] == '/' or path.strip() != path:
 		return False
 	
 	return True
@@ -106,7 +84,7 @@ class DBPath:
 		Leading and trailing whitespace is also stripped to avoid problems.
 	'''
 	
-	def __init__(self, src: typing.Union(str, DBPath)):
+	def __init__(self, src):
 		if isinstance(src, str):
 			self.path = src.strip()
 		elif isinstance(src, DBPath):
@@ -123,7 +101,7 @@ class DBPath:
 		'''Returns True if the instance contains a valid path'''
 		return validate_dbpath(self.path)
 
-	def append(self, path: typing.Union(str, DBPath)) -> DBPath:
+	def append(self, path) -> None:
 		'''Appends the path to the object.
 
 		Parameters:
@@ -145,7 +123,6 @@ class DBPath:
 			temp = temp[:-1]
 		
 		self.path = self.path + '/' + temp
-		return self
 
 
 def delete(path: DBPath) -> RetVal:

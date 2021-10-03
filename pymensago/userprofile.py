@@ -15,6 +15,7 @@ import pathlib
 import platform
 
 import pymensago.config as config
+from pymensago.dbfs import load_folder_maps
 from pymensago.workspace import Workspace
 import shutil
 import sqlite3
@@ -700,6 +701,32 @@ class ProfileManager:
 		if self.active_index >= 0:
 			return RetVal().set_value("profile", self.profiles[self.active_index])
 		return RetVal(InvalidProfile,'No active profile')
+
+
+def make_path_dblocal(profile: Profile, path: str) -> RetVal:
+	'''Converts a Mensago path to an absolute path that references the local filesystem
+
+	Parameters:
+		* profile: the active profile
+		* path: a string containing a single Mensago path
+	
+	Returns:
+		* path: (str) The converted path
+	'''
+	
+	# Load the folder mappings. We'll need these in a bit.
+	status = load_folder_maps(profile.db)
+	if status.error():
+		return status
+	maps = status['maps']
+
+	parts = path.strip().replace(f'/ wsp {profile.wid} ', '').split(' ')
+	
+	for i in range(len(parts)):
+		if parts[i] in maps:
+			parts[i] = maps[parts[i]]
+
+	return RetVal().set_value('path','/' + '/'.join(parts))
 
 
 profman = ProfileManager()
