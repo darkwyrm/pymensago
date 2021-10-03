@@ -149,10 +149,28 @@ def mkdir(path: DBPath) -> RetVal:
 	parent directories if they don't already exist.
 
 	Parameters:
-		* path: the Mensago of directories to create
+		* path: the full DBPath of the directory to create
 	
 	Returns:
 		* id: (UUID) the unique identifier for that directory
 	'''
 	
+	# TODO: implement dbfs.mkdir()
+	return RetVal(ErrUnimplemented)
+
+
+def rmdir(path: DBPath) -> RetVal:
+	'''Removes a directory from the database virtual filesytem.
+	
+	Parameters:
+		* path: the DBPath of the directory to remove
+	
+	Returns:
+		* no additional fields
+	
+	Notes:
+		This function will return an error if the directory is not empty.
+	'''
+	
+	# TODO: implement dbfs.rmdir()
 	return RetVal(ErrUnimplemented)
