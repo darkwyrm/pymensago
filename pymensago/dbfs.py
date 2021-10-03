@@ -1,0 +1,158 @@
+'''The dbfs module implements filesystem-like operations on top of the SQLite3 database'''
+import sqlite3
+import typing
+
+from retval import ErrUnimplemented, RetVal
+
+from pymensago.userprofile import Profile
+
+class FolderMap:
+	'''Represents the mapping of a server-side path to a local one'''
+	def __init__(self):
+		self.fid = ''
+		self.address = ''
+		self.keyid = ''
+		self.path = ''
+		self.permissions = ''
+	
+	def MakeID(self) -> None:
+		'''Generates a FID for the object'''
+		self.fid = str(uuid.uuid4())
+
+	def Set(self, address, keyid, path, permissions) -> None:
+		'''Sets the values of the object'''
+		self.address = address
+		self.keyid = keyid
+		self.path = path
+		self.permissions = permissions
+
+
+def load_folder_maps(db: sqlite3.Connection) -> RetVal():
+	'''Loads from the database all folder maps.
+
+	Parameters:
+		db: connection to the SQLite3 database
+	
+	Returns:
+		maps: (dict) dictionary of UUID keys to workspace-relative paths
+	
+	Notes:
+		Because folders can have the same name due to being in different locations,
+		the full path is used. For example 'files attachments' for the attachments
+		folder for the workspace.
+	'''
+
+	maps = dict()
+
+	cur = db.cursor()
+	cur.execute("SELECT fid,path FROM folders")
+	for row in cur.fetchall():
+		maps[row[0]] = row[1]
+	
+	if len(maps) == 0:
+		return RetVal(ErrNotFound)
+	
+	return RetVal().set_value('maps', maps)
+
+
+def make_path_local(profile: Profile, path: str) -> RetVal:
+	'''Converts a Mensago path to an absolute path that references the local filesystem
+
+	Parameters:
+		* profile: the active profile
+		* path: a string containing a Mensago path
+	
+	Returns:
+		* path: (str) The converted path
+	'''
+	
+	# Load the folder mappings. We'll need these in a bit.
+	status = fmap.load_folder_maps(profile.db)
+	if status.error():
+		return status
+	maps = status['maps']
+
+	parts = path.strip().split('/ wsp ')[1:]
+	
+	for i in range(len(parts)):
+		subparts = parts[i].strip().split(' ')
+		for j in range(len(subparts)):
+			if subparts[j] in maps:
+				subparts[j] = maps[subparts[j]]
+		parts[i] = os.path.join(profile.path,os.sep.join(subparts))
+
+	return RetVal().set_value('path',' '.join(parts))
+
+
+def validate_dbpath(path: str) -> bool:
+	'''Returns true if the path supplied is valid'''
+	
+	if not path or '//' in path or '\\' in path:
+		return False
+	
+	return True
+
+
+class DBPath:
+	'''Represents an internal DBFS path.
+	
+	Notes:
+		The only printable characters not permitted in these paths are forward slashes and
+		backslashes. Paths are also expected to not have trailing slashes, which will be stripped.
+		Leading and trailing whitespace is also stripped to avoid problems.
+	'''
+	
+	def __init__(self, src: typing.Union(str, DBPath)):
+		if isinstance(src, str):
+			self.path = src.strip()
+		elif isinstance(src, DBPath):
+			self.path = src.path.strip()
+		else:
+			self.path = ''
+		
+		if not self.is_valid():
+			self.path = ''
+		if self.path[-1] == '/':
+			self.path = self.path[:-1]
+
+	def is_valid(self) -> bool:
+		'''Returns True if the instance contains a valid path'''
+		return validate_dbpath(self.path)
+
+	def append(self, path: typing.Union(str, DBPath)) -> DBPath:
+		'''Appends the path to the object.
+
+		Parameters:
+			* path: the path to append to the current instance
+
+		Notes:
+			If the path parameter is invalid, the instance's value is not changed.
+		'''
+		temp = ''
+		if isinstance(path, str):
+			temp = path.strip()
+		elif isinstance(path, DBPath):
+			temp = path.path.strip()
+		
+		if not temp or not validate_dbpath(temp):
+			return self
+		
+		if temp[-1] == '/':
+			temp = temp[:-1]
+		
+		self.path = self.path + '/' + temp
+		return self
+
+
+def mkdir(path: DBPath) -> RetVal:
+	'''Creates a new directory in the database virtual filesytem. This function will create
+	parent directories if they don't already exist.
+
+	Parameters:
+		* path: the Mensago of directories to create
+	
+	Returns:
+		* id: (UUID) the unique identifier for that directory
+	'''
+	
+	return RetVal(ErrUnimplemented)
