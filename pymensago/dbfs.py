@@ -162,6 +162,38 @@ def delete(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
+def mkdir(path: DBPath) -> RetVal:
+	'''Creates a new directory in the database virtual filesytem.
+
+	Parameters:
+		* path: the full DBPath of the directory to create
+	
+	Returns:
+		* id: (UUID) the unique identifier for that directory
+	
+	Notes:
+		This function will create parent directories if they don't already exist.
+	'''
+	
+	# TODO: implement dbfs.mkdir()
+	return RetVal(ErrUnimplemented)
+
+
+def move(filepath: DBPath, destination: DBPath) -> RetVal:
+	'''Moves a file to another directory.
+
+	Parameters:
+		* filepath: the full DBPath of the file to move
+		* destination: the directory to move the file to
+	
+	Notes:
+		This function may not be used to rename files, only move them.
+	'''
+	
+	# TODO: implement dbfs.move()
+	return RetVal(ErrUnimplemented)
+
+
 def read(path: DBPath) -> RetVal:
 	'''Reads a file from the database virtual filesytem.
 	
@@ -173,21 +205,6 @@ def read(path: DBPath) -> RetVal:
 	'''
 	
 	# TODO: implement dbfs.read()
-	return RetVal(ErrUnimplemented)
-
-
-def mkdir(path: DBPath) -> RetVal:
-	'''Creates a new directory in the database virtual filesytem. This function will create
-	parent directories if they don't already exist.
-
-	Parameters:
-		* path: the full DBPath of the directory to create
-	
-	Returns:
-		* id: (UUID) the unique identifier for that directory
-	'''
-	
-	# TODO: implement dbfs.mkdir()
 	return RetVal(ErrUnimplemented)
 
 

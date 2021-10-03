@@ -259,8 +259,23 @@ def _process_delete_update(data: tuple, profile: Profile) -> RetVal:
 
 def _process_move_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles moving items around because of MOVE records'''
-	# TODO: Implement _process_move_update()
-	return RetVal(ErrUnimplemented)
+	
+	# This unusual construct simultaneously splits the source and destination paths out while
+	# stripping out the space in between them.
+	paths = data[2].strip().split(' /')
+	paths[1] = '/' + paths[1]
+	
+	status = dbfs.make_path_dblocal(profile, paths[0])
+	if status.error():
+		return status
+	src = status['path']
+
+	status = dbfs.make_path_dblocal(profile, paths[0])
+	if status.error():
+		return status
+	dest = status['path']
+	
+	return dbfs.move(src, dest)
 
 
 def _process_rotate_update(data: tuple, profile: Profile) -> RetVal:
