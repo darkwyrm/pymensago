@@ -1,8 +1,9 @@
 '''The dbfs module implements filesystem-like operations on top of the SQLite3 database'''
 import sqlite3
 import typing
+import uuid
 
-from retval import ErrUnimplemented, RetVal
+from retval import RetVal, ErrNotFound, ErrUnimplemented
 
 import pymensago.fmap as fmap
 from pymensago.userprofile import Profile
