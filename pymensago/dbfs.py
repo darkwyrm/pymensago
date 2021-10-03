@@ -142,6 +142,20 @@ class DBPath:
 		return self
 
 
+def delete(path: DBPath) -> RetVal:
+	'''Deletes a file the database virtual filesytem.
+	
+	Parameters:
+		* path: the DBPath of the directory to remove
+	
+	Returns:
+		* no additional fields
+	'''
+	
+	# TODO: implement dbfs.delete()
+	return RetVal(ErrUnimplemented)
+
+
 def mkdir(path: DBPath) -> RetVal:
 	'''Creates a new directory in the database virtual filesytem. This function will create
 	parent directories if they don't already exist.

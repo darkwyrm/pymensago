@@ -249,8 +249,12 @@ def _process_create_update(data: tuple, maps: dict) -> RetVal:
 
 def _process_delete_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles deleting items from DELETE records'''
-	# TODO: Implement _process_delete_update()
-	return RetVal(ErrUnimplemented)
+	
+	status = dbfs.make_path_dblocal(profile, data[2])
+	if status.error():
+		return status
+	
+	return dbfs.delete(status['path'])
 
 
 def _process_move_update(data: tuple, profile: Profile) -> RetVal:
