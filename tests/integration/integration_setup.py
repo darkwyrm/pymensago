@@ -391,13 +391,13 @@ def setup_profile(profile_folder: str, config: dict, profile_data: dict) -> RetV
 	foldermap = FolderMap()
 
 	folderlist = [
-		'messages',
-		'contacts',
-		'events',
-		'tasks',
-		'notes',
-		'files',
-		'files attachments'
+		'/messages',
+		'/contacts',
+		'/events',
+		'/tasks',
+		'/notes',
+		'/files',
+		'/files/attachments'
 	]
 
 	for folder in folderlist:

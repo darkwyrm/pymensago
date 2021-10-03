@@ -41,6 +41,7 @@ _db_setup_cmds = [ '''
 		"address" TEXT NOT NULL,
 		"keyid" TEXT NOT NULL,
 		"path" TEXT NOT NULL,
+		"name" TEXT NOT NULL,
 		"permissions" TEXT NOT NULL
 	);''', '''
 	CREATE table "sessions"(
@@ -726,7 +727,10 @@ def make_path_dblocal(profile: Profile, path: str) -> RetVal:
 		if parts[i] in maps:
 			parts[i] = maps[parts[i]]
 
-	return RetVal().set_value('path','/' + '/'.join(parts))
+	out = '/'.join(parts)
+	if out[0] != '/':
+		out = '/' + out
+	return RetVal().set_value('path', out)
 
 
 profman = ProfileManager()

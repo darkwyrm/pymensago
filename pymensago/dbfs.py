@@ -11,55 +11,6 @@ from retval import RetVal, ErrNotFound, ErrUnimplemented
 # names are the same as those on the server to make tracking them easier. Folder names, OTOH,
 # are stored in the database using the user-facing names (inbox, notes, etc.)
 
-class FolderMap:
-	'''Represents the mapping of a server-side path to a local one'''
-	def __init__(self):
-		self.fid = ''
-		self.address = ''
-		self.keyid = ''
-		self.path = ''
-		self.permissions = ''
-	
-	def MakeID(self) -> None:
-		'''Generates a FID for the object'''
-		self.fid = str(uuid.uuid4())
-
-	def Set(self, address, keyid, path, permissions) -> None:
-		'''Sets the values of the object'''
-		self.address = address
-		self.keyid = keyid
-		self.path = path
-		self.permissions = permissions
-
-
-def load_folder_maps(db: sqlite3.Connection) -> RetVal():
-	'''Loads from the database all folder maps.
-
-	Parameters:
-		db: connection to the SQLite3 database
-	
-	Returns:
-		maps: (dict) dictionary of UUID keys to workspace-relative paths
-	
-	Notes:
-		Because folders can have the same name due to being in different locations,
-		the full path is used. For example 'files attachments' for the attachments
-		folder for the workspace.
-	'''
-
-	maps = dict()
-
-	cur = db.cursor()
-	cur.execute("SELECT fid,path FROM folders")
-	for row in cur.fetchall():
-		maps[row[0]] = row[1]
-	
-	if len(maps) == 0:
-		return RetVal(ErrNotFound)
-	
-	return RetVal().set_value('maps', maps)
-
-
 def validate_dbpath(path: str) -> bool:
 	'''Returns true if the path supplied is valid'''
 
@@ -98,6 +49,13 @@ class DBPath:
 	def is_valid(self) -> bool:
 		'''Returns True if the instance contains a valid path'''
 		return validate_dbpath(self.path)
+
+	def basename(self) -> str:
+		'''Returns the name of the entry represented by the path.'''
+		if self.path == '/':
+			return '/'
+		
+		return self.path.split('/')[-1]
 
 	def append(self, path) -> None:
 		'''Appends the path to the object.
@@ -213,4 +171,54 @@ def write(path: DBPath, data: str) -> RetVal:
 	
 	# TODO: implement dbfs.write()
 	return RetVal(ErrUnimplemented)
+
+
+class FolderMap:
+	'''Represents the mapping of a server-side path to a local one'''
+	def __init__(self):
+		self.fid = ''
+		self.address = ''
+		self.keyid = ''
+		self.path = DBPath('')
+		self.permissions = ''
+	
+	def MakeID(self) -> None:
+		'''Generates a FID for the object'''
+		self.fid = str(uuid.uuid4())
+
+	def Set(self, address, keyid, path, permissions) -> None:
+		'''Sets the values of the object'''
+		self.address = address
+		self.keyid = keyid
+		self.path = DBPath(path)
+		self.permissions = permissions
+
+
+def load_folder_maps(db: sqlite3.Connection) -> RetVal():
+	'''Loads from the database all folder maps.
+
+	Parameters:
+		db: connection to the SQLite3 database
+	
+	Returns:
+		maps: (dict) dictionary of UUID string keys to workspace-relative paths
+	
+	Notes:
+		Because folders can have the same name due to being in different locations,
+		the full path is used. For example 'files attachments' for the attachments
+		folder for the workspace.
+	'''
+
+	maps = dict()
+
+	cur = db.cursor()
+	cur.execute("SELECT fid,path FROM folders")
+	for row in cur.fetchall():
+		maps[row[0]] = row[1]
+	
+	if len(maps) == 0:
+		return RetVal(ErrNotFound)
+	
+	return RetVal().set_value('maps', maps)
+
 

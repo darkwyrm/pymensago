@@ -62,13 +62,13 @@ class Workspace:
 		foldermap = FolderMap()
 
 		folderlist = [
-			'messages',
-			'contacts',
-			'events',
-			'tasks',
-			'notes',
-			'files',
-			'files attachments'
+			'/messages',
+			'/contacts',
+			'/events',
+			'/tasks',
+			'/notes',
+			'/files',
+			'/files/attachments'
 		]
 
 		for folder in folderlist:
@@ -197,9 +197,9 @@ class Workspace:
 		if results:
 			return RetVal(ErrExists, folder.fid)
 		
-		cursor.execute('''INSERT INTO folders(fid,address,keyid,path,permissions)
-			VALUES(?,?,?,?,?)''', (folder.fid, folder.address, folder.keyid, folder.path,
-				folder.permissions))
+		cursor.execute('''INSERT INTO folders(fid,address,keyid,path,name,permissions)
+			VALUES(?,?,?,?,?,?)''', (folder.fid, folder.address, folder.keyid, folder.path.path,
+				folder.path.basename(), folder.permissions))
 		self.db.commit()
 		return RetVal()
 
