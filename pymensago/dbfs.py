@@ -7,6 +7,12 @@ from retval import RetVal, ErrNotFound, ErrUnimplemented
 
 from pymensago.userprofile import Profile
 
+# This module implements basic filesystem operations inside the SQLite3 database. This is because
+# the files themselves are stored in the database for (a) data protection and (b) easy search.
+# Only attachments are stored outside the database, and this is for bloat protection. The files'
+# names are the same as those on the server to make tracking them easier. Folder names, OTOH,
+# are stored in the database using the user-facing names (inbox, notes, etc.)
+
 class FolderMap:
 	'''Represents the mapping of a server-side path to a local one'''
 	def __init__(self):
@@ -156,6 +162,20 @@ def delete(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
+def read(path: DBPath) -> RetVal:
+	'''Reads a file from the database virtual filesytem.
+	
+	Parameters:
+		* path: full DBPath of the file to read
+	
+	Returns:
+		* data: (str) The JSON data of the file payload
+	'''
+	
+	# TODO: implement dbfs.read()
+	return RetVal(ErrUnimplemented)
+
+
 def mkdir(path: DBPath) -> RetVal:
 	'''Creates a new directory in the database virtual filesytem. This function will create
 	parent directories if they don't already exist.
@@ -186,3 +206,19 @@ def rmdir(path: DBPath) -> RetVal:
 	
 	# TODO: implement dbfs.rmdir()
 	return RetVal(ErrUnimplemented)
+
+
+def write(path: DBPath, data: str) -> RetVal:
+	'''Writes a file to the database virtual filesytem.
+	
+	Parameters:
+		* path: full DBPath of the file to write
+		* data: (str) The JSON data of the file payload
+	
+	Returns:
+		* no additional fields
+	'''
+	
+	# TODO: implement dbfs.write()
+	return RetVal(ErrUnimplemented)
+
