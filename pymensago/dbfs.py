@@ -74,7 +74,7 @@ def make_path_dblocal(profile: Profile, path: str) -> RetVal:
 	'''
 	
 	# Load the folder mappings. We'll need these in a bit.
-	status = fmap.load_folder_maps(profile.db)
+	status = load_folder_maps(profile.db)
 	if status.error():
 		return status
 	maps = status['maps']
