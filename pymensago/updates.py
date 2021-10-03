@@ -6,7 +6,7 @@ import sqlite3
 from retval import ErrBadData, RetVal, ErrServerError, ErrUnimplemented
 from pymensago.client import MensagoClient
 import pymensago.config as config
-import pymensago.fmap as fmap
+import pymensago.dbfs as dbfs
 from pymensago.serverconn import ServerConnection, wrap_server_error
 from pymensago.userprofile import Profile
 import pymensago.utils as utils
@@ -32,7 +32,7 @@ def make_path_local(profile: Profile, path: str) -> RetVal:
 	'''
 	
 	# Load the folder mappings. We'll need these in a bit.
-	status = fmap.load_folder_maps(profile.db)
+	status = dbfs.load_folder_maps(profile.db)
 	if status.error():
 		return status
 	maps = status['maps']
@@ -181,7 +181,6 @@ def process_updates(client: MensagoClient) -> RetVal:
 		"MKDIR":_process_mkdir_update,
 		"RMDIR":_process_rmdir_update
 	}
-	maps = fmap.load_folder_maps(profile.db)
 
 	cur = profile.db.cursor()
 	cur.execute('SELECT COUNT(ALL) FROM updates')
@@ -208,7 +207,7 @@ def process_updates(client: MensagoClient) -> RetVal:
 			# with a new entry that is encrypted with the user's storage key, not an ephemeral one
 			pass
 
-		status = handlers[row[1]](row, maps)
+		status = handlers[row[1]](row, profile)
 		if status.error():
 			out = status
 			break
@@ -245,26 +244,37 @@ def _process_create_update(data: tuple, maps: dict) -> RetVal:
 	# - 
 
 	# TODO: Implement _process_create_update()
+	return RetVal(ErrUnimplemented)
 
 
-def _process_delete_update(data: tuple, maps: dict) -> RetVal:
+def _process_delete_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles deleting items from DELETE records'''
 	# TODO: Implement _process_delete_update()
+	return RetVal(ErrUnimplemented)
 
 
-def _process_move_update(data: tuple, maps: dict) -> RetVal:
+def _process_move_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles moving items around because of MOVE records'''
 	# TODO: Implement _process_move_update()
+	return RetVal(ErrUnimplemented)
 
 
-def _process_rotate_update(data: tuple, maps: dict) -> RetVal:
+def _process_rotate_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles key rotation because of ROTATE records'''
 	# TODO: Implement _process_rotate_update()
+	return RetVal(ErrUnimplemented)
 
-def _process_mkdir_update(data: tuple, maps: dict) -> RetVal:
+
+def _process_mkdir_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles making folders'''
 	# TODO: Implement _process_mkdir_update()
 
-def _process_rmdir_update(data: tuple, maps: dict) -> RetVal:
+	return RetVal(ErrUnimplemented)
+
+
+def _process_rmdir_update(data: tuple, profile: Profile) -> RetVal:
 	'''Handles removing folders'''
 	# TODO: Implement _process_rmdir_update()
+	return RetVal(ErrUnimplemented)
+
+

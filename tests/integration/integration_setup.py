@@ -16,7 +16,7 @@ from pymensago.client import MensagoClient
 from pymensago.config import load_server_config
 from pymensago.contact import Name
 from pymensago.encryption import Password, EncryptionPair, SigningPair, SecretKey
-from pymensago.fmap import FolderMap
+from pymensago.dbfs import FolderMap
 import pymensago.keycard as keycard
 import pymensago.iscmds as iscmds
 import pymensago.serverconn as serverconn

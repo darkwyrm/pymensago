@@ -7,7 +7,7 @@ from retval import ErrBadData, RetVal, ErrExists, ErrNotFound, ErrBadValue
 
 import pymensago.auth as auth
 import pymensago.encryption as encryption
-from pymensago.fmap import FolderMap
+from pymensago.dbfs import FolderMap
 from pymensago.utils import UserID, UUID, Domain
 
 class Workspace:

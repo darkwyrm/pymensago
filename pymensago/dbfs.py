@@ -5,7 +5,6 @@ import uuid
 
 from retval import RetVal, ErrNotFound, ErrUnimplemented
 
-import pymensago.fmap as fmap
 from pymensago.userprofile import Profile
 
 class FolderMap:
