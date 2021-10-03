@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 import sqlite3
 
@@ -7,6 +8,7 @@ from pymensago.client import MensagoClient
 import pymensago.config as config
 import pymensago.fmap as fmap
 from pymensago.serverconn import ServerConnection, wrap_server_error
+from pymensago.userprofile import Profile
 import pymensago.utils as utils
 
 folderPattern = re.compile(r'/( new)?'
@@ -16,6 +18,35 @@ filePattern = re.compile(r'/( new)?'
 	r'( [\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12})*'
 	r'( [0-9]+\.[0-9]+\.[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?'
 		r'[0-9a-fA-F]{12})*')
+
+
+def make_path_local(profile: Profile, path: str) -> RetVal:
+	'''Converts a Mensago path to an absolute path that references the local filesystem
+
+	Parameters:
+		* profile: the active profile
+		* path: a string containing a Mensago path
+	
+	Returns:
+		* path: (str) The converted path
+	'''
+	
+	# Load the folder mappings. We'll need these in a bit.
+	status = fmap.load_folder_maps(profile.db)
+	if status.error():
+		return status
+	maps = status['maps']
+
+	parts = path.strip().split('/ wsp ')[1:]
+	
+	for i in range(len(parts)):
+		subparts = parts[i].strip().split(' ')
+		for j in range(len(subparts)):
+			if subparts[j] in maps:
+				subparts[j] = maps[subparts[j]]
+		parts[i] = os.path.join(profile.path,os.sep.join(subparts))
+
+	return RetVal().set_value('path',' '.join(parts))
 
 
 def _validate_update(item: dict()) -> bool:
