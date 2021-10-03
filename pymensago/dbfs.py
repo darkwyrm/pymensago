@@ -81,7 +81,7 @@ class DBPath:
 		self.path = self.path + '/' + temp
 
 
-def delete(path: DBPath) -> RetVal:
+def delete(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Deletes a file the database virtual filesytem.
 	
 	Parameters:
@@ -95,7 +95,7 @@ def delete(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
-def mkdir(path: DBPath) -> RetVal:
+def mkdir(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Creates a new directory in the database virtual filesytem.
 
 	Parameters:
@@ -112,7 +112,7 @@ def mkdir(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
-def move(filepath: DBPath, destination: DBPath) -> RetVal:
+def move(db: sqlite3.Connection, filepath: DBPath, destination: DBPath) -> RetVal:
 	'''Moves a file to another directory.
 
 	Parameters:
@@ -127,7 +127,7 @@ def move(filepath: DBPath, destination: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
-def read(path: DBPath) -> RetVal:
+def read(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Reads a file from the database virtual filesytem.
 	
 	Parameters:
@@ -141,7 +141,7 @@ def read(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
-def rmdir(path: DBPath) -> RetVal:
+def rmdir(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Removes a directory from the database virtual filesytem.
 	
 	Parameters:
@@ -158,7 +158,7 @@ def rmdir(path: DBPath) -> RetVal:
 	return RetVal(ErrUnimplemented)
 
 
-def write(path: DBPath, data: str) -> RetVal:
+def write(db: sqlite3.Connection, path: DBPath, data: str) -> RetVal:
 	'''Writes a file to the database virtual filesytem.
 	
 	Parameters:

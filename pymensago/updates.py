@@ -254,7 +254,7 @@ def _process_delete_update(data: tuple, profile: Profile) -> RetVal:
 	if status.error():
 		return status
 	
-	return dbfs.delete(status['path'])
+	return dbfs.delete(profile.db, status['path'])
 
 
 def _process_move_update(data: tuple, profile: Profile) -> RetVal:
@@ -275,7 +275,7 @@ def _process_move_update(data: tuple, profile: Profile) -> RetVal:
 		return status
 	dest = status['path']
 	
-	return dbfs.move(src, dest)
+	return dbfs.move(profile.db, src, dest)
 
 
 def _process_rotate_update(data: tuple, profile: Profile) -> RetVal:
@@ -291,7 +291,7 @@ def _process_mkdir_update(data: tuple, profile: Profile) -> RetVal:
 	if status.error():
 		return status
 	
-	return dbfs.mkdir(status['path'])
+	return dbfs.mkdir(profile.db, status['path'])
 
 
 def _process_rmdir_update(data: tuple, profile: Profile) -> RetVal:
@@ -301,4 +301,4 @@ def _process_rmdir_update(data: tuple, profile: Profile) -> RetVal:
 	if status.error():
 		return status
 	
-	return dbfs.rmdir(status['path'])
+	return dbfs.rmdir(profile.db, status['path'])
