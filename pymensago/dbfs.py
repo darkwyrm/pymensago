@@ -94,8 +94,6 @@ class DBPath:
 		
 		if not self.is_valid():
 			self.path = ''
-		if self.path[-1] == '/':
-			self.path = self.path[:-1]
 
 	def is_valid(self) -> bool:
 		'''Returns True if the instance contains a valid path'''
