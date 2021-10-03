@@ -4,6 +4,7 @@ import typing
 
 from retval import ErrUnimplemented, RetVal
 
+import pymensago.fmap as fmap
 from pymensago.userprofile import Profile
 
 class FolderMap:
@@ -55,12 +56,12 @@ def load_folder_maps(db: sqlite3.Connection) -> RetVal():
 	return RetVal().set_value('maps', maps)
 
 
-def make_path_local(profile: Profile, path: str) -> RetVal:
+def make_path_dblocal(profile: Profile, path: str) -> RetVal:
 	'''Converts a Mensago path to an absolute path that references the local filesystem
 
 	Parameters:
 		* profile: the active profile
-		* path: a string containing a Mensago path
+		* path: a string containing a single Mensago path
 	
 	Returns:
 		* path: (str) The converted path
@@ -72,16 +73,13 @@ def make_path_local(profile: Profile, path: str) -> RetVal:
 		return status
 	maps = status['maps']
 
-	parts = path.strip().split('/ wsp ')[1:]
+	parts = path.strip().replace(f'/ wsp {profile.wid} ', '').split(' ')
 	
 	for i in range(len(parts)):
-		subparts = parts[i].strip().split(' ')
-		for j in range(len(subparts)):
-			if subparts[j] in maps:
-				subparts[j] = maps[subparts[j]]
-		parts[i] = os.path.join(profile.path,os.sep.join(subparts))
+		if parts[i] in maps:
+			parts[i] = maps[parts[i]]
 
-	return RetVal().set_value('path',' '.join(parts))
+	return RetVal().set_value('path','/' + '/'.join(parts))
 
 
 def validate_dbpath(path: str) -> bool:
