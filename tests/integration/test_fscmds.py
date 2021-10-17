@@ -6,7 +6,7 @@ import uuid
 from retval import RetVal
 
 from tests.integration.integration_setup import setup_test, init_server, regcode_user, \
-	reset_workspace_dir, setup_profile_base, setup_profile, admin_profile_data
+	reset_workspace_dir, setup_profile_base, setup_profile, admin_profile_data, funcname
 import pymensago.serverconn as serverconn
 import pymensago.utils as utils
 
@@ -320,6 +320,43 @@ def test_move():
 	conn.disconnect()
 
 
+def test_replace():
+	'''Tests the REPLACE command'''
+	dbconn = setup_test()
+	dbdata = init_server(dbconn)
+	test_folder = setup_profile_base('test_replace')
+	status = setup_profile(test_folder, dbdata, admin_profile_data)
+
+	reset_workspace_dir(dbdata)
+
+	conn = serverconn.ServerConnection()
+	status = conn.connect('localhost', 2001)
+	assert not status.error(), f"{funcname()}: failed to connect to server: {status.info()}"
+
+	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
+	assert not status.error(), f"{funcname()}: regcode_user failed: {status.info()}"
+
+	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
+		dbdata['admin_wid'].as_string())
+	inner_dir = f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111"
+	serverconn.mkdir(conn, inner_dir)
+
+	status = make_test_file(admin_dir)
+	assert not status.error(), \
+		f"{funcname()}: error creating server-side test file: {status.info()}"
+	oldfile = f"/ wsp {dbdata['admin_wid'].as_string()} {status['name']}"
+
+	status = make_test_file(test_folder)
+	assert not status.error(), \
+		f"{funcname()}: error creating client-side test file: {status.info()}"
+	newfile = os.path.join(test_folder, status['name'])
+	status = serverconn.replace(conn, oldfile, newfile, inner_dir)
+	assert not status.error(), f"{funcname()}: upload failed: {status.info()}"
+	assert "filename" in status, f"{funcname()}: file name missing"
+
+	conn.disconnect()
+
+
 def test_rmdir():
 	'''Tests the RMDIR command'''
 
@@ -427,15 +464,16 @@ def test_upload():
 	conn.disconnect()
 
 if __name__ == '__main__':
-	test_copy()
-	test_delete()
-	test_download()
-	test_exists()
-	test_getquotainfo()
-	test_listfiles()
-	test_listdirs()
-	test_mkdir()
-	test_move()
-	test_select()
-	test_setquota()
-	test_upload()
+	# test_copy()
+	# test_delete()
+	# test_download()
+	# test_exists()
+	# test_getquotainfo()
+	# test_listfiles()
+	# test_listdirs()
+	# test_mkdir()
+	# test_move()
+	test_replace()
+	# test_select()
+	# test_setquota()
+	# test_upload()

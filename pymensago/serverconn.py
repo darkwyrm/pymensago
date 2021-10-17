@@ -512,6 +512,8 @@ def replace(conn: ServerConnection, oldfile: str, localpath: str, newpath: str, 
 	request = {
 		'Action': 'REPLACE',
 		'Data': {
+			'OldPath': oldfile,
+			'NewPath': newpath,
 			'Size': str(filesize),
 			'Hash': hashstr,
 			'Path': newpath
