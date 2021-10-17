@@ -1,5 +1,13 @@
 '''Module containing path operations for Mensago paths'''
 
+import re
+
+server_path_pattern = re.compile(
+	r"^/( wsp| out| tmp)?"
+		r"( [0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})*"
+		r"( new)?( [0-9]+\.[0-9]+\."
+			r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})*$")
+
 def basename(mpath: str) -> str:
 	'''Given a Mensago path, returns the name of the item specified, regardless 
 	of if it's a folder or file.
@@ -51,3 +59,23 @@ def split(s: str) -> list:
 	out = [ parts[0] ]
 	out.extend(['/' + x for x in parts[1:]])
 	return out
+
+
+def validate_server_path(path: str) -> bool:
+	'''Validates a Mensago server path, which consists primarily of UUIDs, but 
+		potentially some reserved top-level names.
+
+	Parameters:
+		s: a string containing multiple Mensago paths
+	
+	Returns:
+		A list of strings, each containing a Mensago path
+	'''
+	
+	# Just a slash is also valid -- refers to the workspace root directory
+	s = path.strip()
+	if s == '/':
+		return True
+
+	return server_path_pattern.match(s)
+
