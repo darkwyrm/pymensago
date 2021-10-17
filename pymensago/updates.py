@@ -7,18 +7,10 @@ from retval import ErrBadData, RetVal, ErrServerError, ErrUnimplemented
 from pymensago.client import MensagoClient
 import pymensago.config as config
 import pymensago.dbfs as dbfs
+import pymensago.mpath as mpath
 from pymensago.serverconn import ServerConnection, wrap_server_error
 from pymensago.userprofile import Profile
 import pymensago.utils as utils
-
-folderPattern = re.compile(r'/( new)?'
-	r'( [\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12})*')
-
-filePattern = re.compile(r'/( new)?'
-	r'( [\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12})*'
-	r'( [0-9]+\.[0-9]+\.[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?'
-		r'[0-9a-fA-F]{12})*')
-
 
 def make_path_local(profile: Profile, path: str) -> RetVal:
 	'''Converts a Mensago path to an absolute path that references the local filesystem
@@ -69,16 +61,16 @@ def _validate_update(item: dict()) -> bool:
 	except:
 		return False
 	
-	if item['Type'] in [ 'CREATE', 'DELETE' ] and filePattern.match(item['Data']) == None:
+	if item['Type'] in [ 'CREATE', 'DELETE' ] and not mpath.validate_server_path(item['Data']):
 		return False
 	
 	# Validating 'Move' is tricky
 	if item['Type'] == 'MOVE':
-		paths = item['Data'].strip().split('/')
-		if len(paths) != 3:
+		paths = mpath.split(item['Data'])
+		if len(paths) != 2:
 			return False
 		
-		if not filePattern.match('/'+paths[1]) or not folderPattern.match('/'+paths[2]):
+		if not mpath.validate_server_path(paths[0]) or not mpath.validate_server_path(paths[1]):
 			return False
 
 	return True
