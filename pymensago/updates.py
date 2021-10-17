@@ -64,7 +64,6 @@ def _validate_update(item: dict()) -> bool:
 	if item['Type'] in [ 'CREATE', 'DELETE' ] and not mpath.validate_server_path(item['Data']):
 		return False
 	
-	# Validating 'Move' is tricky
 	if item['Type'] == 'MOVE':
 		paths = mpath.split(item['Data'])
 		if len(paths) != 2:
@@ -165,22 +164,22 @@ def process_updates(client: MensagoClient) -> RetVal:
 	out = RetVal()
 	itemlist = list()
 
-	handlers = {
-		"CREATE":_process_create_update,
-		"DELETE":_process_delete_update,
-		"MOVE":_process_move_update,
-		"REPLACE":_process_replace_update,
-		"ROTATE":_process_rotate_update,
-		"MKDIR":_process_mkdir_update,
-		"RMDIR":_process_rmdir_update
-	}
+	record_types = [ "CREATE", "DELETE", "MOVE", "REPLACE", "ROTATE", "MKDIR", "RMDIR" ]
 
+	# To fully process updates, we first need to figure out what the end state should look like.
+	# This dictionary will contain the operations needed to reach this state. By translating the
+	# update list to this intermediate state, we can prevent errors, unnecessary item processing,
+	# and even file transfers.
+	fileops = dict()
+	
 	cur = profile.db.cursor()
 	cur.execute('SELECT COUNT(ALL) FROM updates')
 	row = cur.fetchone()
 	if row == None or row[0] == 0:
 		return RetVal()
 
+	# TODO: refactor update processing to order by an arbitrary row ID, not time
+	
 	cur.execute('SELECT id,type,data FROM updates ORDER BY time')
 	rows = cur.fetchall()
 	
@@ -190,21 +189,123 @@ def process_updates(client: MensagoClient) -> RetVal:
 			out = RetVal(ErrBadData, 'bad update record found in database: ' + row[0])
 			break
 		
-		if row[1] not in handlers:
+		if row[1] not in record_types:
 			out = RetVal(ErrBadData, 'invalid record type ' + row[1])
 			break
+		
+		# This is where it can get complicated
+		if row[1] == 'CREATE':
+			fileops[mpath.basename(row[2])] = { 'op':"CREATE", 'data':row[2], 'dest':row[2]}
+		
+		elif row[1] == 'DELETE':
+			filename = mpath.basename(row[2])
+			if filename in fileops:
+				# This case is that if already instructed to create a file, but it was deleted
+				# later on, which means we don't have to do anything.
+				if fileops[filename]['op'] == 'CREATE':
+					del fileops[filename]
+				
+				# If we've already been instructed to move an existing file to another location,
+				# but now we're asked to delete it, we'll just simply delete it from the original
+				# location
+				elif fileops[filename]['op'] == 'MOVE':
+					fileops[filename]['op'] == 'DELETE'
+					fileops[filename]['data'] == fileops[filename]['src']
+					del fileops[filename]['src']
+					del fileops[filename]['dest']
+				
+				else:
+					# We should *never* be here
+					raise ValueError('BUG: Bad DELETE update state operation in process_updates()')
 
-		if row[1] == "CREATE":
-			# CREATE is one of the most complicated updates to process. When new messages come in,
-			# the new item is downloaded and entry in / new is deleted because it will be replaced
-			# with a new entry that is encrypted with the user's storage key, not an ephemeral one
+			else:
+				fileops[filename] = { 'op':"DELETE", 'data':row[2] }
+		
+		elif row[1] == 'MOVE':
+			paths = mpath.split(row[2])
+			filename = mpath.basename(paths[0])
+			if filename in fileops:
+				# A file is already going to be downloaded from the server. Because of the MOVE,
+				# we'll download it to the final location instead of the its original location
+				# specified in the CREATE record
+				if fileops[filename]['op'] == 'CREATE':
+					fileops[filename]['dest'] = paths[1]
+				
+				elif fileops[filename]['op'] == 'MOVE':
+					# The file was moved once, and now it has been moved again. Skip to the end. :)
+					if fileops[filename]['dest'] == paths[0]:
+						fileops[filename]['dest'] == paths[1]
+					else:
+						# We have a big problem. There is an existing op record to move the file
+						# from a to b. Now we have another update record which says to move the same
+						# file from c to d. This means that the server records are corrupted. The
+						# solution here is to assume that the first record is legitimate and
+						# the following ones are incorrect -- make no further changes until we're
+						# confident of the final state.
+						pass
+
+				# This is silly and shouldn't happen. Nonetheless, if we're asked to move a file
+				# scheduled for deletion, do nothing.
+				elif fileops[filename]['op'] == 'DELETE':
+					pass
+
+			else:
+				fileops[filename] = { 'op':"MOVE", 'data':row[2], 'src':paths[0], 'dest':paths[1] }
+		
+		elif row[1] == 'REPLACE':
+			# Finding a REPLACE record in the mix means that a file has been deleted and another
+			# has been created.
+			paths = mpath.split(row[2])
+			oldfile = mpath.basename(paths[0])
+			newfile = mpath.basename(paths[1])
+			
+			# Handling the new file is, thankfully, really easy
+			fileops[newfile] = { 'op':"CREATE", 'data':paths[1], 'dest':paths[1] }
+
+			# Handling the old one is just like DELETE
+			if oldfile in fileops:
+				# This case is that a file has been created, but now it's being replaced, so
+				# do nothing about the original update record
+				if fileops[filename]['op'] == 'CREATE':
+					del fileops[oldfile]
+				
+				# If we've already been instructed to move an existing file to another location,
+				# but now it's been replaced. Once again we'll just simply delete it from the
+				# original location and move on.
+				elif fileops[filename]['op'] == 'MOVE':
+					fileops[filename]['op'] == 'DELETE'
+					fileops[filename]['data'] == fileops[filename]['src']
+					del fileops[filename]['src']
+					del fileops[filename]['dest']
+				
+				else:
+					# We should *never* be here
+					raise ValueError('BUG: Bad REPLACE update state operation in process_updates()')
+
+			else:
+				fileops[oldfile] = { 'op':"DELETE", 'data':paths[1] }
+		
+		elif row[1] == 'MKDIR':
+			fileops[mpath.basename(row[2])] = { 'op':"MKDIR", 'data':row[2] }
+		
+		elif row[1] == 'RMDIR':
+			dirname = mpath.basename(row[2])
+			if dirname in fileops:
+				if fileops[dirname]['op'] == 'MKDIR':
+					del fileops[dirname]
+				elif fileops[dirname]['op'] == 'RMDIR':
+					# ignore duplicates
+					pass
+			else:
+				fileops[dirname] = { 'op':'RMDIR', 'data':row[2] }
+
+		elif row[1] == 'ROTATE':
+			# TODO: Implement key rotation handling in process_updates()
 			pass
-
-		status = handlers[row[1]](row, profile)
-		if status.error():
-			out = status
-			break
 	
+	# Now that we have put together all the file operations
+	
+
 	# Remove the records for the items successfully processed
 	for item in itemlist:
 		cur.execute("DELETE FROM updates WHERE id=?", (item,))
@@ -212,92 +313,3 @@ def process_updates(client: MensagoClient) -> RetVal:
 	cur.commit()
 	
 	return out
-
-
-def _process_create_update(data: tuple, maps: dict) -> RetVal:
-	'''Handles downloading and creating items from CREATE records'''
-
-	rawpath = data[2]
-	if filePattern.match(rawpath) == None:
-		return RetVal(ErrBadData, 'bad path in database ' + rawpath)
-	
-	# Processing Steps:
-	# - Download item to temporary location
-	#   - If item doesn't exist and is in 'new' directory, abort
-	#     and save to see if it was deleted later on
-	# - Decrypt item
-	# - Validate data
-	# - Process attachments
-	# 	- Create attachment ID
-	#   - Save attachment to filesystem
-	#   - Add attachment record to database
-	#   - Add attachment reference to item
-	# - Save item data to database
-	# - Delete item from server
-	# - 
-
-	# TODO: Implement _process_create_update()
-	return RetVal(ErrUnimplemented)
-
-
-def _process_delete_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles deleting items from DELETE records'''
-	
-	status = dbfs.make_path_dblocal(profile, data[2])
-	if status.error():
-		return status
-	
-	return dbfs.delete(profile.db, status['path'])
-
-
-def _process_move_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles moving items around because of MOVE records'''
-	
-	# This unusual construct simultaneously splits the source and destination paths out while
-	# stripping out the space in between them.
-	paths = data[2].strip().split(' /')
-	paths[1] = '/' + paths[1]
-	
-	status = dbfs.make_path_dblocal(profile, paths[0])
-	if status.error():
-		return status
-	src = status['path']
-
-	status = dbfs.make_path_dblocal(profile, paths[0])
-	if status.error():
-		return status
-	dest = status['path']
-	
-	return dbfs.move(profile.db, src, dest)
-
-
-def _process_replace_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles REPLACE records'''
-	# TODO: Implement _process_replace_update()
-	return RetVal(ErrUnimplemented)
-
-
-def _process_rotate_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles key rotation because of ROTATE records'''
-	# TODO: Implement _process_rotate_update()
-	return RetVal(ErrUnimplemented)
-
-
-def _process_mkdir_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles making folders'''
-
-	status = dbfs.make_path_dblocal(profile, data[2])
-	if status.error():
-		return status
-	
-	return dbfs.mkdir(profile.db, status['path'])
-
-
-def _process_rmdir_update(data: tuple, profile: Profile) -> RetVal:
-	'''Handles removing folders'''
-	
-	status = dbfs.make_path_dblocal(profile, data[2])
-	if status.error():
-		return status
-	
-	return dbfs.rmdir(profile.db, status['path'])
