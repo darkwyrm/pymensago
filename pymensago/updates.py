@@ -1,6 +1,5 @@
 import datetime
 import os
-import re
 import sqlite3
 
 from retval import ErrBadData, RetVal, ErrServerError, ErrUnimplemented
@@ -170,7 +169,19 @@ def process_updates(client: MensagoClient) -> RetVal:
 	# This dictionary will contain the operations needed to reach this state. By translating the
 	# update list to this intermediate state, we can prevent errors, unnecessary item processing,
 	# and even file transfers.
-	fileops = dict()
+	# 
+	# Unfortunately, this will get complicated, requiring us to track folder dependencies and 
+	# specify order (due to key rotation) and a bunch of other junk. Although it might seem
+	# overengineered, an in-memory SQLite database is going to be necessary to handle dependency
+	# tracking
+	opsdb = sqlite3.connect(':memory:')
+	opsdb.execute('''CREATE TABLE ops (
+		"rowid" INTEGER PRIMARY KEY AUTOINCREMENT,
+		"op" TEXT NOT NULL,
+		"name" TEXT NOT NULL,
+		"src" TEXT,
+		"dest" TEXT NOT NULL
+	);''')
 	
 	cur = profile.db.cursor()
 	cur.execute('SELECT COUNT(ALL) FROM updates')
@@ -193,48 +204,60 @@ def process_updates(client: MensagoClient) -> RetVal:
 			out = RetVal(ErrBadData, 'invalid record type ' + row[1])
 			break
 		
-		# This is where it can get complicated
+		# This is where gets complicated :/
+
 		if row[1] == 'CREATE':
-			fileops[mpath.basename(row[2])] = { 'op':"CREATE", 'data':row[2], 'dest':row[2]}
+			ocur = opsdb.cursor()
+			ocur.execute("INSERT INTO ops(op,name,src,dest) VALUES('CREATE',?,?,?)",
+				(mpath.basename(row[2]), row[2], row[2]))
+			opsdb.commit()
 		
 		elif row[1] == 'DELETE':
 			filename = mpath.basename(row[2])
-			if filename in fileops:
+
+			ocur = opsdb.cursor()
+			ocur.execute("SELECT op,dest FROM ops WHERE name=?", (filename,))
+			orow = ocur.fetchone()
+			if orow:
 				# This case is that if already instructed to create a file, but it was deleted
 				# later on, which means we don't have to do anything.
-				if fileops[filename]['op'] == 'CREATE':
-					del fileops[filename]
+				if orow[0] == 'CREATE':
+					ocur.execute("DELETE FROM ops WHERE name=?", (filename,))
 				
 				# If we've already been instructed to move an existing file to another location,
 				# but now we're asked to delete it, we'll just simply delete it from the original
 				# location
-				elif fileops[filename]['op'] == 'MOVE':
-					fileops[filename]['op'] == 'DELETE'
-					fileops[filename]['data'] == fileops[filename]['src']
-					del fileops[filename]['src']
-					del fileops[filename]['dest']
+				elif orow[0] == 'MOVE':
+					ocur.execute("UPDATE ops SET op='DELETE',src='',dest=? WHERE name=?",
+						(orow[1], filename))
 				
 				else:
 					# We should *never* be here
 					raise ValueError('BUG: Bad DELETE update state operation in process_updates()')
 
 			else:
-				fileops[filename] = { 'op':"DELETE", 'data':row[2] }
+				ocur.execute("INSERT INTO ops(op,name,dest) VALUES('DELETE',?,?", (filename,row[2]))
+			
+			opsdb.commit()
 		
 		elif row[1] == 'MOVE':
 			paths = mpath.split(row[2])
 			filename = mpath.basename(paths[0])
-			if filename in fileops:
+
+			ocur = opsdb.cursor()
+			ocur.execute("SELECT op,dest FROM ops WHERE name=?", (filename,))
+			orow = ocur.fetchone()
+			if orow:
 				# A file is already going to be downloaded from the server. Because of the MOVE,
 				# we'll download it to the final location instead of the its original location
 				# specified in the CREATE record
-				if fileops[filename]['op'] == 'CREATE':
-					fileops[filename]['dest'] = paths[1]
+				if orow[0] == 'CREATE':
+					ocur.execute("UPDATE ops SET dest=? WHERE name=?", (paths[1], filename))
 				
-				elif fileops[filename]['op'] == 'MOVE':
+				elif orow[0] == 'MOVE':
 					# The file was moved once, and now it has been moved again. Skip to the end. :)
-					if fileops[filename]['dest'] == paths[0]:
-						fileops[filename]['dest'] == paths[1]
+					if orow[1] == paths[0]:
+						ocur.execute("UPDATE ops SET dest=? WHERE name=?", (paths[1], filename))
 					else:
 						# We have a big problem. There is an existing op record to move the file
 						# from a to b. Now we have another update record which says to move the same
@@ -246,11 +269,13 @@ def process_updates(client: MensagoClient) -> RetVal:
 
 				# This is silly and shouldn't happen. Nonetheless, if we're asked to move a file
 				# scheduled for deletion, do nothing.
-				elif fileops[filename]['op'] == 'DELETE':
+				elif orow[1] == 'DELETE':
 					pass
 
 			else:
-				fileops[filename] = { 'op':"MOVE", 'data':row[2], 'src':paths[0], 'dest':paths[1] }
+				ocur.execute("INSERT INTO ops(op,name,src,dest) VALUES('MOVE',?,?,?",
+					(filename, paths[0], paths[1]))
+			opsdb.commit()
 		
 		elif row[1] == 'REPLACE':
 			# Finding a REPLACE record in the mix means that a file has been deleted and another
@@ -260,52 +285,65 @@ def process_updates(client: MensagoClient) -> RetVal:
 			newfile = mpath.basename(paths[1])
 			
 			# Handling the new file is, thankfully, really easy
-			fileops[newfile] = { 'op':"CREATE", 'data':paths[1], 'dest':paths[1] }
-
+			ocur = opsdb.cursor()
+			ocur.execute("INSERT INTO ops(op,name,src,dest) VALUES('CREATE',?,?,?",
+				(newfile, paths[1], paths[1]))
+			
 			# Handling the old one is just like DELETE
-			if oldfile in fileops:
+			ocur.execute("SELECT op,dest FROM ops WHERE name=?", (oldfile,))
+			orow = ocur.fetchone()
+			if orow:
 				# This case is that a file has been created, but now it's being replaced, so
 				# do nothing about the original update record
-				if fileops[filename]['op'] == 'CREATE':
-					del fileops[oldfile]
+				if orow[0] == 'CREATE':
+					ocur.execute("DELETE FROM ops WHERE name=?", (oldfile,))
 				
 				# If we've already been instructed to move an existing file to another location,
 				# but now it's been replaced. Once again we'll just simply delete it from the
 				# original location and move on.
-				elif fileops[filename]['op'] == 'MOVE':
-					fileops[filename]['op'] == 'DELETE'
-					fileops[filename]['data'] == fileops[filename]['src']
-					del fileops[filename]['src']
-					del fileops[filename]['dest']
+				elif orow[0] == 'MOVE':
+					ocur.execute("UPDATE ops SET op='DELETE',src='',dest=? WHERE name=?",
+						(orow[1], oldfile))
 				
 				else:
 					# We should *never* be here
 					raise ValueError('BUG: Bad REPLACE update state operation in process_updates()')
 
 			else:
-				fileops[oldfile] = { 'op':"DELETE", 'data':paths[1] }
+				ocur.execute("INSERT INTO ops(op,name,dest) VALUES('DELETE',?,?",
+					(oldfile,paths[1]))
+			
+			opsdb.commit()
 		
 		elif row[1] == 'MKDIR':
-			fileops[mpath.basename(row[2])] = { 'op':"MKDIR", 'data':row[2] }
+			ocur = opsdb.cursor()
+			ocur.execute("INSERT INTO ops(op,name,dest) VALUES('MKDIR',?,?)",
+				(mpath.basename(row[2]), row[2]))
+			opsdb.commit()
 		
 		elif row[1] == 'RMDIR':
 			dirname = mpath.basename(row[2])
-			if dirname in fileops:
-				if fileops[dirname]['op'] == 'MKDIR':
-					del fileops[dirname]
-				elif fileops[dirname]['op'] == 'RMDIR':
+
+			ocur = opsdb.cursor()
+			ocur.execute("SELECT op,dest FROM ops WHERE name=?", (filename,))
+			orow = ocur.fetchone()
+			if orow:
+				if orow[0] == 'MKDIR':
+					ocur.execute("DELETE FROM ops WHERE name=?", (dirname,))
+				elif orow[0] == 'RMDIR':
 					# ignore duplicates
 					pass
 			else:
-				fileops[dirname] = { 'op':'RMDIR', 'data':row[2] }
+				ocur.execute("INSERT INTO ops(op,name,dest) VALUES('RMDIR',?,?", (dirname,row[2]))
+			
+			opsdb.commit()
 
 		elif row[1] == 'ROTATE':
 			# TODO: Implement key rotation handling in process_updates()
 			pass
 	
-	# Now that we have put together all the file operations
+	# TODO: Execute file operations
 	
-
 	# Remove the records for the items successfully processed
 	for item in itemlist:
 		cur.execute("DELETE FROM updates WHERE id=?", (item,))
