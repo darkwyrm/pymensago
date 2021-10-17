@@ -467,6 +467,116 @@ def move(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 	return RetVal()
 
 
+def replace(conn: ServerConnection, oldfile: str, localpath: str, newpath: str, tempname='',
+	offset=-1, hashstr=''):
+	'''Uploads a local file to the server to replace an existing one.
+	
+	Parameters:
+		oldfile: (str) Mensago path of the file to replace
+		localpath: (str) local path of the new file to upload
+		newpath: (str) Mensago path of the folder for the replacement file
+		tempname: (str) Resume only. Name of the temporary file returned by the server
+			in the initial upload attempt.
+		offset: (int) Resume only. Location in the file to continue uploading at.
+		hashstr: CryptoString-formatted string containing the hash of the file
+	
+	Returns:
+		sent: (int) Only when interrupted. Number of bytes sent to the server.
+		tempname: (str) Only when interrupted. Name of the server-side temporary file
+			needed when resuming
+		filename: (str) Only on success. Mensago path of the replacement file
+	'''
+
+	try:	
+		filesize = os.path.getsize(localpath)
+	except OSError as e:
+		return RetVal(ErrBadValue, str(e))
+	except Exception as e:
+		return RetVal().wrap_exception(e)
+	
+	if offset >= 0 and offset > filesize:
+		return RetVal(ErrBadValue, 'bad offset')
+	
+	if (offset >= 0 and not tempname) or (offset < 0 and tempname):
+		return RetVal(ErrBadValue, 'both tempname and offset must both be set')
+	
+	if not newpath:
+		return RetVal(ErrBadValue, 'empty server path')
+	
+	if not hashstr:
+		status = hashfile(localpath)
+		if status.error():
+			return status
+		hashstr = status['hash']
+	
+	request = {
+		'Action': 'REPLACE',
+		'Data': {
+			'Size': str(filesize),
+			'Hash': hashstr,
+			'Path': newpath
+		}
+	}
+
+	if offset >= 0:
+		request['Data']['Offset'] = str(offset)
+	
+	if tempname:
+		request['Data']['TempName'] = tempname
+	
+	status = conn.send_message(request)
+	if status.error():
+		return status
+
+	response = conn.read_response(server_response)
+	if response['Code'] != 100:
+		return wrap_server_error(response)
+	
+	totalsent = 0
+	try:
+		handle = open(localpath, 'rb')
+	except Exception as e:
+		return RetVal(ErrFilesystemError, e)
+
+	if offset > 0:
+		handle.seek(offset)
+
+	try:
+		filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
+	except Exception as e:
+		handle.close()
+		return RetVal(ErrFilesystemError, e).set_values({
+			'sent': totalsent,
+			'tempname': response['TempName']
+		})
+	while filedata:
+		try:
+			sent_size = conn.socket.send(filedata)
+		except Exception as e:
+			handle.close()
+			return RetVal(ErrNetworkError, e).set_values({
+				'sent': totalsent,
+				'tempname': response['TempName']
+			})
+		totalsent = totalsent + sent_size
+
+		try:
+			filedata = handle.read(io.DEFAULT_BUFFER_SIZE)
+		except Exception as e:
+			handle.close()
+			return RetVal(ErrFilesystemError, e).set_values({
+				'sent': totalsent,
+				'tempname': response['TempName']
+			})
+	handle.close()
+
+	response = conn.read_response(server_response)
+	if response['Code'] != 200:
+		return wrap_server_error(response)
+
+	return RetVal().set_value("filename", response['Data']['FileName'])
+
+
 def rmdir(conn: ServerConnection, path: str) -> RetVal:
 	'''Removes a directory. If recursive is True, all files and subdirectories are also deleted.'''
 
@@ -624,7 +734,6 @@ def send(conn: ServerConnection, localpath: str, domain: utils.Domain, tempname=
 		return wrap_server_error(response)
 
 	return RetVal().set_value("FileName", response['Data']['FileName'])
-
 
 
 def setquota(conn: ServerConnection, wid: str, size: int) -> RetVal:
