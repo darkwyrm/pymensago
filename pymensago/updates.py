@@ -181,7 +181,12 @@ def process_updates(client: MensagoClient) -> RetVal:
 		"name" TEXT NOT NULL,
 		"src" TEXT,
 		"dest" TEXT NOT NULL
-	);''')
+	);
+	CREATE TABLE dependencies (
+		"folder" TEXT NOT NULL,
+		"file" TEXT NOT NULL
+	);
+	''')
 	
 	cur = profile.db.cursor()
 	cur.execute('SELECT COUNT(ALL) FROM updates')
@@ -205,6 +210,8 @@ def process_updates(client: MensagoClient) -> RetVal:
 			break
 		
 		# This is where gets complicated :/
+
+		# TODO: Implement dependency tracking for file ops
 
 		if row[1] == 'CREATE':
 			ocur = opsdb.cursor()
