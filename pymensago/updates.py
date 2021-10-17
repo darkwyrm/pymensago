@@ -177,6 +177,7 @@ def process_updates(client: MensagoClient) -> RetVal:
 		"CREATE":_process_create_update,
 		"DELETE":_process_delete_update,
 		"MOVE":_process_move_update,
+		"REPLACE":_process_replace_update,
 		"ROTATE":_process_rotate_update,
 		"MKDIR":_process_mkdir_update,
 		"RMDIR":_process_rmdir_update
@@ -276,6 +277,12 @@ def _process_move_update(data: tuple, profile: Profile) -> RetVal:
 	dest = status['path']
 	
 	return dbfs.move(profile.db, src, dest)
+
+
+def _process_replace_update(data: tuple, profile: Profile) -> RetVal:
+	'''Handles REPLACE records'''
+	# TODO: Implement _process_replace_update()
+	return RetVal(ErrUnimplemented)
 
 
 def _process_rotate_update(data: tuple, profile: Profile) -> RetVal:
