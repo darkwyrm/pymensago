@@ -15,11 +15,11 @@ def make_path_local(profile: Profile, path: str) -> RetVal:
 	'''Converts a Mensago path to an absolute path that references the local filesystem
 
 	Parameters:
-		* profile: the active profile
-		* path: a string containing a Mensago path
+	  * profile: the active profile
+	  * path: a string containing a Mensago path
 	
 	Returns:
-		* path: (str) The converted path
+	  * path: (str) The converted path
 	'''
 	
 	# Load the folder mappings. We'll need these in a bit.

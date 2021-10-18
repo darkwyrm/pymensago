@@ -162,7 +162,7 @@ class Profile:
 		'''Connects the profile to its associated database.
 		
 		Returns:
-			* connection: (sqlite3.Connection) a Sqlite3 database connection instance
+		  * connection: (sqlite3.Connection) a Sqlite3 database connection instance
 		
 		Notes:
 			If the database file for the profile doesn't already exist, it is created and
@@ -192,7 +192,7 @@ class Profile:
 		'''Loads the config file for the profile
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		'''
 
 		config_path = os.path.join(self.path, 'config.json')
@@ -215,7 +215,7 @@ class Profile:
 		'''Saves the profile-specific configuration information to a file
 
 		Returns:
-			* no additional fields
+		  * no additional fields
 		'''
 		
 		if self.devid.is_empty():
@@ -247,10 +247,10 @@ class Profile:
 		'''Sets or unsets the default status for a profile.
 
 		Parameters:
-			* is_default: flag for if the profile should or should not be the default
+		  * is_default: flag for if the profile should or should not be the default
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			The default status is flagged in the filesystem by the existence of the
@@ -325,7 +325,7 @@ class Profile:
 		'''Assigns an identity workspace to the profile.
 
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			The profile can have multiple workspace memberships, but only one can be used
@@ -352,7 +352,7 @@ class Profile:
 		'''This function reinitializes the database to empty.
 		
 		Returns:
-			* 'connection': (sqlite3.Connection) an connection instance to the database
+		  * 'connection': (sqlite3.Connection) an connection instance to the database
 		
 		Notes:
 			All data is IRREVOCABLY deleted from the database using this call, including
@@ -380,10 +380,10 @@ class Profile:
 		'''Resolves a Mensago address to its corresponding workspace ID.
 		
 		Parameters:
-			* address: the address to resolve
+		  * address: the address to resolve
 		
 		Returns:
-			* wid: (UUID) the workspace ID of the address.
+		  * wid: (UUID) the workspace ID of the address.
 
 		Notes:
 			This call works only for those addresses to which the profile has a
@@ -417,10 +417,10 @@ class ProfileManager:
 		'''Loads all profiles under the specified path
 		
 		Parameters:
-			* profile_path: (optional) the path containing the profile hierarchy
+		  * profile_path: (optional) the path containing the profile hierarchy
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			If not specified, the profile manager will look in ~/config/mensago on POSIX
@@ -485,10 +485,10 @@ class ProfileManager:
 		'''Creates a profile with the specified name.
 		
 		Parameters:
-			* name: name of the profile to create
+		  * name: name of the profile to create
 
 		Returns: 
-			* profile: (Profile) management object of the newly-created profile
+		  * profile: (Profile) management object of the newly-created profile
 		
 		Notes:
 			The name given to this method is expected to be all lowercase and profile names
@@ -523,10 +523,10 @@ class ProfileManager:
 		'''Deletes the named profile and all files on disk contained in it.
 
 		Parameters:
-			* name: the name of the profile to delete
+		  * name: the name of the profile to delete
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		'''
 
 		if name == 'default':
@@ -556,11 +556,11 @@ class ProfileManager:
 		'''Renames a profile, leaving the profile ID unchanged.
 
 		Parameters:
-			* oldname: the current name of the profile
-			* newname: the new name of the profile
+		  * oldname: the current name of the profile
+		  * newname: the new name of the profile
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			As with create_profile(), capital letters will be squashed, care should be
@@ -620,10 +620,10 @@ class ProfileManager:
 		'''Sets the default profile.
 		
 		Parameters:
-			* name: the name of the profile to set as default
+		  * name: the name of the profile to set as default
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			If there is only one profile -- or none at all -- this call has no effect and
@@ -661,11 +661,11 @@ class ProfileManager:
 		'''Activates the specified profile.
 
 		Parameters:
-			* name: the name of the profile to activate
+		  * name: the name of the profile to activate
 
 		Returns:
-			* wid: (UUID) the workspace ID of the identity address
-			* host: (Domain) the domain of the identity address
+		  * wid: (UUID) the workspace ID of the identity address
+		  * host: (Domain) the domain of the identity address
 		'''
 		if not name:
 			return RetVal(ErrEmptyData, "BUG: name may not be empty")
@@ -696,7 +696,7 @@ class ProfileManager:
 		'''Returns the active profile
 		
 		Returns:
-			* profile: (Profile) instance of active profile
+		  * profile: (Profile) instance of active profile
 		'''
 
 		if self.active_index >= 0:
@@ -708,11 +708,11 @@ def make_path_dblocal(profile: Profile, path: str) -> RetVal:
 	'''Converts a Mensago path to an absolute path that references the local filesystem
 
 	Parameters:
-		* profile: the active profile
-		* path: a string containing a single Mensago path
+	  * profile: the active profile
+	  * path: a string containing a single Mensago path
 	
 	Returns:
-		* path: (str) The converted path
+	  * path: (str) The converted path
 	'''
 	
 	# Load the folder mappings. We'll need these in a bit.

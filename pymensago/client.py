@@ -43,10 +43,10 @@ class MensagoClient:
 		'''Establishes a network connection to a Mensago server. Logging in is not performed.
 		
 		Parameters:
-			* domain: domain to connect to
+		  * domain: domain to connect to
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		'''
 		serverconfig = kcresolver.get_server_config(domain)
 		if serverconfig.error():
@@ -68,10 +68,10 @@ class MensagoClient:
 		'''Logs into a server.
 		
 		Parameters:
-			* address: the Mensago address or workspace address to connect with.
+		  * address: the Mensago address or workspace address to connect with.
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Note that logging in and connecting are not the same. At the same time, if no 
 		connection is established, login() will also create the connection.'''
@@ -136,7 +136,7 @@ class MensagoClient:
 		'''Logs out of a server
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		'''
 		self.login_active = False
 		if self.conn.is_connected():
@@ -147,14 +147,14 @@ class MensagoClient:
 		'''Administrator command which preprovisions a new account on the server.
 		
 		Parameters:
-			* id: (optional) username for the account
-			* domain: (optional) domain for the account
+		  * id: (optional) username for the account
+		  * domain: (optional) domain for the account
 		
 		Returns:
-			* Workspace-ID: (UUID) the workspace ID of the account
-			* Reg-Code: (str) the registration code
-			* Domain: (Domain) the domain for the account. 
-			* User-ID: (UserID) returned only if specified
+		  * Workspace-ID: (UUID) the workspace ID of the account
+		  * Reg-Code: (str) the registration code
+		  * Domain: (Domain) the domain for the account. 
+		  * User-ID: (UserID) returned only if specified
 		 
 		This is a simple command because it is not meant to create a local
 		profile. It is only meant to provision the account on the server side
@@ -203,19 +203,19 @@ class MensagoClient:
 		'''Completes setup of a preregistered account.
 		
 		Parameters:
-			* address: the preprovisioned account address
-			* regcode: the registration code obtains from preregister()
-			* userpass: the user's cleartext password
-			* name: (optional) the user's name
+		  * address: the preprovisioned account address
+		  * regcode: the registration code obtains from preregister()
+		  * userpass: the user's cleartext password
+		  * name: (optional) the user's name
 		
 		Returns:
-			* wid: (UUID) the workspace ID of the account
-			* devid: (UUID) the registration code
-			* domain: (Domain) the domain for the account. 
-			* uid: (UserID) returned only if specified
-			* password: (Password) the Password object containing the user's hashed 
+		  * wid: (UUID) the workspace ID of the account
+		  * devid: (UUID) the registration code
+		  * domain: (Domain) the domain for the account. 
+		  * uid: (UserID) returned only if specified
+		  * password: (Password) the Password object containing the user's hashed 
 				password
-			* devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
+		  * devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
 				individual device to the server
 		
 		Notes:
@@ -279,19 +279,19 @@ class MensagoClient:
 		'''Create a new account on the specified server.
 		
 		Parameters:
-			* domain: the domain to create the account on
-			* userpass: the user's cleartext password
-			* userid: (optional) the desired username
-			* name: (optional) the user's name
+		  * domain: the domain to create the account on
+		  * userpass: the user's cleartext password
+		  * userid: (optional) the desired username
+		  * name: (optional) the user's name
 		
 		Returns:
-			* wid: (UUID) the workspace ID of the account
-			* devid: (UUID) the registration code
-			* domain: (Domain) the domain for the account. 
-			* uid: (UserID) returned only if specified
-			* password: (Password) the Password object containing the user's hashed 
+		  * wid: (UUID) the workspace ID of the account
+		  * devid: (UUID) the registration code
+		  * domain: (Domain) the domain for the account. 
+		  * uid: (UserID) returned only if specified
+		  * password: (Password) the Password object containing the user's hashed 
 				password
-			* devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
+		  * devpair: (EncryptionPair) Asymmetric encryption key pair for identifying the
 				individual device to the server
 		
 		Notes:
@@ -391,10 +391,10 @@ class MensagoClient:
 		'''Disables the account on the server.
 		
 		Parameters:
-			* wid: the UUID of the workspace to disable
+		  * wid: the UUID of the workspace to disable
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 		
 		Notes:
 			This function can be called for a user to disable their own account or by an
@@ -508,11 +508,11 @@ class MensagoClient:
 		'''Uploads an encrypted message to the server for delivery.
 
 		Parameters:
-			* msg: The envelope object containing the message to send
-			* domain: The domain of the recipient
+		  * msg: The envelope object containing the message to send
+		  * domain: The domain of the recipient
 
 		Returns:
-			* No additional fields		
+		  * No additional fields		
 		
 		Notes:
 			The Envelope object is expected to be fully set up, and all keys applied.

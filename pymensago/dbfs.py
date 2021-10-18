@@ -61,7 +61,7 @@ class DBPath:
 		'''Appends the path to the object.
 
 		Parameters:
-			* path: the path to append to the current instance
+		  * path: the path to append to the current instance
 
 		Notes:
 			If the path parameter is invalid, the instance's value is not changed.
@@ -85,10 +85,10 @@ def delete(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Deletes a file the database virtual filesytem.
 	
 	Parameters:
-		* path: the DBPath of the directory to remove
+	  * path: the DBPath of the directory to remove
 	
 	Returns:
-		* no additional fields
+	  * no additional fields
 	'''
 	
 	# TODO: implement dbfs.delete()
@@ -99,10 +99,10 @@ def mkdir(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Creates a new directory in the database virtual filesytem.
 
 	Parameters:
-		* path: the full DBPath of the directory to create
+	  * path: the full DBPath of the directory to create
 	
 	Returns:
-		* id: (UUID) the unique identifier for that directory
+	  * id: (UUID) the unique identifier for that directory
 	
 	Notes:
 		This function will create parent directories if they don't already exist.
@@ -116,8 +116,8 @@ def move(db: sqlite3.Connection, filepath: DBPath, destination: DBPath) -> RetVa
 	'''Moves a file to another directory.
 
 	Parameters:
-		* filepath: the full DBPath of the file to move
-		* destination: the directory to move the file to
+	  * filepath: the full DBPath of the file to move
+	  * destination: the directory to move the file to
 	
 	Notes:
 		This function may not be used to rename files, only move them.
@@ -131,10 +131,10 @@ def read(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Reads a file from the database virtual filesytem.
 	
 	Parameters:
-		* path: full DBPath of the file to read
+	  * path: full DBPath of the file to read
 	
 	Returns:
-		* data: (str) The JSON data of the file payload
+	  * data: (str) The JSON data of the file payload
 	'''
 	
 	# TODO: implement dbfs.read()
@@ -145,10 +145,10 @@ def rmdir(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Removes a directory from the database virtual filesytem.
 	
 	Parameters:
-		* path: the DBPath of the directory to remove
+	  * path: the DBPath of the directory to remove
 	
 	Returns:
-		* no additional fields
+	  * no additional fields
 	
 	Notes:
 		This function will return an error if the directory is not empty.
@@ -162,11 +162,11 @@ def write(db: sqlite3.Connection, path: DBPath, data: str) -> RetVal:
 	'''Writes a file to the database virtual filesytem.
 	
 	Parameters:
-		* path: full DBPath of the file to write
-		* data: (str) The JSON data of the file payload
+	  * path: full DBPath of the file to write
+	  * data: (str) The JSON data of the file payload
 	
 	Returns:
-		* no additional fields
+	  * no additional fields
 	'''
 	
 	# TODO: implement dbfs.write()

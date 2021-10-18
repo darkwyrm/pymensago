@@ -189,7 +189,7 @@ class MAddress:
 		'''Sets a value for the object from a string.
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 
 		Notes:
 			Validates input, adjusts formatting, and assigns the address. Formatting is
@@ -232,11 +232,11 @@ class MAddress:
 		'''Sets the value of the instance from separate components
 
 		Parameters:
-			* uid: UserID instance for the username
-			* domain: Domain instance for the address domain
+		  * uid: UserID instance for the username
+		  * domain: Domain instance for the address domain
 		
 		Returns:
-			* No additional fields
+		  * No additional fields
 		'''
 		if not (uid.is_valid() and domain.is_valid()):
 			return RetVal(ErrBadValue, 'bad parameter')
@@ -252,11 +252,11 @@ class MAddress:
 		'''Sets the value of the instance from separate components
 
 		Parameters:
-			* wid: UUID instance for the workspace ID
-			* domain: Domain instance for the address domain
+		  * wid: UUID instance for the workspace ID
+		  * domain: Domain instance for the address domain
 		
 		Returns:
-			* No additional fields
+		  * No additional fields
 		'''
 		if not (wid.is_valid() and domain.is_valid()):
 			return RetVal(ErrBadValue, 'bad parameter')
@@ -288,7 +288,7 @@ class WAddress:
 		'''Sets a value for the object from a string.
 		
 		Returns:
-			* no additional fields
+		  * no additional fields
 
 		Notes:
 			Validates input, adjusts formatting, and assigns the address. Formatting is

@@ -51,15 +51,15 @@ def hashbuffer(data: bytes, algorithm: str) -> RetVal:
 	'''Calculates a hash value for the memory buffer passed to it
 
 	Parameters:
-		* data: an array of bytes
-		* algorithm: the hash algorithm to be used. This can be one of the following:
+	  * data: an array of bytes
+	  * algorithm: the hash algorithm to be used. This can be one of the following:
 			- BLAKE2B-256 (default)
 			- BLAKE3-256
 			- SHA-256
 			- SHA3-256
 	
 	Returns:
-		* hash: (CryptoString) the computed hash of the buffer
+	  * hash: (CryptoString) the computed hash of the buffer
 	'''
 	if not data:
 		return RetVal(ErrBadValue, 'bad path')
