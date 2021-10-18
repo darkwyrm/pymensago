@@ -182,10 +182,6 @@ def process_updates(client: MensagoClient) -> RetVal:
 		"src" TEXT,
 		"dest" TEXT NOT NULL
 	);
-	CREATE TABLE dependencies (
-		"folder" TEXT NOT NULL,
-		"file" TEXT NOT NULL
-	);
 	''')
 	
 	cur = profile.db.cursor()
@@ -210,8 +206,6 @@ def process_updates(client: MensagoClient) -> RetVal:
 			break
 		
 		# This is where gets complicated :/
-
-		# TODO: Implement dependency tracking for file ops
 
 		if row[1] == 'CREATE':
 			ocur = opsdb.cursor()
@@ -329,20 +323,9 @@ def process_updates(client: MensagoClient) -> RetVal:
 			opsdb.commit()
 		
 		elif row[1] == 'RMDIR':
-			dirname = mpath.basename(row[2])
-
 			ocur = opsdb.cursor()
-			ocur.execute("SELECT op,dest FROM ops WHERE name=?", (filename,))
-			orow = ocur.fetchone()
-			if orow:
-				if orow[0] == 'MKDIR':
-					ocur.execute("DELETE FROM ops WHERE name=?", (dirname,))
-				elif orow[0] == 'RMDIR':
-					# ignore duplicates
-					pass
-			else:
-				ocur.execute("INSERT INTO ops(op,name,dest) VALUES('RMDIR',?,?", (dirname,row[2]))
-			
+			ocur.execute("INSERT INTO ops(op,name,dest) VALUES('RMDIR',?,?", 
+				(mpath.basename(row[2]),row[2]))
 			opsdb.commit()
 
 		elif row[1] == 'ROTATE':
