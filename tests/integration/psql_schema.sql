@@ -66,8 +66,8 @@ CREATE TABLE updates(rowid SERIAL PRIMARY KEY, rid CHAR(36) NOT NULL, wid CHAR(3
 
 -- Information about individual workspaces
 
-CREATE TABLE iwkspc_folders(rowid SERIAL PRIMARY KEY, wid char(36) NOT NULL, 
-	enc_key VARCHAR(64) NOT NULL);
+CREATE TABLE iwkspc_folders(rowid SERIAL PRIMARY KEY, wid char(36) NOT NULL,
+	serverpath VARCHAR(512) NOT NULL, clientpath VARCHAR(768) NOT NULL);
 
 -- Devices registered to each individual's workspace
 CREATE TABLE iwkspc_devices(rowid SERIAL PRIMARY KEY, wid CHAR(36) NOT NULL,
