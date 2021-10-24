@@ -5,6 +5,7 @@ import io
 import json
 import os
 import socket
+from typing import Type
 
 import jsonschema
 from retval import ErrOutOfRange, RetVal, ErrBadValue, ErrFilesystemError, ErrNetworkError, ErrServerError
@@ -226,27 +227,54 @@ def copy(conn: ServerConnection, srcfile: str, destdir: str) -> RetVal:
 	return RetVal().set_value('name', response['Data']['NewName'])
 
 
-def delete(conn: ServerConnection, path: str) -> RetVal:
-	'''Deletes a file'''
-	if not path:
-		return RetVal(MsgBadRequest).set_value('Status', 400)
-	
-	request = {
-		'Action' : 'DELETE',
-		'Data' : {
-			'Path' : path
-		}
-	}
-	status = conn.send_message(request)
-	if status.error():
-		return status
+def delete(conn: ServerConnection, path_list: list) -> RetVal:
+	'''Deletes one or more server-side files'''
 
-	response = conn.read_response(server_response)
-	if response.error():
-		return response
+	if not isinstance(path_list, list):
+		raise TypeError('path_list must be a list')
 	
-	if response['Code'] != 200:
-		return wrap_server_error(response)
+	if len(path_list) < 1:
+		return RetVal()
+	
+	queue = list(path_list)
+
+	while len(queue) > 0:
+		request = { 'Action' : 'DELETE', 'Data' : {} }
+
+		# The baseline size for a DELETE message with 3 characters for the path count. We can make this
+		# assumption because each path will be a minimum of 83 bytes, equating to a rough maximum
+		# of 196 paths that can fit within the 16k max message size.
+		reqsize = 47
+		index = 0
+
+		# We don't go all the way to 16384, the official max command size, to allow for a bit of
+		# a 'fudge factor.'
+		while len(queue) > 0 and reqsize < 16000:
+			# entry: "Path":"",
+			entrysize = 10 + len(str(index)) + len(queue[0])
+
+			if reqsize + entrysize > 16384:
+				# We increment the index just to make sure that PathCount is correct.
+				index = index + 1
+				break
+
+			item = queue.pop(0)
+			request['Data'][f'Path{index}'] = item
+			reqsize = reqsize + entrysize
+			index = index + 1
+			
+
+		request ['Data']['PathCount'] = str(index)
+		status = conn.send_message(request)
+		if status.error():
+			return status
+
+		response = conn.read_response(server_response)
+		if response.error():
+			return response
+		
+		if response['Code'] != 200:
+			return wrap_server_error(response)
 	
 	return RetVal()
 

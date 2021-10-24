@@ -85,12 +85,14 @@ def test_delete():
 	admin_dir = os.path.join(dbdata['configfile']['global']['workspace_dir'],
 		dbdata['admin_wid'].as_string())
 
-	status = make_test_file(admin_dir)
-	assert not status.error(), f"test_delete(): error creating test file: {status.info()}"
-	testname = status['name']
+	file_list = list()
+	for i in range(300):
+		status = make_test_file(admin_dir)
+		assert not status.error(), f"test_delete(): error creating test file: {status.info()}"
+		file_list.append(f"/ wsp {dbdata['admin_wid'].as_string()} {status['name']}")
 
-	status = serverconn.delete(conn, f"/ wsp {dbdata['admin_wid'].as_string()} {testname}")
-	assert not status.error(), f"test_delete(): error deleting test file: {status.info()}"
+	status = serverconn.delete(conn, file_list)
+	assert not status.error(), f"test_delete(): error deleting test files: {status.info()}"
 
 	conn.disconnect()
 
@@ -465,7 +467,7 @@ def test_upload():
 
 if __name__ == '__main__':
 	# test_copy()
-	# test_delete()
+	test_delete()
 	# test_download()
 	# test_exists()
 	# test_getquotainfo()
@@ -473,7 +475,7 @@ if __name__ == '__main__':
 	# test_listdirs()
 	# test_mkdir()
 	# test_move()
-	test_replace()
+	# test_replace()
 	# test_select()
 	# test_setquota()
 	# test_upload()
