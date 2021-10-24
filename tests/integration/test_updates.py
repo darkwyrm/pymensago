@@ -71,8 +71,8 @@ def setup_updates(dbconn, dbdata: dict) -> dict:
 		# we make the timestamp for each of the new files about a day apart
 		filetime = now - ((100-i) * 86400)
 
-		cur.execute("INSERT INTO updates(wid,update_type,update_data,unixtime) VALUES("
-			f"'{dbdata['admin_wid']}',1,'{path}','{filetime}')")
+		cur.execute("INSERT INTO updates(rid,wid,update_type,update_data,unixtime) VALUES("
+			f"'{str(uuid.uuid4())}','{dbdata['admin_wid']}',1,'{path}','{filetime}')")
 	
 	dbconn.commit()
 
