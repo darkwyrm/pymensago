@@ -2,6 +2,7 @@ import os
 import random
 import time
 import uuid
+from pycryptostring import CryptoString
 
 from retval import RetVal
 
@@ -282,8 +283,10 @@ def test_mkdir():
 	status = regcode_user(conn, dbdata, admin_profile_data, dbdata['admin_regcode'])
 	assert not status.error(), f"test_mkdir: regcode_user failed: {status.info()}"
 
+	encpath = CryptoString(r"XSALSA20:^nYyCWf?8WE;xn=b+IPz@6a)g%U_-(5OzlNe7b$POYgfTu|*B%VXq$a4wD`")
+
 	status = serverconn.mkdir(conn, 
-		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111")
+		f"/ wsp {dbdata['admin_wid'].as_string()} 11111111-1111-1111-1111-111111111111", encpath)
 	assert not status.error(), f"test_mkdir: mkdir failed: {status.info()}"
 
 	conn.disconnect()
@@ -467,13 +470,13 @@ def test_upload():
 
 if __name__ == '__main__':
 	# test_copy()
-	test_delete()
+	# test_delete()
 	# test_download()
 	# test_exists()
 	# test_getquotainfo()
 	# test_listfiles()
 	# test_listdirs()
-	# test_mkdir()
+	test_mkdir()
 	# test_move()
 	# test_replace()
 	# test_select()

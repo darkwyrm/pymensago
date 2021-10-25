@@ -8,8 +8,10 @@ import socket
 from typing import Type
 
 import jsonschema
-from retval import ErrOutOfRange, RetVal, ErrBadValue, ErrFilesystemError, ErrNetworkError, ErrServerError
+from retval import RetVal, ErrBadValue, ErrBadType, ErrFilesystemError, ErrNetworkError, \
+	ErrOutOfRange, ErrServerError
 
+from pycryptostring import CryptoString
 from pymensago.errorcodes import *	# pylint: disable=wildcard-import
 from pymensago.hash import hashfile
 import pymensago.utils as utils
@@ -447,14 +449,33 @@ def listdirs(conn: ServerConnection, path='') -> RetVal:
 	return RetVal().set_value('directories', response['Data']['Directories'])
 	
 
-def mkdir(conn: ServerConnection, path: str) -> RetVal:
-	'''Creates one or more directories. 'path' is a Mensago-style path and the command ensures that 
-	the directory exists, creating any parent directories as needed. '''
+def mkdir(conn: ServerConnection, path: str, encpath: CryptoString) -> RetVal:
+	'''Creates one or more directories. The command ensures that the directory
+	exists, creating any parent directories as needed.
+	
+	Parameters:
+	  * path: (str) the server-side path
+	  * encpath: (CryptoString) the encrypted client-side path
+	
+	Returns:
+	  * None
+	
+	Notes:
+	The encpath parameter contains the user-facing path, whereas path contains
+	the corresponding server-side path which contains no identifying information.
+	'''
 
+	if not isinstance(encpath, CryptoString):
+		return RetVal(ErrBadType)
+	
+	if not path or not encpath.is_valid():
+		return RetVal(ErrBadValue)
+	
 	request = {
 		'Action' : 'MKDIR',
 		'Data' : {
-			'Path': path
+			'Path': path,
+			'ClientPath': encpath.as_string()
 		}
 	}
 	status = conn.send_message(request)
