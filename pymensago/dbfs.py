@@ -81,6 +81,19 @@ class DBPath:
 		self.path = self.path + '/' + temp
 
 
+def load_file(db: sqlite3.Connection, fspath: str, dbpath: DBPath) -> RetVal:
+	'''Loads a file from disk into the virtual filesystem at the specified path
+	
+	Parameters:
+		* db: (sqlite3.Connection) SQLite3 connection to the database in question
+		* fspath: (str) Path of the file on the local filesystem
+		* dbpathL (DBPath) Destination of the file in the database's virtual filesystem
+	'''
+
+	# TODO: implement dbfs.delete()
+	return RetVal(ErrUnimplemented)
+
+
 def delete(db: sqlite3.Connection, path: DBPath) -> RetVal:
 	'''Deletes a file the database virtual filesytem.
 	
