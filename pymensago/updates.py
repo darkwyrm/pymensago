@@ -7,7 +7,7 @@ from pymensago.client import MensagoClient
 import pymensago.config as config
 import pymensago.dbfs as dbfs
 import pymensago.mpath as mpath
-from pymensago.serverconn import ServerConnection, wrap_server_error
+import pymensago.serverconn as serverconn
 from pymensago.userprofile import Profile
 import pymensago.utils as utils
 
@@ -74,7 +74,7 @@ def _validate_update(item: dict()) -> bool:
 	return True
 
 
-def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetVal:
+def download_updates(conn: serverconn.ServerConnection, dbconn: sqlite3.Connection) -> RetVal:
 	'''Checks for updates on the server and downloads them into the local database.'''
 
 	# First, check the update table for existing ones. 
@@ -92,7 +92,7 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 
 	res = conn.read_response()
 	if res['Code'] != 200:
-		return wrap_server_error(res)
+		return serverconn.wrap_server_error(res)
 	
 	if 'UpdateCount' not in res['Data']:
 		return RetVal(ErrServerError, "server didn't supply update count when requested")
@@ -114,7 +114,7 @@ def download_updates(conn: ServerConnection, dbconn: sqlite3.Connection) -> RetV
 
 		res = conn.read_response()
 		if res['Code'] != 200:
-			return wrap_server_error(res)
+			return serverconn.wrap_server_error(res)
 		
 		try:
 			updates_received = len(res['Data']['Updates'])
@@ -332,7 +332,21 @@ def process_updates(client: MensagoClient) -> RetVal:
 			# TODO: Implement key rotation handling in process_updates()
 			pass
 	
-	# TODO: Execute file operations
+	temppath = os.path.join(profile.path, 'temp')
+	
+	ocur = opsdb.cursor()
+	ocur.execute('SELECT op,name,src,dest FROM ops ORDER BY rowid')
+	row = ocur.fetchone()
+	while row:
+	
+		if row[0] == 'CREATE':
+			status = serverconn.download(client.conn, row[2], temppath)
+			if status.error():
+				return status.set_info('Failed to download item '+row[2])
+		
+		# TODO: Finish file operations
+
+		row = ocur.fetchone()
 	
 	# Remove the records for the items successfully processed
 	for item in itemlist:
