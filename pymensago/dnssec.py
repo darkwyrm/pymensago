@@ -73,7 +73,7 @@ def check_resolver_support() -> str:
 	res = dns.resolver.get_default_resolver()
 	request = dns.message.make_query('.', dns.rdatatype.DNSKEY, want_dnssec=True)
 	response = dns.query.udp(request, res.nameservers[0])
-	if len(response.answer) == 2:
+	if len(response.answer) > 0:
 		drdnssec_support = 'default'
 		return drdnssec_support
 	
