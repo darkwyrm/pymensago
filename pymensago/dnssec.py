@@ -51,7 +51,7 @@ ErrValidationFailure = 'validation failure'
 
 drdnssec_support = ''
 
-def check_resolver_dnssec() -> str:
+def check_resolver_support() -> str:
 	'''Checks for the source to use to check DNSSEC signatures and returns a string indicating the
 	source.
 	
@@ -85,12 +85,25 @@ def check_resolver_dnssec() -> str:
 def check_dnssec(domain: str) -> RetVal:
 	'''Checks if the domain given is covered by DNSSEC and validates records found.'''
 
-	# Rather than hitting the authoritative name server
+	global drdnssec_support
+
+	if drdnssec_support != '':
+		check_resolver_support()
+
 	res = dns.resolver.get_default_resolver()
-	nsip = res.nameservers[0]
+	ns_ips = res.nameservers[0]
+
+	if drdnssec_support == 'upstream':
+		try:
+			response = dns.resolver.query(domain, dns.rdatatype.NS)
+		except Exception as e:
+			return RetVal().wrap_exception(e).set_error(ErrNotFound)
+
+		for i in range(response.rrset):
+			ns_ips[i] = response.rrset[i].to_text()
 
 	request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
-	response = dns.query.udp(request, nsip)
+	response = dns.query.udp(request, ns_ips[0])
 	if response.rcode():
 		return RetVal(ErrNoDNSSEC)
 
@@ -104,5 +117,5 @@ def check_dnssec(domain: str) -> RetVal:
 # 	print("No errors")
 
 if __name__ == '__main__':
-	print(check_resolver_dnssec())
+	print(check_resolver_support())
 
