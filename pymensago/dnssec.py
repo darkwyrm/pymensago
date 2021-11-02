@@ -50,6 +50,7 @@ ErrValidationFailure = 'validation failure'
 # 	return RetVal()
 
 drdnssec_support = ''
+drdnssec_ips = list()
 
 def check_resolver_support() -> str:
 	'''Checks for the source to use to check DNSSEC signatures and returns a string indicating the
@@ -62,22 +63,23 @@ def check_resolver_support() -> str:
 	  * 'default': the DNS servers in the network config support DNSSEC
 	  * 'upstream': the authoritative server for the domain needs to be queried directly for DNSSEC
 	'''
-	global drdnssec_support
+	global drdnssec_support, drdnssec_ips
 
 	if drdnssec_support != '':
 		return drdnssec_support
 
+	drdnssec_support = 'upstream'
+	
 	# On most platforms, the OS has its own stub resolver and DNS cache. We'll try that first.
 	# We know that the root domain is signed, so we'll try to get the DNSKEY for the root zone.
 	# If our resolver doesn't return a record, then we know it doesn't support DNSSEC
 	res = dns.resolver.get_default_resolver()
-	request = dns.message.make_query('.', dns.rdatatype.DNSKEY, want_dnssec=True)
-	response = dns.query.udp(request, res.nameservers[0])
-	if len(response.answer) > 0:
-		drdnssec_support = 'default'
-		return drdnssec_support
-	
-	drdnssec_support = 'upstream'
+	for nsip in res.nameservers:
+		request = dns.message.make_query('.', dns.rdatatype.DNSKEY, want_dnssec=True)
+		response = dns.query.udp(request, nsip)
+		if response.rcode() == 0 and len(response.answer) > 0:
+			drdnssec_ips.append(nsip)
+			drdnssec_support = 'default'
 
 	return drdnssec_support
 	
@@ -85,37 +87,36 @@ def check_resolver_support() -> str:
 def check_dnssec(domain: str) -> RetVal:
 	'''Checks if the domain given is covered by DNSSEC and validates records found.'''
 
-	global drdnssec_support
+	global drdnssec_support, drdnssec_ip
 
 	if drdnssec_support != '':
 		check_resolver_support()
 
-	res = dns.resolver.get_default_resolver()
-	ns_ips = res.nameservers[0]
-
+	ns_ips = list()
 	if drdnssec_support == 'upstream':
 		try:
 			response = dns.resolver.query(domain, dns.rdatatype.NS)
 		except Exception as e:
 			return RetVal().wrap_exception(e).set_error(ErrNotFound)
 
-		for i in range(response.rrset):
-			ns_ips[i] = response.rrset[i].to_text()
+		for rr in range(response.rrset):
+			ns_ips.append(rr.to_text())
+	else:
+		ns_ips.extend(drdnssec_ips)
 
-	request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
-	response = dns.query.udp(request, ns_ips[0])
-	if response.rcode():
-		return RetVal(ErrNoDNSSEC)
+	response = None	
+	for ns in ns_ips:
+		request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
+		response = dns.query.udp(request, drdnssec_ip)
+		if response.rcode() == 0:
+			drdnssec_ip = ip
+			return RetVal()
 
-	return RetVal()
+	return RetVal(ErrNoDNSSEC)
 
 
-#status = check_dnssec('mensago.org.')
-# if status.error():
-# 	print(status)
-# else:
-# 	print("No errors")
-
-if __name__ == '__main__':
-	print(check_resolver_support())
-
+status = check_dnssec('mensago.org')
+if status.error():
+	print(status)
+else:
+	print("No errors")
