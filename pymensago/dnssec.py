@@ -65,7 +65,7 @@ def check_resolver_support() -> str:
 	'''
 	global drdnssec_support, drdnssec_ips
 
-	if drdnssec_support != '':
+	if drdnssec_support:
 		return drdnssec_support
 
 	drdnssec_support = 'upstream'
@@ -87,11 +87,12 @@ def check_resolver_support() -> str:
 def check_dnssec(domain: str) -> RetVal:
 	'''Checks if the domain given is covered by DNSSEC and validates records found.'''
 
-	global drdnssec_support, drdnssec_ip
+	global drdnssec_support, drdnssec_ips
 
-	if drdnssec_support != '':
+	if not drdnssec_support:
 		check_resolver_support()
 
+	# Get the nameserver for the domain
 	ns_ips = list()
 	if drdnssec_support == 'upstream':
 		try:
@@ -101,16 +102,26 @@ def check_dnssec(domain: str) -> RetVal:
 
 		for rr in range(response.rrset):
 			ns_ips.append(rr.to_text())
+		
+		# TODO: translate domains to IP addresses and place into drdnssec_ips
+		# response = None	
+		# for ns in ns_ips:
+		# 	request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
+		# 	try:
+		# 		response = dns.query.udp(request, ns, timeout=2.0)
+		# 	except Exception:
+		# 		continue
+
+		# 	if response.rcode() == 0:
+		# 		drdnssec_ip = ns
+		# 		return RetVal()
+
 	else:
 		ns_ips.extend(drdnssec_ips)
 
-	response = None	
-	for ns in ns_ips:
-		request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
-		response = dns.query.udp(request, drdnssec_ip)
-		if response.rcode() == 0:
-			drdnssec_ip = ip
-			return RetVal()
+	# Now that we have the IP address(es) to query for a DNSSEC record, start the resolution process
+
+	# TODO: finish implementing check_dnssec()
 
 	return RetVal(ErrNoDNSSEC)
 
