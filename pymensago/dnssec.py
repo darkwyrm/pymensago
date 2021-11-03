@@ -109,7 +109,6 @@ def check_dnssec(domain: str) -> RetVal:
 		if len(nslist) < 1:
 			return RetVal(ErrDNSError, 'no nameservers found for domain')
 		
-		# TODO: translate domains to IP addresses and place into drdnssec_ips
 		response = None
 		for ns in nslist:
 			try:
