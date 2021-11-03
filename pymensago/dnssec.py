@@ -4,11 +4,13 @@ import dns.dnssec
 import dns.message
 import dns.resolver
 import dns.rdatatype
+import socket
 
 import pymensago.utils as utils
 from retval import RetVal, ErrBadValue, ErrNotFound, ErrBadType, ErrNetworkError
 
 ErrNoDNSSEC = 'no DNSSEC for domain'
+ErrDNSError = 'DNS error'
 ErrValidationFailure = 'validation failure'
 
 # def check_dnssec(domain: str) -> RetVal:
@@ -96,25 +98,31 @@ def check_dnssec(domain: str) -> RetVal:
 	ns_ips = list()
 	if drdnssec_support == 'upstream':
 		try:
-			response = dns.resolver.query(domain, dns.rdatatype.NS)
+			response = dns.resolver.resolve(domain, dns.rdatatype.NS)
 		except Exception as e:
 			return RetVal().wrap_exception(e).set_error(ErrNotFound)
 
+		nslist = list()
 		for rr in range(response.rrset):
-			ns_ips.append(rr.to_text())
+			nslist.append(rr.to_text())
+		
+		if len(nslist) < 1:
+			return RetVal(ErrDNSError, 'no nameservers found for domain')
 		
 		# TODO: translate domains to IP addresses and place into drdnssec_ips
-		# response = None	
-		# for ns in ns_ips:
-		# 	request = dns.message.make_query(domain, dns.rdatatype.A, want_dnssec=True)
-		# 	try:
-		# 		response = dns.query.udp(request, ns, timeout=2.0)
-		# 	except Exception:
-		# 		continue
+		response = None
+		for ns in nslist:
+			try:
+				response = dns.resolver.resolve(ns, dns.rdatatype.NS)
+			except:
+				# We'll skip the ones that have errors and just use the good entries
+				continue
 
-		# 	if response.rcode() == 0:
-		# 		drdnssec_ip = ns
-		# 		return RetVal()
+			if len(response.rrset) > 0:
+				ns_ips.append(response.rrset[0].to_text())
+		
+		if len(ns_ips) == 0:
+			return RetVal(ErrDNSError, 'no IP addresses found for nameservers')
 
 	else:
 		ns_ips.extend(drdnssec_ips)
@@ -131,3 +139,10 @@ if status.error():
 	print(status)
 else:
 	print("No errors")
+
+def check_ipv6(n):
+    try:
+        socket.inet_pton(socket.AF_INET6, n)
+        return True
+    except socket.error:
+        return False
