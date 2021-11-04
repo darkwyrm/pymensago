@@ -126,7 +126,28 @@ def check_dnssec(domain: str) -> RetVal:
 	else:
 		ns_ips.extend(drdnssec_ips)
 
-	# Now that we have the IP address(es) to query for a DNSSEC record, start the resolution process
+	# Now that we have the IP address(es) to query for a DNSSEC record, start checking to see
+	# if the domain is signed by DNSSEC
+	
+	# The DNSKEY record contains the verification key for the zone
+	
+	for ns_ip in ns_ips:
+		request = dns.message.make_query(domain, dns.rdatatype.DNSKEY, want_dnssec=True)
+		try:
+			response = dns.query.udp(request, ns_ip, timeout=2.0)
+		except:
+			continue
+		else:
+			break
+
+	if response.rcode():
+		# Query failed -- either a server error or no DNSKEY record
+		return RetVal(ErrNoDNSSEC)
+	
+	# The response should contain two RRSET items: DNSKEY and RRSIG
+	records = response.answer
+	if len(records) != 2:
+		return RetVal(ErrNetworkError)
 
 	# TODO: finish implementing check_dnssec()
 
