@@ -149,9 +149,15 @@ def check_dnssec(domain: str) -> RetVal:
 	if len(records) != 2:
 		return RetVal(ErrNetworkError)
 
+	# the DNSKEY should be self-signed, validate it
+	try:
+		dns.dnssec.validate(records[0], records[1], { domain: records[0] } )
+	except dns.dnssec.ValidationFailure as e:
+		return RetVal().wrap_exception(e).set_error(ErrValidationFailure)
+	
 	# TODO: finish implementing check_dnssec()
 
-	return RetVal(ErrNoDNSSEC)
+	return RetVal()
 
 
 status = check_dnssec('mensago.org')
