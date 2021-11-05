@@ -150,21 +150,19 @@ def check_dnssec(domain: str) -> RetVal:
 		return RetVal(ErrNetworkError)
 
 	# the DNSKEY should be self-signed, validate it
-	try:
-		dns.dnssec.validate(records[0], records[1], { domain: records[0] } )
-	except dns.dnssec.ValidationFailure as e:
-		return RetVal().wrap_exception(e).set_error(ErrValidationFailure)
+
+	# This code doesn't successfully validate DSKEY records for domains that pass analysis by
+	# dnssec-analyzer.verisignlabs.com and other DNSSEC validators. We need to find out why.
 	
-	# TODO: finish implementing check_dnssec()
+	# try:
+	# 	dns.dnssec.validate(records[0], records[1], { domain: records[0] } )
+	# except dns.dnssec.ValidationFailure as e:
+	# 	return RetVal().wrap_exception(e).set_error(ErrValidationFailure)
+	
+	# TODO: fix DNSSEC validation problems in check_dnssec()
 
 	return RetVal()
 
-
-status = check_dnssec('mensago.org')
-if status.error():
-	print(status)
-else:
-	print("No errors")
 
 def check_ipv6(n):
     try:
@@ -172,3 +170,12 @@ def check_ipv6(n):
         return True
     except socket.error:
         return False
+
+
+if __name__ == '__main__':
+	status = check_dnssec('mensago.org')
+	if status.error():
+		print(status)
+	else:
+		print("No errors")
+
