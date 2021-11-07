@@ -19,12 +19,15 @@ setup(
 	],
 	python_requires='>=3.5',
 	install_requires=[
-		# 'blake3>=0.1.7',
+		'blake3>=0.1.7',
 		'distro>=1.5.0',
 		'PyNaCl>=1.3.0',
 		'jsonschema>=3.2.0',
 		'pillow>=8.2.0',
 		'pycryptostring>=1.0.0',
-		'retval>=1.0.0'
+		'retval>=1.0.0',
+		'toml>=0.10.2',
+		'dnspython>=2.1.0',
+		'pycryptodome>=3.11.0'
 	]
 )
