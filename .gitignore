@@ -5,3 +5,4 @@ tests/integration/testfiles/*
 .cache/*
 testcards/*
 pymensago.egg-info/*
+.venv
