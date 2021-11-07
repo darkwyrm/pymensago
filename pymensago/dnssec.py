@@ -13,44 +13,6 @@ ErrNoDNSSEC = 'no DNSSEC for domain'
 ErrDNSError = 'DNS error'
 ErrValidationFailure = 'validation failure'
 
-# def check_dnssec(domain: str) -> RetVal:
-# 	'''Checks if the domain given is covered by DNSSEC'''
-
-# 	# Doing a DNSSEC resolution is... involved... even with the great DNS package. :(
-	
-# 	# First get the nameservers for the domain
-# 	try:
-# 		response = dns.resolver.query(domain, dns.rdatatype.NS)
-# 	except Exception as e:
-# 		return RetVal().wrap_exception(e).set_error(ErrNotFound)
-
-# 	# The NS records returned will give the names, not IP addresses, of the authoritative
-# 	# name servers for the domain, so look up the IP address of the first name server
-# 	ns_domain = response.rrset[0].to_text()
-# 	response = dns.resolver.query(ns_domain, dns.rdatatype.A)
-# 	ns_ip = response.rrset[0].to_text()
-
-# 	# The DNSKEY record contains the verification key for the zone
-# 	request = dns.message.make_query(domain, dns.rdatatype.DNSKEY, want_dnssec=True)
-# 	response = dns.query.udp(request, ns_ip)
-# 	if response.rcode():
-# 		# Query failed -- either a server error or no DNSKEY record
-# 		return RetVal(ErrNoDNSSEC)
-	
-# 	# The response should contain two RRSET records: DNSKEY and RRSIG
-# 	records = response.answer
-# 	if len(records) != 2:
-# 		return RetVal(ErrNetworkError)
-
-# 	# the DNSKEY should be self-signed, validate it
-# 	name = dns.name.from_text(domain)
-# 	try:
-# 		dns.dnssec.validate(records[0], records[1], { name: records[0] } )
-# 	except dns.dnssec.ValidationFailure:
-# 		return RetVal(ErrValidationFailure)
-	
-# 	return RetVal()
-
 drdnssec_support = ''
 drdnssec_ips = list()
 
@@ -151,15 +113,11 @@ def check_dnssec(domain: str) -> RetVal:
 
 	# the DNSKEY should be self-signed, validate it
 
-	# This code doesn't successfully validate DSKEY records for domains that pass analysis by
-	# dnssec-analyzer.verisignlabs.com and other DNSSEC validators. We need to find out why.
-	
-	# try:
-	# 	dns.dnssec.validate(records[0], records[1], { domain: records[0] } )
-	# except dns.dnssec.ValidationFailure as e:
-	# 	return RetVal().wrap_exception(e).set_error(ErrValidationFailure)
-	
-	# TODO: fix DNSSEC validation problems in check_dnssec()
+	dname = dns.name.from_text(domain)
+	try:
+		dns.dnssec.validate(records[0], records[1], { dname: records[0] } )
+	except dns.dnssec.ValidationFailure as e:
+		return RetVal().wrap_exception(e).set_error(ErrValidationFailure)
 
 	return RetVal()
 
